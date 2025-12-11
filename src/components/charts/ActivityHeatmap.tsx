@@ -1,0 +1,105 @@
+"use client";
+
+import { CommitInfo } from "@/lib/github";
+import { useMemo } from "react";
+
+interface Props {
+  data: CommitInfo[];
+}
+
+const DAYS = ["日", "月", "火", "水", "木", "金", "土"];
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+export default function ActivityHeatmap({ data }: Props) {
+  // 曜日×時間帯のマトリックスを作成
+  const heatmapData = useMemo(() => {
+    const matrix: number[][] = Array.from({ length: 7 }, () =>
+      Array(24).fill(0)
+    );
+
+    data.forEach((commit) => {
+      const date = new Date(commit.committedDate);
+      const day = date.getDay();
+      const hour = date.getHours();
+      matrix[day][hour]++;
+    });
+
+    return matrix;
+  }, [data]);
+
+  // 最大値を取得（色の濃さ計算用）
+  const maxValue = useMemo(() => {
+    return Math.max(...heatmapData.flat(), 1);
+  }, [heatmapData]);
+
+  // 値に応じた色を返す
+  const getColor = (value: number) => {
+    if (value === 0) return "bg-gray-100 dark:bg-gray-700";
+    const intensity = value / maxValue;
+    if (intensity < 0.25) return "bg-purple-200 dark:bg-purple-900";
+    if (intensity < 0.5) return "bg-purple-400 dark:bg-purple-700";
+    if (intensity < 0.75) return "bg-purple-500 dark:bg-purple-600";
+    return "bg-purple-600 dark:bg-purple-500";
+  };
+
+  if (data.length === 0) {
+    return (
+      <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
+        活動データがありません
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[600px]">
+        {/* 時間ラベル */}
+        <div className="flex mb-1">
+          <div className="w-8"></div>
+          {HOURS.filter((h) => h % 3 === 0).map((hour) => (
+            <div
+              key={hour}
+              className="flex-1 text-center text-xs text-gray-500 dark:text-gray-400"
+              style={{ minWidth: `${100 / 8}%` }}
+            >
+              {hour}:00
+            </div>
+          ))}
+        </div>
+
+        {/* ヒートマップグリッド */}
+        {DAYS.map((day, dayIndex) => (
+          <div key={day} className="flex items-center mb-1">
+            <div className="w-8 text-xs text-gray-600 dark:text-gray-400">
+              {day}
+            </div>
+            <div className="flex-1 flex gap-0.5">
+              {HOURS.map((hour) => (
+                <div
+                  key={hour}
+                  className={`flex-1 h-6 rounded-sm ${getColor(
+                    heatmapData[dayIndex][hour]
+                  )} transition-colors cursor-default`}
+                  title={`${day} ${hour}:00 - ${heatmapData[dayIndex][hour]} commits`}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* 凡例 */}
+        <div className="flex items-center justify-end gap-2 mt-4">
+          <span className="text-xs text-gray-500 dark:text-gray-400">少ない</span>
+          <div className="flex gap-0.5">
+            <div className="w-4 h-4 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+            <div className="w-4 h-4 rounded-sm bg-purple-200 dark:bg-purple-900"></div>
+            <div className="w-4 h-4 rounded-sm bg-purple-400 dark:bg-purple-700"></div>
+            <div className="w-4 h-4 rounded-sm bg-purple-500 dark:bg-purple-600"></div>
+            <div className="w-4 h-4 rounded-sm bg-purple-600 dark:bg-purple-500"></div>
+          </div>
+          <span className="text-xs text-gray-500 dark:text-gray-400">多い</span>
+        </div>
+      </div>
+    </div>
+  );
+}
