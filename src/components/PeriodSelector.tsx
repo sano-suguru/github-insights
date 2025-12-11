@@ -37,7 +37,8 @@ export function PeriodSelector({
       <div className="flex gap-0.5 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
         {PERIOD_OPTIONS.map((option) => {
           // 未認証時は30日以下のみ有効（レート制限考慮）
-          const disabled = !isAuthenticated && option.days !== null && option.days > 30;
+          // days=null（全期間）も未認証では無効
+          const disabled = !isAuthenticated && (option.days === null || option.days > 30);
           const isSelected = selectedDays === option.days;
 
           return (
