@@ -349,6 +349,8 @@ function DashboardContent() {
                 <ContributorRanking
                   contributors={contributorDetails}
                   currentUserLogin={session?.login}
+                  owner={owner}
+                  repo={repo}
                 />
               </div>
             )}

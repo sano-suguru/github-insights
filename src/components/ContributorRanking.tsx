@@ -1,12 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { ContributorDetailStat } from "@/lib/github";
 import { calculateBadges, sortBadgesByImportance, Badge } from "@/lib/badges";
 import { 
   TrendingUp, GitCommit, Plus, Minus, GitPullRequest, 
-  Crown, Trophy, Medal, Award, Star, Eye, Cpu, Eraser, Sparkles, ExternalLink 
+  Crown, Trophy, Medal, Award, Star, Eye, Cpu, Eraser, Sparkles, ExternalLink, ImageIcon 
 } from "lucide-react";
+import ContributionCardModal from "./ContributionCardModal";
 
 // アイコン名からコンポーネントを取得するマップ
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -25,12 +27,18 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 interface ContributorRankingProps {
   contributors: ContributorDetailStat[];
   currentUserLogin?: string;
+  owner?: string;
+  repo?: string;
 }
 
 export default function ContributorRanking({
   contributors,
   currentUserLogin,
+  owner,
+  repo,
 }: ContributorRankingProps) {
+  const [selectedContributor, setSelectedContributor] = useState<ContributorDetailStat | null>(null);
+
   if (contributors.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -55,6 +63,8 @@ export default function ContributorRanking({
             contributor={contributor}
             isCurrentUser={contributor.login.toLowerCase() === currentUserLogin?.toLowerCase()}
             totalContributors={contributors.length}
+            onCardClick={() => setSelectedContributor(contributor)}
+            showCardButton={!!owner && !!repo}
           />
         ))}
       </div>
@@ -69,8 +79,21 @@ export default function ContributorRanking({
             contributor={currentUser}
             isCurrentUser={true}
             totalContributors={contributors.length}
+            onCardClick={() => setSelectedContributor(currentUser)}
+            showCardButton={!!owner && !!repo}
           />
         </div>
+      )}
+
+      {/* カードモーダル */}
+      {selectedContributor && owner && repo && (
+        <ContributionCardModal
+          isOpen={!!selectedContributor}
+          onClose={() => setSelectedContributor(null)}
+          owner={owner}
+          repo={repo}
+          contributor={selectedContributor}
+        />
       )}
     </div>
   );
@@ -81,10 +104,14 @@ function ContributorRow({
   contributor,
   isCurrentUser,
   totalContributors,
+  onCardClick,
+  showCardButton,
 }: {
   contributor: ContributorDetailStat;
   isCurrentUser: boolean;
   totalContributors: number;
+  onCardClick: () => void;
+  showCardButton: boolean;
 }) {
   const badges = sortBadgesByImportance(
     calculateBadges(contributor, totalContributors)
@@ -194,6 +221,20 @@ function ContributorRow({
         </div>
         <span className="text-xs text-gray-500">スコア</span>
       </div>
+
+      {/* カード生成ボタン */}
+      {showCardButton && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onCardClick();
+          }}
+          className="shrink-0 p-2 rounded-lg text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
+          title="貢献度カードを生成"
+        >
+          <ImageIcon className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 }
