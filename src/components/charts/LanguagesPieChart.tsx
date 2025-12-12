@@ -9,6 +9,7 @@ import {
   Legend,
 } from "recharts";
 import { LanguageStat } from "@/lib/github";
+import { getChartColor } from "@/lib/colors";
 
 interface Props {
   data: LanguageStat[];
@@ -23,10 +24,10 @@ export default function LanguagesPieChart({ data }: Props) {
     );
   }
 
-  const chartData = data.map((lang) => ({
+  const chartData = data.map((lang, index) => ({
     name: lang.name,
     value: lang.percentage,
-    color: lang.color || "#6b7280",
+    color: getChartColor(lang.color, index),
   }));
 
   return (
