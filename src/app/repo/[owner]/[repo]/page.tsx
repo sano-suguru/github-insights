@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { AlertTriangle, AlertCircle, Lightbulb, GitCommit, GitPullRequest, CircleDot, Star, Frown } from "lucide-react";
+import { AlertTriangle, AlertCircle, Lightbulb, GitCommit, GitPullRequest, CircleDot, Star, Frown, ExternalLink } from "lucide-react";
 import { getPublicRepository, getPublicRateLimitInfo } from "@/lib/github";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguageStats, useContributorStats, useRepositoryStats } from "@/hooks/useRepoData";
@@ -168,9 +168,17 @@ export default function PublicRepoPage() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {owner}/{repo}
-                </h1>
+                <a
+                  href={`https://github.com/${owner}/${repo}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 group"
+                >
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                    {owner}/{repo}
+                  </h1>
+                  <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-purple-500 transition-colors" />
+                </a>
                 {repository?.description && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {repository.description}

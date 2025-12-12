@@ -5,7 +5,7 @@ import { ContributorDetailStat } from "@/lib/github";
 import { calculateBadges, sortBadgesByImportance, Badge } from "@/lib/badges";
 import { 
   TrendingUp, GitCommit, Plus, Minus, GitPullRequest, 
-  Crown, Trophy, Medal, Award, Star, Eye, Cpu, Eraser, Sparkles 
+  Crown, Trophy, Medal, Award, Star, Eye, Cpu, Eraser, Sparkles, ExternalLink 
 } from "lucide-react";
 
 // アイコン名からコンポーネントを取得するマップ
@@ -120,31 +120,40 @@ function ContributorRow({
       </div>
 
       {/* アバター */}
-      <div className="shrink-0">
+      <a
+        href={`https://github.com/${contributor.login}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="shrink-0 hover:opacity-80 transition-opacity"
+      >
         <Image
           src={contributor.avatarUrl}
           alt={contributor.name}
           width={40}
           height={40}
-          className="rounded-full"
+          className="rounded-full ring-2 ring-transparent hover:ring-purple-500 transition-all"
         />
-      </div>
+      </a>
 
       {/* 名前とバッジ */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span
-            className={`font-medium truncate ${
+          <a
+            href={`https://github.com/${contributor.login}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`font-medium truncate hover:underline inline-flex items-center gap-1 group ${
               isCurrentUser
                 ? "text-purple-700 dark:text-purple-300"
                 : "text-gray-900 dark:text-white"
             }`}
           >
             {contributor.name}
-            {isCurrentUser && (
-              <span className="ml-1 text-xs text-purple-500">(あなた)</span>
-            )}
-          </span>
+            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+          </a>
+          {isCurrentUser && (
+            <span className="text-xs text-purple-500">(あなた)</span>
+          )}
         </div>
         {/* バッジ（最大3つ表示） */}
         <div className="flex flex-wrap gap-1 mt-1">
@@ -189,13 +198,13 @@ function ContributorRow({
   );
 }
 
-// バッジチップ
+// バッジチップ（すりガラス風）
 function BadgeChip({ badge }: { badge: Badge }) {
   const IconComponent = iconMap[badge.iconName];
   
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs ${badge.color}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}
       title={badge.description}
     >
       {IconComponent && <IconComponent className="w-3 h-3" />}

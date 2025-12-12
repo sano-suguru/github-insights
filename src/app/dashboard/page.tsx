@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, Lock, GitCommit, GitPullRequest, CircleDot, Star, Plus, Minus, Trophy, Crown, Medal, Award, Eye, Cpu, Eraser, Sparkles } from "lucide-react";
+import { Globe, Lock, GitCommit, GitPullRequest, CircleDot, Star, Plus, Minus, Trophy, Crown, Medal, Award, Eye, Cpu, Eraser, Sparkles, ExternalLink } from "lucide-react";
 import { ContributorDetailStat } from "@/lib/github";
 import { calculateBadges, sortBadgesByImportance } from "@/lib/badges";
 import { signInWithPrivateScope } from "@/lib/actions";
@@ -35,7 +36,29 @@ const ActivityHeatmap = dynamic(
   { ssr: false }
 );
 
+// ローディングコンポーネント
+function DashboardLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">読み込み中...</p>
+      </div>
+    </div>
+  );
+}
+
+// メインのダッシュボードページ（Suspenseでラップ）
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+// 実際のダッシュボードコンテンツ
+function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -213,9 +236,15 @@ export default function DashboardPage() {
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 dark:text-gray-400">分析中:</span>
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
+                <a
+                  href={`https://github.com/${activeRepo}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors group"
+                >
                   <span className="font-medium text-purple-700 dark:text-purple-300">{activeRepo}</span>
-                </span>
+                  <ExternalLink className="w-3.5 h-3.5 text-purple-500 opacity-50 group-hover:opacity-100 transition-opacity" />
+                </a>
               </div>
             </div>
           )}
