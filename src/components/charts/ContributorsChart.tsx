@@ -58,10 +58,17 @@ export default function ContributorsChart({ data }: Props) {
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: "rgba(0, 0, 0, 0.8)",
-              border: "none",
+              backgroundColor: "rgba(0, 0, 0, 0.9)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
               borderRadius: "8px",
+            }}
+            itemStyle={{
               color: "#fff",
+            }}
+            labelStyle={{
+              color: "#fff",
+              fontWeight: "bold",
+              marginBottom: "4px",
             }}
             formatter={(value: number) => [value, "Commits"]}
           />
