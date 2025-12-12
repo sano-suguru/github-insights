@@ -1,8 +1,8 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Globe, Lock, GitCommit, GitPullRequest, CircleDot, Star, Plus, Minus, Trophy, Crown, Medal, Award, Eye, Cpu, Eraser, Sparkles } from "lucide-react";
@@ -38,8 +38,11 @@ const ActivityHeatmap = dynamic(
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [selectedRepo, setSelectedRepo] = useState<string>("");
+  // URLからリポジトリを取得
+  const repoFromUrl = searchParams.get("repo");
+  const [selectedRepo, setSelectedRepo] = useState<string>(repoFromUrl || "");
   const [selectedDays, setSelectedDays] = useState<number | null>(30);
 
   // リポジトリ一覧取得（React Query）
@@ -49,6 +52,12 @@ export default function DashboardPage() {
 
   // 実際に使用するリポジトリ（選択されていない場合は最初のリポジトリ）
   const activeRepo = selectedRepo || (repositories.length > 0 ? repositories[0].nameWithOwner : "");
+
+  // リポジトリ選択時にURLを更新
+  const handleSelectRepo = useCallback((repo: string) => {
+    setSelectedRepo(repo);
+    router.push(`/dashboard?repo=${encodeURIComponent(repo)}`, { scroll: false });
+  }, [router]);
 
   // 選択リポジトリのowner/repo
   const [owner, repo] = activeRepo ? activeRepo.split("/") : ["", ""];
@@ -111,7 +120,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 via-purple-50/30 to-gray-50 dark:from-gray-800 dark:via-purple-900/30 dark:to-gray-800">
       {/* Privateスコープへのアップグレード促進バナー */}
       {session?.scope && !session.scope.includes("repo") && (
         <div className="bg-linear-to-r from-purple-600 to-pink-600 text-white">
@@ -135,7 +144,7 @@ export default function DashboardPage() {
       )}
 
       {/* ヘッダー */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm">
+      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur shadow-sm border-b border-gray-200/50 dark:border-gray-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -192,11 +201,11 @@ export default function DashboardPage() {
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* リポジトリ選択エリア */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-8">
+        <div className="relative z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 mb-8">
           <RepoSearchCombobox
             repositories={repositories}
             selectedRepo={activeRepo}
-            onSelectRepo={setSelectedRepo}
+            onSelectRepo={handleSelectRepo}
           />
           
           {/* 現在選択中のリポジトリ */}
@@ -247,17 +256,19 @@ export default function DashboardPage() {
             {/* グラフエリア */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Languages */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
                   Languages
                 </h2>
                 <LanguagesPieChart data={languages} />
               </div>
 
               {/* Commits */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
                     Commits
                   </h2>
                   <PeriodSelector
@@ -271,7 +282,7 @@ export default function DashboardPage() {
               </div>
 
               {/* コントリビューター（棒グラフ/円グラフ切り替え） */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
                 <ContributorChartWithToggle
                   contributors={contributors}
                   contributorDetails={contributorDetails}
@@ -279,8 +290,9 @@ export default function DashboardPage() {
               </div>
 
               {/* Activity */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
                   Activity
                 </h2>
                 <ActivityHeatmap data={commits} />
@@ -297,13 +309,11 @@ export default function DashboardPage() {
 
             {/* Ranking */}
             {contributorDetails.length > 0 && (
-              <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <Trophy className="w-6 h-6 text-yellow-500" />
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Ranking
-                  </h2>
-                </div>
+              <div className="mt-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
+                  Ranking
+                </h2>
                 <ContributorRanking
                   contributors={contributorDetails}
                   currentUserLogin={session?.login}
@@ -328,9 +338,11 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+    <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 group overflow-hidden">
+      {/* グラデーション装飾 */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="flex items-center gap-3">
-        <div className="shrink-0">{icon}</div>
+        <div className="shrink-0 p-2 rounded-lg bg-gray-100 dark:bg-gray-700/50">{icon}</div>
         <div>
           <p className="text-sm text-gray-600 dark:text-gray-400">{label}</p>
           <p className="text-xl font-bold text-gray-900 dark:text-white">
