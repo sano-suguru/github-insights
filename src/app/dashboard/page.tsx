@@ -6,12 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, Lock, GitCommit, GitPullRequest, CircleDot, Star, Plus, Minus, Trophy, Crown, Medal, Award, Eye, Cpu, Eraser, Sparkles, ExternalLink } from "lucide-react";
+import { Globe, Lock, GitCommit, GitPullRequest, CircleDot, Star, Plus, Minus, Trophy, Crown, Medal, Award, Eye, Cpu, Eraser, Sparkles, ExternalLink, Share2 } from "lucide-react";
 import { ContributorDetailStat } from "@/lib/github";
 import { calculateBadges, sortBadgesByImportance } from "@/lib/badges";
 import { signInWithPrivateScope } from "@/lib/actions";
 import dynamic from "next/dynamic";
 import RepoSearchCombobox from "@/components/RepoSearchCombobox";
+import ContributionCardModal from "@/components/ContributionCardModal";
 import ContributorRanking from "@/components/ContributorRanking";
 import { PeriodSelector } from "@/components/PeriodSelector";
 import { useRepositories } from "@/hooks/useRepositories";
@@ -333,6 +334,8 @@ function DashboardContent() {
               <MyContributionSummary
                 contributors={contributorDetails}
                 currentUserLogin={session.login}
+                owner={owner}
+                repo={repo}
               />
             )}
 
@@ -401,10 +404,15 @@ const badgeIconMap: Record<string, React.ComponentType<{ className?: string }>> 
 function MyContributionSummary({
   contributors,
   currentUserLogin,
+  owner,
+  repo,
 }: {
   contributors: ContributorDetailStat[];
   currentUserLogin: string;
+  owner: string;
+  repo: string;
 }) {
+  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const myStats = contributors.find(
     (c) => c.login.toLowerCase() === currentUserLogin.toLowerCase()
   );
@@ -418,11 +426,21 @@ function MyContributionSummary({
   );
 
   return (
-    <div className="mt-8 bg-linear-to-r from-purple-600 to-pink-600 rounded-xl shadow-lg p-6 text-white">
-      <div className="flex items-center gap-2 mb-4">
-        <Trophy className="w-6 h-6" />
-        <h2 className="text-lg font-semibold">Your Contribution</h2>
-      </div>
+    <>
+      <div className="mt-8 bg-linear-to-r from-purple-600 to-pink-600 rounded-xl shadow-lg p-6 text-white">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-6 h-6" />
+            <h2 className="text-lg font-semibold">Your Contribution</h2>
+          </div>
+          <button
+            onClick={() => setIsCardModalOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
+          >
+            <Share2 className="w-4 h-4" />
+            カードを生成
+          </button>
+        </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         {/* Rank */}
@@ -486,7 +504,17 @@ function MyContributionSummary({
           </div>
         </div>
       )}
-    </div>
+      </div>
+
+      {/* 貢献度カードモーダル */}
+      <ContributionCardModal
+        isOpen={isCardModalOpen}
+        onClose={() => setIsCardModalOpen(false)}
+        owner={owner}
+        repo={repo}
+        contributor={myStats}
+      />
+    </>
   );
 }
 
