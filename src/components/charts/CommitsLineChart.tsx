@@ -130,27 +130,41 @@ export default function CommitsLineChart({ data, days = 30 }: Props) {
     <ResponsiveContainer width="100%" height={280}>
       <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
+          {/* メインのエリアグラデーション（シャープで控えめ） */}
           <linearGradient id="colorCommits" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.3} />
-            <stop offset="100%" stopColor="#7c3aed" stopOpacity={0.05} />
+            <stop offset="0%" stopColor="#a855f7" stopOpacity={0.25} />
+            <stop offset="100%" stopColor="#a855f7" stopOpacity={0} />
           </linearGradient>
+          {/* ライン用のグラデーション */}
+          <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#a855f7" />
+            <stop offset="100%" stopColor="#ec4899" />
+          </linearGradient>
+          {/* 控えめなグロー効果 */}
+          <filter id="softGlow" x="-10%" y="-10%" width="120%" height="120%">
+            <feGaussianBlur stdDeviation="1" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
         <CartesianGrid 
           strokeDasharray="3 3" 
           stroke="#374151" 
-          opacity={0.5}
+          opacity={0.2}
           vertical={false}
         />
         <XAxis
           dataKey="date"
-          stroke="#9ca3af"
+          stroke="#6b7280"
           fontSize={11}
           tickLine={false}
           axisLine={false}
           interval="preserveStartEnd"
         />
         <YAxis
-          stroke="#9ca3af"
+          stroke="#6b7280"
           fontSize={11}
           tickLine={false}
           axisLine={false}
@@ -158,27 +172,28 @@ export default function CommitsLineChart({ data, days = 30 }: Props) {
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: "rgba(31, 41, 55, 0.95)",
-            border: "1px solid rgba(107, 114, 128, 0.5)",
-            borderRadius: "12px",
+            backgroundColor: "rgba(15, 23, 42, 0.95)",
+            border: "1px solid rgba(168, 85, 247, 0.2)",
+            borderRadius: "8px",
           }}
           itemStyle={{ color: "#fff" }}
-          labelStyle={{ color: "#9ca3af", fontSize: "12px" }}
+          labelStyle={{ color: "#c4b5fd", fontSize: "12px", fontWeight: 500 }}
           formatter={(value: number) => [value, "Commits"]}
-          cursor={{ stroke: "#6b7280", strokeWidth: 1, strokeDasharray: "4 4" }}
+          cursor={{ stroke: "rgba(168, 85, 247, 0.3)", strokeWidth: 1 }}
         />
         <Area
           type="monotone"
           dataKey="commits"
-          stroke="#a78bfa"
+          stroke="url(#lineGradient)"
           strokeWidth={2}
           fillOpacity={1}
           fill="url(#colorCommits)"
           dot={false}
+          filter="url(#softGlow)"
           activeDot={{
-            r: 5,
-            fill: "#a78bfa",
-            stroke: "#1f2937",
+            r: 4,
+            fill: "#a855f7",
+            stroke: "#fff",
             strokeWidth: 2,
           }}
         />
