@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@auth/core": "^0.41.0",
@@ -39,6 +41,17 @@
     "jsdom": "^27.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "storybook": "^10.1.8",
+    "@storybook/nextjs-vite": "^10.1.8",
+    "@chromatic-com/storybook": "^4.1.3",
+    "@storybook/addon-vitest": "^10.1.8",
+    "@storybook/addon-a11y": "^10.1.8",
+    "@storybook/addon-docs": "^10.1.8",
+    "@storybook/addon-onboarding": "^10.1.8",
+    "vite": "^7.2.7",
+    "eslint-plugin-storybook": "^10.1.8",
+    "playwright": "^1.57.0",
+    "@vitest/browser": "^3.2.4"
   }
 }
