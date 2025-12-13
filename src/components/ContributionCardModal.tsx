@@ -115,22 +115,17 @@ export default function ContributionCardModal({
 
       {/* モーダル */}
       <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-auto">
-        {/* ヘッダー */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            貢献度カード
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        {/* 閉じるボタン */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-10 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
         {/* カードタイプ切り替え */}
         {hasRepoContext && (
-          <div className="px-6 pt-4">
+          <div className="px-6 pt-6">
             <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-700 rounded-full">
               <button
                 onClick={() => handleCardTypeChange("repo")}
@@ -141,7 +136,7 @@ export default function ContributionCardModal({
                 }`}
               >
                 <FolderGit2 className="w-4 h-4" />
-                リポジトリ別
+                Repo
               </button>
               <button
                 onClick={() => handleCardTypeChange("user")}
@@ -152,14 +147,14 @@ export default function ContributionCardModal({
                 }`}
               >
                 <User className="w-4 h-4" />
-                ユーザー全体
+                Profile
               </button>
             </div>
           </div>
         )}
 
         {/* プレビュー */}
-        <div className="p-6">
+        <div className={hasRepoContext ? "p-6" : "p-6 pt-12"}>
           <div className="relative bg-gray-100 dark:bg-gray-900 rounded-xl overflow-hidden aspect-1200/630">
             {/* ローディングスピナー */}
             {!imageLoaded && (
@@ -189,7 +184,7 @@ export default function ContributionCardModal({
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="inline-flex items-center gap-2 bg-purple-600 text-white font-medium py-2.5 px-5 rounded-full hover:bg-purple-700 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 bg-linear-to-r from-purple-600 to-pink-600 text-white font-semibold py-2.5 px-5 rounded-full hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 shadow-lg shadow-purple-500/25"
           >
             <Download className="w-4 h-4" />
             {downloading ? "ダウンロード中..." : "ダウンロード"}
@@ -197,7 +192,7 @@ export default function ContributionCardModal({
 
           <button
             onClick={handleCopyUrl}
-            className="inline-flex items-center gap-2 bg-white/10 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 px-5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="inline-flex items-center gap-2 bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 font-medium py-2.5 px-5 rounded-full hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
           >
             <Link className="w-4 h-4" />
             {copiedUrl ? "コピーしました！" : "URLをコピー"}
@@ -205,7 +200,7 @@ export default function ContributionCardModal({
 
           <button
             onClick={handleCopyMarkdown}
-            className="inline-flex items-center gap-2 bg-white/10 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 px-5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="inline-flex items-center gap-2 bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 font-medium py-2.5 px-5 rounded-full hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
           >
             <Code className="w-4 h-4" />
             {copiedMarkdown ? "コピーしました！" : "Markdown"}

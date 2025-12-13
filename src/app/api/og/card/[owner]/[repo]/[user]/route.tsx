@@ -262,35 +262,103 @@ export async function GET(
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          background: `linear-gradient(135deg, ${COLORS.bgDark} 0%, ${COLORS.bgPurple} 50%, ${COLORS.bgDark} 100%)`,
+          background: `linear-gradient(145deg, ${COLORS.bgDark} 0%, #1e1b4b 25%, ${COLORS.bgPurple} 50%, #4c1d95 75%, ${COLORS.bgDark} 100%)`,
           padding: 48,
           fontFamily: "system-ui, sans-serif",
           position: "relative",
           overflow: "hidden",
         }}
       >
-        {/* 背景装飾 - グローイングオーブ */}
+        {/* プレミアムカード風エッジハイライト - 上部 */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            background: "linear-gradient(90deg, transparent 0%, rgba(168,85,247,0.3) 20%, rgba(236,72,153,0.5) 50%, rgba(168,85,247,0.3) 80%, transparent 100%)",
+            display: "flex",
+          }}
+        />
+        {/* プレミアムカード風エッジハイライト - 左 */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            bottom: 0,
+            width: 1,
+            background: "linear-gradient(180deg, transparent 0%, rgba(168,85,247,0.2) 20%, rgba(139,92,246,0.4) 50%, rgba(168,85,247,0.2) 80%, transparent 100%)",
+            display: "flex",
+          }}
+        />
+        
+        {/* ギョーシェ風パターン - 同心円の微細なテクスチャ */}
+        <svg
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            opacity: 0.03,
+          }}
+          viewBox="0 0 1200 630"
+        >
+          {/* 同心円パターン（右上） */}
+          <circle cx="1000" cy="150" r="50" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="1000" cy="150" r="80" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="1000" cy="150" r="110" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="1000" cy="150" r="140" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="1000" cy="150" r="170" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="1000" cy="150" r="200" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="1000" cy="150" r="230" fill="none" stroke="white" strokeWidth="0.5" />
+          {/* 同心円パターン（左下） */}
+          <circle cx="200" cy="500" r="40" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="200" cy="500" r="70" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="200" cy="500" r="100" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="200" cy="500" r="130" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="200" cy="500" r="160" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="200" cy="500" r="190" fill="none" stroke="white" strokeWidth="0.5" />
+        </svg>
+        
+        {/* 背景装飾 - グローイングオーブ（より繊細に） */}
         <div
           style={{
             position: "absolute",
             top: -100,
             right: -100,
-            width: 400,
-            height: 400,
+            width: 350,
+            height: 350,
             borderRadius: "50%",
-            background: `radial-gradient(circle, ${COLORS.glowPurple} 0%, transparent 70%)`,
+            background: `radial-gradient(circle, ${COLORS.glowPurple} 0%, transparent 60%)`,
             display: "flex",
           }}
         />
         <div
           style={{
             position: "absolute",
-            bottom: -150,
-            left: -150,
-            width: 500,
-            height: 500,
+            bottom: -120,
+            left: -120,
+            width: 400,
+            height: 400,
             borderRadius: "50%",
-            background: `radial-gradient(circle, ${COLORS.glowPink} 0%, transparent 70%)`,
+            background: `radial-gradient(circle, ${COLORS.glowPink} 0%, transparent 60%)`,
+            display: "flex",
+          }}
+        />
+        {/* 中央の微かなグロー */}
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            height: 400,
+            borderRadius: "50%",
+            background: "radial-gradient(ellipse, rgba(139,92,246,0.1) 0%, transparent 70%)",
             display: "flex",
           }}
         />
