@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, Lock, GitCommit, GitPullRequest, CircleDot, Star, Plus, Minus, Trophy, Crown, Medal, Award, Eye, Cpu, Eraser, Sparkles, ExternalLink, Share2 } from "lucide-react";
+import { Globe, Lock, GitCommit, GitPullRequest, CircleDot, Star, Plus, Minus, Trophy, Crown, Medal, Award, Eye, Cpu, Eraser, Sparkles, ExternalLink, Share2, LogOut, Github } from "lucide-react";
 import { ContributorDetailStat } from "@/lib/github";
 import { calculateBadges, sortBadgesByImportance } from "@/lib/badges";
 import { signInWithPrivateScope } from "@/lib/actions";
@@ -213,9 +213,10 @@ function DashboardContent() {
               )}
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                ログアウト
+                <LogOut className="w-4 h-4" />
+                Sign out
               </button>
             </div>
           </div>
@@ -235,18 +236,18 @@ function DashboardContent() {
           {/* 現在選択中のリポジトリ */}
           {activeRepo && (
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">分析中:</span>
-                <a
-                  href={`https://github.com/${activeRepo}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors group"
-                >
-                  <span className="font-medium text-purple-700 dark:text-purple-300">{activeRepo}</span>
-                  <ExternalLink className="w-3.5 h-3.5 text-purple-500 opacity-50 group-hover:opacity-100 transition-opacity" />
-                </a>
-              </div>
+              <a
+                href={`https://github.com/${activeRepo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors group ${
+                  dataLoading ? "animate-pulse shadow-lg shadow-purple-500/30" : ""
+                }`}
+              >
+                <Github className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span className="font-medium text-purple-700 dark:text-purple-300">{activeRepo}</span>
+                <ExternalLink className="w-3.5 h-3.5 text-purple-500 opacity-50 group-hover:opacity-100 transition-opacity" />
+              </a>
             </div>
           )}
         </div>
