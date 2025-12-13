@@ -1,16 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
-
-// GitHub API関数のモック
-vi.mock("@/lib/github", () => ({
-  getCommitHistory: vi.fn(),
-}));
-
-// モック後にインポート
-import { getCommitHistory } from "@/lib/github";
 import { useCommitHistory } from "@/hooks/useCommitHistory";
+
+// fetch のモック
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 // テスト用のQueryClient wrapper
 function createWrapper() {
@@ -26,6 +22,15 @@ function createWrapper() {
     createElement(QueryClientProvider, { client: queryClient }, children);
   Wrapper.displayName = "TestQueryClientWrapper";
   return Wrapper;
+}
+
+// fetchモックヘルパー
+function mockFetchResponse(data: unknown, ok = true, status = 200) {
+  return Promise.resolve({
+    ok,
+    status,
+    json: () => Promise.resolve(data),
+  } as Response);
 }
 
 // モックデータ（getCommitHistoryの戻り値の型に合わせる）
@@ -55,10 +60,20 @@ const mockCommitHistory = [
 describe("useCommitHistory", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.mockImplementation(() => mockFetchResponse(mockCommitHistory));
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   it("コミット履歴を取得して返す", async () => {
-    vi.mocked(getCommitHistory).mockResolvedValue(mockCommitHistory);
+    // モックデータにフィルタリングされないよう最近の日付を使用
+    const recentCommits = mockCommitHistory.map((c, i) => ({
+      ...c,
+      committedDate: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
+    }));
+    mockFetch.mockImplementation(() => mockFetchResponse(recentCommits));
 
     const { result } = renderHook(
       () =>
@@ -77,17 +92,42 @@ describe("useCommitHistory", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual(mockCommitHistory);
-    expect(getCommitHistory).toHaveBeenCalledWith(null, "owner", "repo", { days: 30 });
+    expect(result.current.data).toEqual(recentCommits);
+    // ベース期間キャッシュにより、デフォルト30日リクエストは30日でフェッチ
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=30")
+    );
   });
 
-  it("days パラメータを正しく渡す", async () => {
-    vi.mocked(getCommitHistory).mockResolvedValue(mockCommitHistory);
-
+  it("認証済みで91日以上リクエストは365日でフェッチされる", async () => {
+    // 認証済み（accessToken あり）で90日超過リクエストすると、ベース期間として365日でフェッチ
     const { result } = renderHook(
       () =>
         useCommitHistory({
-          accessToken: "test-token",
+          accessToken: "test-token", // 認証済み
+          owner: "owner",
+          repo: "repo",
+          days: 180, // 90日超過
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // 認証済みで90日超過は365日でフェッチ
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=365")
+    );
+  });
+
+  it("認証済みで90日以下リクエストは30日でフェッチされる", async () => {
+    // 認証済みでも90日以下は30日でフェッチ（キャッシュ効率化のため）
+    const { result } = renderHook(
+      () =>
+        useCommitHistory({
+          accessToken: "test-token", // 認証済み
           owner: "owner",
           repo: "repo",
           days: 90,
@@ -99,16 +139,40 @@ describe("useCommitHistory", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(getCommitHistory).toHaveBeenCalledWith("test-token", "owner", "repo", { days: 90 });
+    // 認証済みでも90日以下は30日でフェッチ
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=30")
+    );
   });
 
-  it("days=null の場合は null を渡す", async () => {
-    vi.mocked(getCommitHistory).mockResolvedValue(mockCommitHistory);
-
+  it("未認証で90日リクエストは30日でフェッチされる", async () => {
+    // 未認証（accessToken: null）は常に30日でフェッチ
     const { result } = renderHook(
       () =>
         useCommitHistory({
-          accessToken: null,
+          accessToken: null, // 未認証
+          owner: "owner",
+          repo: "repo",
+          days: 90,
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // 未認証時は常に30日でフェッチ
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=30")
+    );
+  });
+
+  it("認証済みでdays=nullは全期間（null）でフェッチされる", async () => {
+    const { result } = renderHook(
+      () =>
+        useCommitHistory({
+          accessToken: "test-token", // 認証済み
           owner: "owner",
           repo: "repo",
           days: null,
@@ -120,7 +184,32 @@ describe("useCommitHistory", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(getCommitHistory).toHaveBeenCalledWith(null, "owner", "repo", { days: null });
+    // 認証済みでdays=nullは全期間（null）でフェッチ
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("days=null")
+    );
+  });
+
+  it("未認証でdays=nullでも30日でフェッチされる", async () => {
+    const { result } = renderHook(
+      () =>
+        useCommitHistory({
+          accessToken: null, // 未認証
+          owner: "owner",
+          repo: "repo",
+          days: null,
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // 未認証時は常に30日でフェッチ
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("days=30")
+    );
   });
 
   it("enabled=false の場合はクエリを実行しない", () => {
@@ -136,7 +225,7 @@ describe("useCommitHistory", () => {
     );
 
     expect(result.current.fetchStatus).toBe("idle");
-    expect(getCommitHistory).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("owner が空の場合はクエリを実行しない", () => {
@@ -151,7 +240,7 @@ describe("useCommitHistory", () => {
     );
 
     expect(result.current.fetchStatus).toBe("idle");
-    expect(getCommitHistory).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("repo が空の場合はクエリを実行しない", () => {
@@ -166,11 +255,13 @@ describe("useCommitHistory", () => {
     );
 
     expect(result.current.fetchStatus).toBe("idle");
-    expect(getCommitHistory).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("エラー時は isError が true になる", async () => {
-    vi.mocked(getCommitHistory).mockRejectedValue(new Error("API Error"));
+    mockFetch.mockImplementation(() =>
+      mockFetchResponse({ error: "API Error" }, false, 500)
+    );
 
     const { result } = renderHook(
       () =>
@@ -190,8 +281,6 @@ describe("useCommitHistory", () => {
   });
 
   it("queryKey に days が含まれる（キャッシュの分離）", async () => {
-    vi.mocked(getCommitHistory).mockResolvedValue(mockCommitHistory);
-
     // 30日のフック
     const { result: result30 } = renderHook(
       () =>
@@ -225,6 +314,6 @@ describe("useCommitHistory", () => {
     });
 
     // 両方のクエリが実行される（キャッシュが分離されている）
-    expect(getCommitHistory).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 });

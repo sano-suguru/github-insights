@@ -44,9 +44,8 @@ export default function PublicRepoPage() {
     retry: 1,
   });
 
-  // 各データ取得（React Query）- 未認証なので accessToken = null
+  // 各データ取得（React Query）
   const { data: languages = [] } = useLanguageStats({
-    accessToken: null,
     owner,
     repo,
     enabled: !!repository,
@@ -61,14 +60,12 @@ export default function PublicRepoPage() {
   });
 
   const { data: contributors = [] } = useContributorStats({
-    accessToken: null,
     owner,
     repo,
     enabled: !!repository,
   });
 
   const { data: stats } = useRepositoryStats({
-    accessToken: null,
     owner,
     repo,
     enabled: !!repository,

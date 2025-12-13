@@ -1,23 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
-
-// GitHub API関数のモック
-vi.mock("@/lib/github", () => ({
-  getLanguageStats: vi.fn(),
-  getContributorStats: vi.fn(),
-  getRepositoryStats: vi.fn(),
-  getContributorDetails: vi.fn(),
-}));
-
-// モック後にインポート
-import {
-  getLanguageStats,
-  getContributorStats,
-  getRepositoryStats,
-  getContributorDetails,
-} from "@/lib/github";
 import {
   useLanguageStats,
   useContributorStats,
@@ -25,6 +9,10 @@ import {
   useContributorDetails,
   useRepoAllData,
 } from "@/hooks/useRepoData";
+
+// fetch のモック
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 // テスト用のQueryClient wrapper
 function createWrapper() {
@@ -79,18 +67,48 @@ const mockContributorDetails = [
   },
 ];
 
+// fetchモックヘルパー
+function mockFetchResponse(data: unknown, ok = true, status = 200) {
+  return Promise.resolve({
+    ok,
+    status,
+    json: () => Promise.resolve(data),
+  } as Response);
+}
+
+// URL に基づいてレスポンスを返すモック設定
+function setupFetchMock(responses: Record<string, unknown>) {
+  mockFetch.mockImplementation((url: string) => {
+    if (url.includes("/api/github/languages")) {
+      return mockFetchResponse(responses.languages ?? mockLanguageStats);
+    }
+    if (url.includes("/api/github/contributors") && url.includes("type=stats")) {
+      return mockFetchResponse(responses.contributorStats ?? mockContributorStats);
+    }
+    if (url.includes("/api/github/contributors") && url.includes("type=details")) {
+      return mockFetchResponse(responses.contributorDetails ?? mockContributorDetails);
+    }
+    if (url.includes("/api/github/stats")) {
+      return mockFetchResponse(responses.stats ?? mockRepositoryStats);
+    }
+    return mockFetchResponse({ error: "Not found" }, false, 404);
+  });
+}
+
 describe("useLanguageStats", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
+    setupFetchMock({});
+  });
+
+  afterEach(() => {
     vi.clearAllMocks();
   });
 
   it("言語統計を取得して返す", async () => {
-    vi.mocked(getLanguageStats).mockResolvedValue(mockLanguageStats);
-
     const { result } = renderHook(
       () =>
         useLanguageStats({
-          accessToken: null,
           owner: "owner",
           repo: "repo",
         }),
@@ -105,14 +123,15 @@ describe("useLanguageStats", () => {
     });
 
     expect(result.current.data).toEqual(mockLanguageStats);
-    expect(getLanguageStats).toHaveBeenCalledWith(null, "owner", "repo");
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/github/languages?owner=owner&repo=repo")
+    );
   });
 
   it("enabled=falseの場合はクエリを実行しない", () => {
     const { result } = renderHook(
       () =>
         useLanguageStats({
-          accessToken: null,
           owner: "owner",
           repo: "repo",
           enabled: false,
@@ -121,14 +140,13 @@ describe("useLanguageStats", () => {
     );
 
     expect(result.current.fetchStatus).toBe("idle");
-    expect(getLanguageStats).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("ownerが空の場合はクエリを実行しない", () => {
     const { result } = renderHook(
       () =>
         useLanguageStats({
-          accessToken: null,
           owner: "",
           repo: "repo",
         }),
@@ -136,16 +154,17 @@ describe("useLanguageStats", () => {
     );
 
     expect(result.current.fetchStatus).toBe("idle");
-    expect(getLanguageStats).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("エラー時はisErrorがtrueになる", async () => {
-    vi.mocked(getLanguageStats).mockRejectedValue(new Error("API Error"));
+    mockFetch.mockImplementation(() =>
+      mockFetchResponse({ error: "API Error" }, false, 500)
+    );
 
     const { result } = renderHook(
       () =>
         useLanguageStats({
-          accessToken: null,
           owner: "owner",
           repo: "repo",
         }),
@@ -163,15 +182,13 @@ describe("useLanguageStats", () => {
 describe("useContributorStats", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setupFetchMock({});
   });
 
   it("コントリビューター統計を取得して返す", async () => {
-    vi.mocked(getContributorStats).mockResolvedValue(mockContributorStats);
-
     const { result } = renderHook(
       () =>
         useContributorStats({
-          accessToken: "test-token",
           owner: "owner",
           repo: "repo",
         }),
@@ -183,22 +200,22 @@ describe("useContributorStats", () => {
     });
 
     expect(result.current.data).toEqual(mockContributorStats);
-    expect(getContributorStats).toHaveBeenCalledWith("test-token", "owner", "repo");
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/github/contributors?owner=owner&repo=repo&type=stats")
+    );
   });
 });
 
 describe("useRepositoryStats", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setupFetchMock({});
   });
 
   it("リポジトリ統計を取得して返す", async () => {
-    vi.mocked(getRepositoryStats).mockResolvedValue(mockRepositoryStats);
-
     const { result } = renderHook(
       () =>
         useRepositoryStats({
-          accessToken: null,
           owner: "owner",
           repo: "repo",
         }),
@@ -216,15 +233,13 @@ describe("useRepositoryStats", () => {
 describe("useContributorDetails", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setupFetchMock({});
   });
 
   it("コントリビューター詳細を取得して返す", async () => {
-    vi.mocked(getContributorDetails).mockResolvedValue(mockContributorDetails);
-
     const { result } = renderHook(
       () =>
         useContributorDetails({
-          accessToken: null,
           owner: "owner",
           repo: "repo",
         }),
@@ -242,18 +257,13 @@ describe("useContributorDetails", () => {
 describe("useRepoAllData", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setupFetchMock({});
   });
 
   it("全データを一括取得する", async () => {
-    vi.mocked(getLanguageStats).mockResolvedValue(mockLanguageStats);
-    vi.mocked(getContributorStats).mockResolvedValue(mockContributorStats);
-    vi.mocked(getContributorDetails).mockResolvedValue(mockContributorDetails);
-    vi.mocked(getRepositoryStats).mockResolvedValue(mockRepositoryStats);
-
     const { result } = renderHook(
       () =>
         useRepoAllData({
-          accessToken: null,
           owner: "owner",
           repo: "repo",
         }),
@@ -275,15 +285,25 @@ describe("useRepoAllData", () => {
   });
 
   it("一部のクエリがエラーの場合isErrorがtrueになる", async () => {
-    vi.mocked(getLanguageStats).mockResolvedValue(mockLanguageStats);
-    vi.mocked(getContributorStats).mockRejectedValue(new Error("API Error"));
-    vi.mocked(getContributorDetails).mockResolvedValue(mockContributorDetails);
-    vi.mocked(getRepositoryStats).mockResolvedValue(mockRepositoryStats);
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes("/api/github/contributors") && url.includes("type=stats")) {
+        return mockFetchResponse({ error: "API Error" }, false, 500);
+      }
+      if (url.includes("/api/github/languages")) {
+        return mockFetchResponse(mockLanguageStats);
+      }
+      if (url.includes("/api/github/contributors") && url.includes("type=details")) {
+        return mockFetchResponse(mockContributorDetails);
+      }
+      if (url.includes("/api/github/stats")) {
+        return mockFetchResponse(mockRepositoryStats);
+      }
+      return mockFetchResponse({ error: "Not found" }, false, 404);
+    });
 
     const { result } = renderHook(
       () =>
         useRepoAllData({
-          accessToken: null,
           owner: "owner",
           repo: "repo",
         }),
@@ -302,7 +322,6 @@ describe("useRepoAllData", () => {
     const { result } = renderHook(
       () =>
         useRepoAllData({
-          accessToken: null,
           owner: "owner",
           repo: "repo",
           enabled: false,
@@ -312,7 +331,6 @@ describe("useRepoAllData", () => {
 
     expect(result.current.languageStats.fetchStatus).toBe("idle");
     expect(result.current.contributorStats.fetchStatus).toBe("idle");
-    expect(getLanguageStats).not.toHaveBeenCalled();
-    expect(getContributorStats).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

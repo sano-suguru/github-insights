@@ -3,6 +3,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useCallback } from "react";
 import type { CommitInfo as CommitInfoType } from "@/lib/github";
+import { getErrorMessage } from "@/lib/api-utils";
+import { CLIENT_CACHE } from "@/lib/cache-config";
 
 export type CommitInfo = CommitInfoType;
 
@@ -59,8 +61,7 @@ async function fetchCommitsFromAPI(
   const response = await fetch(`/api/github/commits?${params}`);
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to fetch commits");
+    throw new Error(await getErrorMessage(response, "Failed to fetch commits"));
   }
   
   return response.json();
@@ -91,7 +92,7 @@ export function useCommitHistory({
     enabled: enabled && !!owner && !!repo,
     // クライアント側もキャッシュ（サーバーキャッシュと二重化）
     staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    gcTime: CLIENT_CACHE.GC_TIME,
   });
 
   // 表示用にフィルタリング

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getCommitHistory } from "@/lib/github";
+import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
 
 // キャッシュキーを生成
 function getCacheKey(owner: string, repo: string, days: number | null, isAuthenticated: boolean) {
@@ -19,16 +20,16 @@ async function getCachedCommitHistory(
   const isAuthenticated = !!accessToken;
   const cacheKey = getCacheKey(owner, repo, days, isAuthenticated);
   
-  // キャッシュ時間: 5分（300秒）
-  // revalidate: ISR的に5分後に再検証
   const cachedFetch = unstable_cache(
     async () => {
-      console.log(`[Cache MISS] Fetching commits: ${owner}/${repo}, days=${days}`);
+      if (process.env.NODE_ENV === "development") {
+        console.log(`[Cache MISS] Fetching commits: ${owner}/${repo}, days=${days}`);
+      }
       return await getCommitHistory(accessToken, owner, repo, { days });
     },
     [cacheKey],
     {
-      revalidate: 300, // 5分
+      revalidate: SERVER_CACHE.COMMITS_REVALIDATE,
       tags: [`commits:${owner}:${repo}`],
     }
   );
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
     // レスポンスヘッダーにキャッシュ情報を追加
     return NextResponse.json(commits, {
       headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        "Cache-Control": `public, s-maxage=${SERVER_CACHE.COMMITS_REVALIDATE}, stale-while-revalidate=${SWR_CACHE.COMMITS}`,
       },
     });
   } catch (error) {

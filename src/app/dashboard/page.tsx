@@ -94,7 +94,6 @@ function DashboardContent() {
 
   // 各データ取得（React Query）
   const { data: languages = [], isLoading: langLoading } = useLanguageStats({
-    accessToken: session?.accessToken ?? null,
     owner,
     repo,
     enabled: !!activeRepo,
@@ -109,21 +108,18 @@ function DashboardContent() {
   });
 
   const { data: contributors = [] } = useContributorStats({
-    accessToken: session?.accessToken ?? null,
     owner,
     repo,
     enabled: !!activeRepo,
   });
 
   const { data: contributorDetails = [] } = useContributorDetails({
-    accessToken: session?.accessToken ?? null,
     owner,
     repo,
     enabled: !!activeRepo,
   });
 
   const { data: stats } = useRepositoryStats({
-    accessToken: session?.accessToken ?? null,
     owner,
     repo,
     enabled: !!activeRepo,
