@@ -18,6 +18,7 @@ import { PeriodSelector } from "@/components/PeriodSelector";
 import { useRepositories } from "@/hooks/useRepositories";
 import { useCommitHistory, usePrefetchCommitHistory } from "@/hooks/useCommitHistory";
 import { useLanguageStats, useContributorStats, useContributorDetails, useRepositoryStats } from "@/hooks/useRepoData";
+import { ChartErrorWrapper } from "@/components/ErrorDisplay";
 
 // SSR無効化してチャートを読み込み
 const LanguagesPieChart = dynamic(
@@ -93,13 +94,13 @@ function DashboardContent() {
   }, [prefetchCommits, session?.accessToken, owner, repo]);
 
   // 各データ取得（React Query）
-  const { data: languages = [], isLoading: langLoading } = useLanguageStats({
+  const { data: languages = [], isLoading: langLoading, isError: langError, error: langErrorData, refetch: refetchLanguages } = useLanguageStats({
     owner,
     repo,
     enabled: !!activeRepo,
   });
 
-  const { data: commits = [], isLoading: commitsLoading, isFetching: commitsFetching } = useCommitHistory({
+  const { data: commits = [], isLoading: commitsLoading, isFetching: commitsFetching, isError: commitsError, error: commitsErrorData, refetch: refetchCommits } = useCommitHistory({
     accessToken: session?.accessToken ?? null,
     owner,
     repo,
@@ -107,19 +108,19 @@ function DashboardContent() {
     enabled: !!activeRepo,
   });
 
-  const { data: contributors = [] } = useContributorStats({
+  const { data: contributors = [], isError: contributorsError, error: contributorsErrorData, refetch: refetchContributors } = useContributorStats({
     owner,
     repo,
     enabled: !!activeRepo,
   });
 
-  const { data: contributorDetails = [] } = useContributorDetails({
+  const { data: contributorDetails = [], isError: detailsError, error: detailsErrorData, refetch: refetchDetails } = useContributorDetails({
     owner,
     repo,
     enabled: !!activeRepo,
   });
 
-  const { data: stats } = useRepositoryStats({
+  const { data: stats, isError: statsError, error: statsErrorData, refetch: refetchStats } = useRepositoryStats({
     owner,
     repo,
     enabled: !!activeRepo,
@@ -261,7 +262,16 @@ function DashboardContent() {
         ) : (
           <>
             {/* 統計カード */}
-            {stats && (
+            {statsError ? (
+              <div className="mb-8">
+                <ChartErrorWrapper
+                  isError={true}
+                  error={statsErrorData}
+                  onRetry={() => refetchStats()}
+                  errorHeight="h-24"
+                />
+              </div>
+            ) : stats && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <StatCard
                   label="Commits"
@@ -294,7 +304,13 @@ function DashboardContent() {
                   <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
                   Languages
                 </h2>
-                <LanguagesPieChart data={languages} />
+                <ChartErrorWrapper
+                  isError={langError}
+                  error={langErrorData}
+                  onRetry={() => refetchLanguages()}
+                >
+                  <LanguagesPieChart data={languages} />
+                </ChartErrorWrapper>
               </div>
 
               {/* Commits */}
@@ -312,15 +328,30 @@ function DashboardContent() {
                     isAuthenticated={!!session?.accessToken}
                   />
                 </div>
-                <CommitsLineChart data={commits} days={selectedDays} />
+                <ChartErrorWrapper
+                  isError={commitsError}
+                  error={commitsErrorData}
+                  onRetry={() => refetchCommits()}
+                >
+                  <CommitsLineChart data={commits} days={selectedDays} />
+                </ChartErrorWrapper>
               </div>
 
               {/* コントリビューター（棒グラフ/円グラフ切り替え） */}
               <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
-                <ContributorChartWithToggle
-                  contributors={contributors}
-                  contributorDetails={contributorDetails}
-                />
+                <ChartErrorWrapper
+                  isError={contributorsError || detailsError}
+                  error={contributorsErrorData || detailsErrorData}
+                  onRetry={() => {
+                    refetchContributors();
+                    refetchDetails();
+                  }}
+                >
+                  <ContributorChartWithToggle
+                    contributors={contributors}
+                    contributorDetails={contributorDetails}
+                  />
+                </ChartErrorWrapper>
               </div>
 
               {/* Activity */}
@@ -329,7 +360,13 @@ function DashboardContent() {
                   <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
                   Activity
                 </h2>
-                <ActivityHeatmap data={commits} />
+                <ChartErrorWrapper
+                  isError={commitsError}
+                  error={commitsErrorData}
+                  onRetry={() => refetchCommits()}
+                >
+                  <ActivityHeatmap data={commits} />
+                </ChartErrorWrapper>
               </div>
             </div>
 
