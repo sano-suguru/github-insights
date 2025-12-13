@@ -16,7 +16,7 @@ import ContributionCardModal from "@/components/ContributionCardModal";
 import ContributorRanking from "@/components/ContributorRanking";
 import { PeriodSelector } from "@/components/PeriodSelector";
 import { useRepositories } from "@/hooks/useRepositories";
-import { useCommitHistory } from "@/hooks/useCommitHistory";
+import { useCommitHistory, usePrefetchCommitHistory } from "@/hooks/useCommitHistory";
 import { useLanguageStats, useContributorStats, useContributorDetails, useRepositoryStats } from "@/hooks/useRepoData";
 
 // SSR無効化してチャートを読み込み
@@ -63,6 +63,7 @@ function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const prefetchCommits = usePrefetchCommitHistory();
 
   // URLからリポジトリを取得
   const repoFromUrl = searchParams.get("repo");
@@ -85,6 +86,11 @@ function DashboardContent() {
 
   // 選択リポジトリのowner/repo
   const [owner, repo] = activeRepo ? activeRepo.split("/") : ["", ""];
+
+  // 期間ホバー時にプリフェッチ
+  const handlePeriodHover = useCallback((days: number | null) => {
+    prefetchCommits(session?.accessToken ?? null, owner, repo, days);
+  }, [prefetchCommits, session?.accessToken, owner, repo]);
 
   // 各データ取得（React Query）
   const { data: languages = [], isLoading: langLoading } = useLanguageStats({
@@ -305,6 +311,7 @@ function DashboardContent() {
                   <PeriodSelector
                     selectedDays={selectedDays}
                     onPeriodChange={setSelectedDays}
+                    onPeriodHover={handlePeriodHover}
                     isLoading={commitsFetching}
                     isAuthenticated={!!session?.accessToken}
                   />

@@ -18,6 +18,7 @@ const PERIOD_OPTIONS: PeriodOption[] = [
 interface PeriodSelectorProps {
   selectedDays: number | null;
   onPeriodChange: (days: number | null) => void;
+  onPeriodHover?: (days: number | null) => void;
   isLoading?: boolean;
   isAuthenticated?: boolean;
 }
@@ -25,6 +26,7 @@ interface PeriodSelectorProps {
 export function PeriodSelector({
   selectedDays,
   onPeriodChange,
+  onPeriodHover,
   isLoading = false,
   isAuthenticated = true,
 }: PeriodSelectorProps) {
@@ -46,6 +48,7 @@ export function PeriodSelector({
             <button
               key={option.days ?? "all"}
               onClick={() => onPeriodChange(option.days)}
+              onMouseEnter={() => !disabled && onPeriodHover?.(option.days)}
               disabled={disabled || isLoading}
               className={`
                 inline-flex items-center gap-1.5
@@ -68,3 +71,5 @@ export function PeriodSelector({
     </div>
   );
 }
+
+export { PERIOD_OPTIONS };
