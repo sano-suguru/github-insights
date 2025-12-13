@@ -40,6 +40,7 @@ export function PeriodSelector({
           // days=null（全期間）も未認証では無効
           const disabled = !isAuthenticated && (option.days === null || option.days > 30);
           const isSelected = selectedDays === option.days;
+          const showSpinner = isSelected && isLoading;
 
           return (
             <button
@@ -47,24 +48,23 @@ export function PeriodSelector({
               onClick={() => onPeriodChange(option.days)}
               disabled={disabled || isLoading}
               className={`
+                inline-flex items-center gap-1.5
                 px-3 py-1.5 text-sm rounded-md transition-colors font-medium
                 ${isSelected
                   ? "bg-purple-600 text-white shadow-sm"
                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                 }
                 ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
-                ${isLoading ? "pointer-events-none" : ""}
+                ${isLoading && !isSelected ? "opacity-60" : ""}
               `}
               title={disabled ? "ログインが必要です" : undefined}
             >
+              {showSpinner && <Loader2 className="w-3 h-3 animate-spin" />}
               {option.label}
             </button>
           );
         })}
       </div>
-      {isLoading && (
-        <Loader2 className="w-4 h-4 text-purple-500 animate-spin" />
-      )}
     </div>
   );
 }
