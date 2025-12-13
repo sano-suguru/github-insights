@@ -41,7 +41,7 @@ export default function LanguagesPieChart({ data }: Props) {
           outerRadius={100}
           paddingAngle={2}
           dataKey="value"
-          label={({ name, value }) => `${name} ${value}%`}
+          label={({ name, value }) => value >= 1 ? `${name} ${value}%` : ""}
           labelLine={false}
         >
           {chartData.map((entry, index) => (
