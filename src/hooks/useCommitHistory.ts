@@ -1,10 +1,10 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCommitHistory } from "@/lib/github";
 import { useMemo, useCallback } from "react";
+import type { CommitInfo as CommitInfoType } from "@/lib/github";
 
-export type CommitInfo = Awaited<ReturnType<typeof getCommitHistory>>[number];
+export type CommitInfo = CommitInfoType;
 
 // キャッシュ戦略の閾値定数
 const BASE_PERIOD_DAYS = 30;           // 短期間のベース（7日, 30日用）
@@ -44,6 +44,28 @@ function filterCommitsByDays(commits: CommitInfo[], days: number | null): Commit
   return commits.filter(c => new Date(c.committedDate) >= since);
 }
 
+// Route Handler経由でコミット履歴を取得
+async function fetchCommitsFromAPI(
+  owner: string,
+  repo: string,
+  days: number | null
+): Promise<CommitInfo[]> {
+  const params = new URLSearchParams({
+    owner,
+    repo,
+    days: days === null ? "null" : String(days),
+  });
+  
+  const response = await fetch(`/api/github/commits?${params}`);
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch commits");
+  }
+  
+  return response.json();
+}
+
 interface UseCommitHistoryParams {
   accessToken: string | null;
   owner: string;
@@ -62,12 +84,12 @@ export function useCommitHistory({
   const isAuthenticated = !!accessToken;
   const baseDays = getBaseDays(days, isAuthenticated);
   
-  // ベース期間でデータを取得
+  // Route Handler経由でデータを取得（サーバーサイドキャッシュ活用）
   const query = useQuery({
     queryKey: ["commitHistory", owner, repo, baseDays],
-    queryFn: () => getCommitHistory(accessToken, owner, repo, { days: baseDays }),
+    queryFn: () => fetchCommitsFromAPI(owner, repo, baseDays),
     enabled: enabled && !!owner && !!repo,
-    // ベース期間は長めにキャッシュ
+    // クライアント側もキャッシュ（サーバーキャッシュと二重化）
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
@@ -104,7 +126,7 @@ export function usePrefetchCommitHistory() {
       
       queryClient.prefetchQuery({
         queryKey: ["commitHistory", owner, repo, baseDays],
-        queryFn: () => getCommitHistory(accessToken, owner, repo, { days: baseDays }),
+        queryFn: () => fetchCommitsFromAPI(owner, repo, baseDays),
         staleTime: 10 * 60 * 1000,
       });
     },
