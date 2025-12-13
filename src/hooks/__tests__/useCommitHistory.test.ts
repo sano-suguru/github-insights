@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
-import { useCommitHistory } from "@/hooks/useCommitHistory";
+import { useCommitHistory, usePrefetchCommitHistory } from "@/hooks/useCommitHistory";
 
 // fetch のモック
 const mockFetch = vi.fn();
@@ -315,5 +315,109 @@ describe("useCommitHistory", () => {
 
     // 両方のクエリが実行される（キャッシュが分離されている）
     expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("認証済みで365日超過リクエストは全期間（null）でフェッチされる", async () => {
+    const { result } = renderHook(
+      () =>
+        useCommitHistory({
+          accessToken: "test-token", // 認証済み
+          owner: "owner",
+          repo: "repo",
+          days: 400, // 365日超過
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // 認証済みで365日超過は全期間（null）でフェッチ
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("days=null")
+    );
+  });
+});
+
+describe("usePrefetchCommitHistory", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetch.mockImplementation(() => mockFetchResponse(mockCommitHistory));
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("プリフェッチ関数を返す", () => {
+    const { result } = renderHook(() => usePrefetchCommitHistory(), {
+      wrapper: createWrapper(),
+    });
+
+    expect(typeof result.current).toBe("function");
+  });
+
+  it("キャッシュがない場合はプリフェッチを実行", async () => {
+    const { result } = renderHook(() => usePrefetchCommitHistory(), {
+      wrapper: createWrapper(),
+    });
+
+    // プリフェッチ実行
+    result.current(null, "owner", "repo", 30);
+
+    // フェッチが呼ばれる
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=30")
+      );
+    });
+  });
+
+  it("認証済みで90日超過は365日でプリフェッチ", async () => {
+    const { result } = renderHook(() => usePrefetchCommitHistory(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current("test-token", "owner", "repo", 180);
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("days=365")
+      );
+    });
+  });
+
+  it("認証済みでdays=nullは全期間でプリフェッチ", async () => {
+    const { result } = renderHook(() => usePrefetchCommitHistory(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current("test-token", "owner", "repo", null);
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("days=null")
+      );
+    });
+  });
+
+  it("キャッシュがある場合はプリフェッチをスキップ", async () => {
+    // まずデータをキャッシュに入れる
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    queryClient.setQueryData(["commitHistory", "owner", "repo", 30], mockCommitHistory);
+
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const { result } = renderHook(() => usePrefetchCommitHistory(), { wrapper });
+
+    // プリフェッチ実行
+    result.current(null, "owner", "repo", 30);
+
+    // キャッシュがあるのでフェッチはスキップ
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });
