@@ -213,33 +213,69 @@ function ContributorRow({
               )}
             </button>
             
-            {/* バッジ一覧ポップオーバー */}
+            {/* バッジ一覧ポップオーバー - デスクトップ用（相対位置） */}
             {showBadgePopover && (
-              <div className="absolute left-0 top-full mt-2 z-50 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">獲得バッジ</span>
-                  <button
+              <>
+                {/* モバイル: 固定位置モーダル */}
+                <div className="sm:hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+                  <div 
+                    className="absolute inset-0 bg-black/50"
                     onClick={() => setShowBadgePopover(false)}
-                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <X className="w-4 h-4 text-gray-400" />
-                  </button>
+                  />
+                  <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-base font-medium text-gray-900 dark:text-white">獲得バッジ</span>
+                      <button
+                        onClick={() => setShowBadgePopover(false)}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <X className="w-5 h-5 text-gray-400" />
+                      </button>
+                    </div>
+                    <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                      {badges.map((badge) => {
+                        const IconComponent = iconMap[badge.iconName];
+                        return (
+                          <div key={badge.id} className={`flex items-start gap-2 p-2.5 rounded-lg ${badge.color}`}>
+                            {IconComponent && <IconComponent className="w-5 h-5 shrink-0 mt-0.5" />}
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium">{badge.name}</p>
+                              <p className="text-xs opacity-80">{badge.description}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  {badges.map((badge) => {
-                    const IconComponent = iconMap[badge.iconName];
-                    return (
-                      <div key={badge.id} className={`flex items-start gap-2 p-2 rounded-lg ${badge.color}`}>
-                        {IconComponent && <IconComponent className="w-4 h-4 shrink-0 mt-0.5" />}
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium">{badge.name}</p>
-                          <p className="text-xs opacity-80">{badge.description}</p>
+                
+                {/* デスクトップ: 相対位置ポップオーバー */}
+                <div className="hidden sm:block absolute left-0 top-full mt-2 z-50 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">獲得バッジ</span>
+                    <button
+                      onClick={() => setShowBadgePopover(false)}
+                      className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <X className="w-4 h-4 text-gray-400" />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {badges.map((badge) => {
+                      const IconComponent = iconMap[badge.iconName];
+                      return (
+                        <div key={badge.id} className={`flex items-start gap-2 p-2 rounded-lg ${badge.color}`}>
+                          {IconComponent && <IconComponent className="w-4 h-4 shrink-0 mt-0.5" />}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium">{badge.name}</p>
+                            <p className="text-xs opacity-80">{badge.description}</p>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
         )}
