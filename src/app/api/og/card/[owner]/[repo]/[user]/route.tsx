@@ -168,10 +168,6 @@ async function getContributorStats(
     }
 
     const userData = contributors[userIndex];
-    const totalCommits = contributors.reduce(
-      (sum: number, c: { contributions: number }) => sum + c.contributions,
-      0
-    );
 
     const userRes = await fetch(`https://api.github.com/users/${user}`, {
       headers: {
@@ -371,9 +367,15 @@ export async function GET(
           }}
         >
           <div style={{ display: "flex", alignItems: "center" }}>
-            {/* リポジトリオーナーアバター */}
+            {/* 
+              @vercel/og の ImageResponse は Satori を使用してReact要素をSVGに変換するため、
+              next/image の <Image /> コンポーネントは使用できません。
+              通常の <img> タグが必要です。
+            */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={stats.ownerAvatarUrl}
+              alt={`${owner}'s avatar`}
               width={44}
               height={44}
               style={{
