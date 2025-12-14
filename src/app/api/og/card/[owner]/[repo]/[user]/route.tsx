@@ -93,7 +93,6 @@ interface ContributorStats {
   issues: number;
   rank: number;
   totalContributors: number;
-  contributionPercent: number;
   badges: string[];
   repoStars: number;
   repoForks: number;
@@ -205,9 +204,6 @@ async function getContributorStats(
       issues: issueCount,
       rank: userIndex + 1,
       totalContributors: contributors.length,
-      contributionPercent: Math.round(
-        (userData.contributions / totalCommits) * 100
-      ),
       badges: badges.slice(0, 3),
       repoStars: repoData?.stargazers_count ?? 0,
       repoForks: repoData?.forks_count ?? 0,
@@ -393,7 +389,7 @@ export async function GET(
             {/* リポジトリ名 */}
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span
-                style={{ color: COLORS.white, fontSize: 26, fontWeight: 700 }}
+                style={{ color: COLORS.white, fontSize: 32, fontWeight: 700 }}
               >
                 {owner}/{repo}
               </span>
@@ -401,7 +397,7 @@ export async function GET(
                 <span
                   style={{
                     color: COLORS.gray400,
-                    fontSize: 14,
+                    fontSize: 18,
                     marginTop: 4,
                   }}
                 >
@@ -419,12 +415,12 @@ export async function GET(
                 alignItems: "center",
                 gap: 6,
                 color: COLORS.gray300,
-                fontSize: 18,
+                fontSize: 22,
               }}
             >
               <svg
-                width="18"
-                height="18"
+                width="22"
+                height="22"
                 viewBox="0 0 24 24"
                 fill={COLORS.gray300}
               >
@@ -438,12 +434,12 @@ export async function GET(
                 alignItems: "center",
                 gap: 6,
                 color: COLORS.gray400,
-                fontSize: 18,
+                fontSize: 22,
               }}
             >
               <svg
-                width="18"
-                height="18"
+                width="22"
+                height="22"
                 viewBox="0 0 24 24"
                 fill={COLORS.gray400}
               >
@@ -538,14 +534,14 @@ export async function GET(
             <span
               style={{
                 color: COLORS.white,
-                fontSize: 28,
+                fontSize: 34,
                 fontWeight: 700,
                 textAlign: "center",
               }}
             >
               {stats.name}
             </span>
-            <span style={{ color: COLORS.gray400, fontSize: 16, marginTop: 4 }}>
+            <span style={{ color: COLORS.gray400, fontSize: 20, marginTop: 4 }}>
               @{stats.login}
             </span>
             
@@ -603,13 +599,13 @@ export async function GET(
               }}
             >
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ color: COLORS.gray400, fontSize: 14, marginBottom: 4 }}>
+                <span style={{ color: COLORS.gray400, fontSize: 18, marginBottom: 4 }}>
                   Total Commits
                 </span>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                   <span
                     style={{
-                      fontSize: 48,
+                      fontSize: 56,
                       fontWeight: 800,
                       background: `linear-gradient(135deg, ${COLORS.purple400}, ${COLORS.pink400})`,
                       backgroundClip: "text",
@@ -618,7 +614,7 @@ export async function GET(
                   >
                     {stats.commits}
                   </span>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill={COLORS.purple400}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill={COLORS.purple400}>
                     <path d={ICONS.fire} />
                   </svg>
                 </div>
@@ -630,16 +626,16 @@ export async function GET(
               {/* PR と Issues */}
               <div style={{ display: "flex", gap: 24 }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <span style={{ color: COLORS.white, fontSize: 28, fontWeight: 700 }}>
+                  <span style={{ color: COLORS.white, fontSize: 36, fontWeight: 700 }}>
                     {stats.pullRequests}
                   </span>
-                  <span style={{ color: COLORS.gray400, fontSize: 12 }}>PRs</span>
+                  <span style={{ color: COLORS.gray400, fontSize: 18 }}>PRs</span>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <span style={{ color: COLORS.white, fontSize: 28, fontWeight: 700 }}>
+                  <span style={{ color: COLORS.white, fontSize: 36, fontWeight: 700 }}>
                     {stats.issues}
                   </span>
-                  <span style={{ color: COLORS.gray400, fontSize: 12 }}>Issues</span>
+                  <span style={{ color: COLORS.gray400, fontSize: 18 }}>Issues</span>
                 </div>
               </div>
             </div>
@@ -660,9 +656,9 @@ export async function GET(
                     style={{
                       background: `linear-gradient(135deg, ${COLORS.badgeBg}, rgba(236, 72, 153, 0.15))`,
                       color: COLORS.badgeText,
-                      padding: "8px 16px",
+                      padding: "10px 18px",
                       borderRadius: 20,
-                      fontSize: 14,
+                      fontSize: 18,
                       fontWeight: 600,
                       border: `1px solid ${COLORS.badgeBorder}`,
                       boxShadow: `0 2px 8px rgba(168, 85, 247, 0.2)`,
@@ -674,63 +670,20 @@ export async function GET(
               </div>
             )}
 
-            {/* 貢献率プログレスバー */}
-            <div 
-              style={{ 
-                display: "flex", 
-                flexDirection: "column",
-                backgroundColor: COLORS.cardBg,
-                padding: "16px 20px",
-                borderRadius: 12,
-                border: `1px solid ${COLORS.cardBorder}`,
+            {/* ランキング情報 */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                color: COLORS.gray400,
+                fontSize: 18,
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 12,
-                }}
-              >
-                <span style={{ color: COLORS.gray300, fontSize: 14, fontWeight: 500 }}>
-                  Contribution Share
-                </span>
-                <span
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 700,
-                    background: `linear-gradient(135deg, ${COLORS.purple400}, ${COLORS.pink400})`,
-                    backgroundClip: "text",
-                    color: "transparent",
-                  }}
-                >
-                  {stats.contributionPercent}%
-                </span>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  width: "100%",
-                  height: 12,
-                  backgroundColor: "rgba(139, 92, 246, 0.15)",
-                  borderRadius: 6,
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  style={{
-                    width: `${stats.contributionPercent}%`,
-                    height: "100%",
-                    background: `linear-gradient(90deg, ${COLORS.purple500}, ${COLORS.pink500})`,
-                    borderRadius: 6,
-                    boxShadow: `0 0 12px ${COLORS.glowPurple}`,
-                  }}
-                />
-              </div>
-              <span style={{ color: COLORS.gray500, fontSize: 12, marginTop: 8 }}>
-                {stats.rank} of {stats.totalContributors} contributors
+              <span style={{ color: getRankColor(stats.rank), fontWeight: 600, fontSize: 20 }}>
+                #{stats.rank}
               </span>
+              <span>of {stats.totalContributors} contributors</span>
             </div>
           </div>
         </div>
@@ -766,14 +719,14 @@ export async function GET(
                 background: `linear-gradient(135deg, ${COLORS.purple400}, ${COLORS.pink400})`,
                 backgroundClip: "text",
                 color: "transparent",
-                fontSize: 18,
+                fontSize: 22,
                 fontWeight: 700,
               }}
             >
               GitHub Insights
             </span>
           </div>
-          <span style={{ color: COLORS.gray500, fontSize: 13 }}>
+          <span style={{ color: COLORS.gray500, fontSize: 16 }}>
             github-insights-orpin.vercel.app
           </span>
         </div>

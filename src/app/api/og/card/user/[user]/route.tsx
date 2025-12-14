@@ -278,7 +278,7 @@ export async function GET(
             <span
               style={{
                 color: COLORS.white,
-                fontSize: 28,
+                fontSize: 34,
                 fontWeight: 700,
                 textAlign: "center",
                 marginBottom: 4,
@@ -287,7 +287,7 @@ export async function GET(
               {stats.name}
             </span>
             <span
-              style={{ color: COLORS.gray400, fontSize: 18, marginBottom: 12 }}
+              style={{ color: COLORS.gray400, fontSize: 22, marginBottom: 12 }}
             >
               @{stats.login}
             </span>
@@ -296,7 +296,7 @@ export async function GET(
               <span
                 style={{
                   color: COLORS.gray400,
-                  fontSize: 14,
+                  fontSize: 18,
                   textAlign: "center",
                   maxWidth: 200,
                   lineHeight: 1.4,
@@ -347,9 +347,9 @@ export async function GET(
                     style={{
                       backgroundColor: COLORS.badgeBg,
                       color: COLORS.badgeText,
-                      padding: "8px 16px",
+                      padding: "10px 18px",
                       borderRadius: 20,
-                      fontSize: 14,
+                      fontSize: 18,
                       fontWeight: 500,
                       border: `1px solid ${COLORS.badgeBorder}`,
                     }}
@@ -364,7 +364,7 @@ export async function GET(
             {stats.topRepos.length > 0 && (
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span
-                  style={{ color: COLORS.gray400, fontSize: 14, marginBottom: 12 }}
+                  style={{ color: COLORS.gray400, fontSize: 18, marginBottom: 12 }}
                 >
                   Top Repositories
                 </span>
@@ -384,7 +384,7 @@ export async function GET(
                       <span
                         style={{
                           color: COLORS.gray300,
-                          fontSize: 15,
+                          fontSize: 18,
                           marginRight: 10,
                         }}
                       >
@@ -392,8 +392,8 @@ export async function GET(
                       </span>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <svg
-                          width="14"
-                          height="14"
+                          width="18"
+                          height="18"
                           viewBox="0 0 24 24"
                           fill={COLORS.purple400}
                         >
@@ -402,7 +402,7 @@ export async function GET(
                         <span
                           style={{
                             color: COLORS.purple400,
-                            fontSize: 14,
+                            fontSize: 18,
                             fontWeight: 500,
                           }}
                         >
@@ -425,7 +425,7 @@ export async function GET(
             marginTop: 20,
           }}
         >
-          <span style={{ color: COLORS.gray500, fontSize: 14 }}>
+          <span style={{ color: COLORS.gray500, fontSize: 16 }}>
             github-insights-orpin.vercel.app
           </span>
         </div>
@@ -459,14 +459,14 @@ function StatBox({ label, value }: { label: string; value: string }) {
       <span
         style={{
           color: COLORS.white,
-          fontSize: 28,
+          fontSize: 34,
           fontWeight: 700,
           marginBottom: 4,
         }}
       >
         {value}
       </span>
-      <span style={{ color: COLORS.gray400, fontSize: 13 }}>{label}</span>
+      <span style={{ color: COLORS.gray400, fontSize: 18 }}>{label}</span>
     </div>
   );
 }
