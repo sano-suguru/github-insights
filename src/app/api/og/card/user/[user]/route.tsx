@@ -214,30 +214,27 @@ export async function GET(
           }}
         >
           <div style={{ display: "flex", alignItems: "center" }}>
-            <div
+            {/* ユーザーアバター */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={stats.avatarUrl}
+              alt={`${stats.login}'s avatar`}
+              width={40}
+              height={40}
               style={{
-                width: 40,
-                height: 40,
                 borderRadius: 20,
-                background: `linear-gradient(135deg, ${COLORS.purple500}, ${COLORS.pink500})`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                border: `2px solid ${COLORS.purple500}`,
                 marginRight: 12,
               }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                <path d={ICONS.github} />
-              </svg>
-            </div>
+            />
             <span
               style={{
                 fontSize: 22,
                 fontWeight: 600,
-                color: COLORS.purple400,
+                color: COLORS.gray300,
               }}
             >
-              GitHub Insights
+              @{stats.login}
             </span>
           </div>
           <span style={{ color: COLORS.gray400, fontSize: 16 }}>
