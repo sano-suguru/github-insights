@@ -6,11 +6,12 @@ GitHub リポジトリの貢献度・統計を可視化する日本語向け Web
 
 ## 技術スタック
 
-- **フレームワーク**: Next.js 16 (App Router)、React 19、TypeScript
-- **認証**: NextAuth v5 (beta) + GitHub OAuth
-- **データ取得**: TanStack Query v5 + Octokit GraphQL
+- **フレームワーク**: Next.js (App Router)、React、TypeScript
+- **認証**: NextAuth v5 + GitHub OAuth
+- **データ取得**: TanStack Query + Octokit GraphQL
 - **チャート**: Recharts (SSR 無効化必須)
-- **スタイル**: Tailwind CSS v4
+- **スタイル**: Tailwind CSS
+- **テスト**: Vitest + React Testing Library + Storybook
 
 ## アーキテクチャ
 
@@ -21,22 +22,36 @@ GitHub リポジトリの貢献度・統計を可視化する日本語向け Web
 - `/dashboard` - 認証済みユーザー向けダッシュボード
 - `/repo/[owner]/[repo]` - Public リポジトリ詳細（未認証アクセス可）
 
+### ディレクトリ構成
+
+```
+src/
+├── app/           # App Router ページ・API Route Handler
+├── components/    # UIコンポーネント（charts/はチャート専用）
+├── hooks/         # カスタムフック（React Query ラッパー中心）
+├── lib/           # ユーティリティ・API クライアント・設定
+├── providers/     # Context Provider（Query, Session）
+├── stories/       # Storybook ストーリー
+└── types/         # 型定義
+```
+
 ### データフロー
 
 ```
-lib/github.ts（GraphQL API）
+lib/github.ts（GraphQL API クライアント）
   ↓
-hooks/useRepoData.ts, useCommitHistory.ts（React Query）
+hooks/（React Query によるキャッシュ・状態管理）
   ↓
-components/charts/*（Recharts可視化）
+components/（可視化・UI）
 ```
+
+## 設計原則
 
 ### 認証/未認証の分岐パターン
 
-`accessToken`が`null`の場合は未認証として処理。`lib/github.ts`の各関数は第 1 引数で判定：
+`accessToken` が `null` の場合は未認証として処理。API 関数は第 1 引数で判定：
 
 ```typescript
-// 認証/未認証両対応パターン
 export async function getLanguageStats(
   accessToken: string | null,
   owner: string,
@@ -49,42 +64,45 @@ export async function getLanguageStats(
 }
 ```
 
-## 重要な規約
+### SSR 無効化パターン（Recharts）
 
-### チャートコンポーネントは SSR 無効化必須
-
-Recharts はサーバーサイドレンダリング非対応。必ず`dynamic`でインポート：
+Recharts はサーバーサイドレンダリング非対応。チャートコンポーネントは必ず `dynamic` でインポート：
 
 ```typescript
-const LanguagesPieChart = dynamic(
-  () => import("@/components/charts/LanguagesPieChart"),
+import dynamic from "next/dynamic";
+
+const ChartComponent = dynamic(
+  () => import("@/components/charts/ChartComponent"),
   { ssr: false }
 );
 ```
 
-### React Query のキャッシュ設定
+### キャッシュ設定の一元管理
 
-`QueryProvider.tsx`でグローバル設定済み。カスタムフックでは`staleTime`で鮮度を調整：
-
-- 言語統計: 10 分
-- コミット履歴: 5〜10 分（期間に応じて変動）
-- コントリビューター: 5 分
-
-### レート制限への対応
-
-未認証時は GitHub API のレート制限が厳しい（60 回/時間）。`getPublicRateLimitInfo()`でグローバル状態を管理し、UI で警告表示。未認証ユーザーは 30 日以内のデータ取得に制限。
+`lib/cache-config.ts` でサーバー/クライアント両方のキャッシュ設定を一元管理。新しいデータ取得を追加する際はここを参照。
 
 ### Server Actions
 
-`lib/actions.ts`に`"use server"`で定義。認証関連のアクション（`signInWithPublicScope`、`signInWithPrivateScope`）を集約。
+`lib/actions.ts` に `"use server"` で定義。認証関連のアクションを集約。
+
+### レート制限への対応
+
+未認証時は GitHub API のレート制限が厳しい（60 回/時間）。以下の対策を実施：
+
+- サーバーサイドキャッシュ（Route Handler）
+- クライアントサイドキャッシュ（React Query staleTime）
+- 人気リポジトリのローカル JSON による API 呼び出し削減
+- UI でのレート制限警告表示
 
 ## 開発コマンド
 
 ```bash
-npm run dev    # ポート3001で起動
-npm run build  # 本番ビルド
-npm run lint   # ESLint実行
-npm run test   # Vitestでテスト実行
+npm run dev          # 開発サーバー起動
+npm run build        # 本番ビルド
+npm run lint         # ESLint 実行
+npm run test         # Vitest でテスト実行
+npm run test:run     # テスト実行（ウォッチなし）
+npm run storybook    # Storybook 起動
 ```
 
 ## 環境変数（必須）
@@ -92,52 +110,35 @@ npm run test   # Vitestでテスト実行
 ```
 GITHUB_ID=<OAuth App Client ID>
 GITHUB_SECRET=<OAuth App Client Secret>
-AUTH_SECRET=<NextAuth用シークレット>
+AUTH_SECRET=<NextAuth 用シークレット>
 ```
 
-## ファイル命名規約
+## コーディング規約
+
+### ファイル命名
 
 - コンポーネント: PascalCase（`ContributorRanking.tsx`）
-- フック: camelCase + `use`プレフィックス（`useRepoData.ts`）
-- 型定義: `types/`ディレクトリに集約
+- フック: camelCase + `use` プレフィックス（`useRepoData.ts`）
+- ユーティリティ: camelCase（`cache-config.ts`）
+- 型定義: `types/` ディレクトリに集約
 
-## UI パターン
+### UI パターン
 
-- ローディング: `animate-spin`でスピナー表示
+- ローディング: Skeleton コンポーネントまたは `animate-spin` スピナー
 - アイコン: Lucide React 使用
-- 日本語ロケール前提（コメント・UI テキスト共に日本語）
+- 日本語ロケール前提（コメント・UI テキスト共に日本語可）
 
-## テスト
+### テスト方針
 
-### フレームワーク
-
-- **Vitest** + **React Testing Library** を使用
-- テストファイルは `__tests__/` または `*.test.ts(x)` で配置
-
-### テスト対象の優先順位
-
-1. `lib/github.ts` - 認証/未認証分岐ロジック、GraphQL クエリのモック
-2. `hooks/` - React Query フックの動作確認
-3. `components/` - ユーザーインタラクション（チャートはスナップショット程度）
-
-### モックパターン
-
-```typescript
-// GitHub APIのモック例
-vi.mock("@octokit/graphql", () => ({
-  graphql: { defaults: vi.fn(() => vi.fn()) },
-}));
-```
+- テストファイルは `__tests__/` ディレクトリまたは `*.test.ts(x)` で配置
+- Storybook でコンポーネントの視覚的なテストも可能
+- 優先順位: API ロジック → フック → コンポーネント
 
 ## デプロイ（Vercel）
 
 ### 環境変数設定
 
-Vercel ダッシュボードで以下を設定：
-
-- `GITHUB_ID` - GitHub OAuth App Client ID
-- `GITHUB_SECRET` - GitHub OAuth App Client Secret
-- `AUTH_SECRET` - `npx auth secret`で生成
+Vercel ダッシュボードで上記の環境変数を設定。
 
 ### GitHub OAuth App 設定
 
@@ -148,7 +149,7 @@ https://your-domain.vercel.app/api/auth/callback/github
 https://your-project-git-*.vercel.app/api/auth/callback/github
 ```
 
-### デプロイ時の注意
+### 注意事項
 
-- `next.config.ts`の`images.remotePatterns`に GitHub アバター URL を許可済み
-- Recharts はクライアントサイドのみで動作するため、SSR 無効化が正しく設定されていればビルドエラーは発生しない
+- `next.config.ts` の `images.remotePatterns` に GitHub アバター URL を許可済み
+- Recharts は SSR 無効化必須（`dynamic` import で対応済み）
