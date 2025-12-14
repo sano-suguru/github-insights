@@ -109,16 +109,18 @@ export function StatCard({ label, value, icon, color = "default" }: StatCardProp
   };
 
   return (
-    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+    <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-3 sm:p-4 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 group overflow-hidden">
+      {/* グラデーション装飾 */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className={`shrink-0 p-1.5 sm:p-2 rounded-lg ${colorClasses[color]}`}>
           {icon}
         </div>
         <div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{label}</p>
+          <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
             {typeof value === "number" ? value.toLocaleString() : value}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
         </div>
       </div>
     </div>
@@ -136,8 +138,9 @@ interface SectionCardProps {
 
 export function SectionCard({ title, children, className = "" }: SectionCardProps) {
   return (
-    <div className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 ${className}`}>
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+    <div className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300 ${className}`}>
+      <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
+        <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
         {title}
       </h2>
       {children}

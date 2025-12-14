@@ -14,6 +14,7 @@ import {
   Calendar,
   ExternalLink,
   AlertCircle,
+  Code2,
 } from "lucide-react";
 import { UserProfile, UserStats } from "@/lib/github";
 import DashboardLayout, { StatCard, SectionCard } from "@/components/DashboardLayout";
@@ -70,28 +71,28 @@ export default function UserProfilePage() {
           {errorMessage === "USER_NOT_FOUND" ? (
             <>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                ユーザーが見つかりません
+                User Not Found
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                「{username}」というユーザーは存在しないか、アクセスできません。
+                The user &quot;{username}&quot; does not exist or is not accessible.
               </p>
             </>
           ) : errorMessage === "RATE_LIMIT" ? (
             <>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                レート制限に達しました
+                Rate Limit Exceeded
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                しばらく待ってから再度お試しください。
+                Please wait a moment and try again.
               </p>
             </>
           ) : (
             <>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                エラーが発生しました
+                Error Occurred
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                ユーザー情報の取得に失敗しました。
+                Failed to fetch user information.
               </p>
             </>
           )}
@@ -106,9 +107,9 @@ export default function UserProfilePage() {
   }
 
   const { profile, stats } = data;
-  const joinedDate = new Date(profile.createdAt).toLocaleDateString("ja-JP", {
+  const joinedDate = new Date(profile.createdAt).toLocaleDateString("en-US", {
     year: "numeric",
-    month: "long",
+    month: "short",
   });
 
   return (
@@ -181,7 +182,7 @@ export default function UserProfilePage() {
               )}
               <span className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                {joinedDate}から
+                Joined {joinedDate}
               </span>
             </div>
           </div>
@@ -194,7 +195,7 @@ export default function UserProfilePage() {
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center md:justify-end gap-1">
                 <Users className="w-4 h-4" />
-                フォロワー
+                Followers
               </p>
             </div>
             <div>
@@ -202,7 +203,7 @@ export default function UserProfilePage() {
                 {profile.following.toLocaleString()}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                フォロー中
+                Following
               </p>
             </div>
           </div>
@@ -212,35 +213,35 @@ export default function UserProfilePage() {
       {/* 統計カード */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard
-          label="リポジトリ"
+          label="Repositories"
           value={stats.totalRepos}
-          icon={<GitFork className="w-5 h-5" />}
+          icon={<GitFork className="w-5 h-5 text-purple-500" />}
           color="purple"
         />
         <StatCard
-          label="獲得スター"
+          label="Stars"
           value={stats.totalStars}
-          icon={<Star className="w-5 h-5" />}
+          icon={<Star className="w-5 h-5 text-yellow-500" />}
           color="yellow"
         />
         <StatCard
-          label="被フォーク数"
+          label="Forks"
           value={stats.totalForks}
-          icon={<GitFork className="w-5 h-5" />}
+          icon={<GitFork className="w-5 h-5 text-blue-500" />}
           color="blue"
         />
         <StatCard
-          label="言語数"
+          label="Languages"
           value={stats.languageBreakdown.length}
-          icon={<span className="text-lg">🔤</span>}
+          icon={<Code2 className="w-5 h-5 text-green-500" />}
           color="green"
         />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* 使用言語 */}
+        {/* Languages */}
         {stats.languageBreakdown.length > 0 && (
-          <SectionCard title="使用言語">
+          <SectionCard title="Languages">
             {/* スクリーンリーダー向けテキストサマリー */}
             <p className="sr-only">
               {stats.languageBreakdown.slice(0, 8).map((lang) => 
@@ -260,9 +261,9 @@ export default function UserProfilePage() {
           </SectionCard>
         )}
 
-        {/* 人気リポジトリ */}
+        {/* Top Repositories */}
         {stats.topRepositories.length > 0 && (
-          <SectionCard title="人気リポジトリ">
+          <SectionCard title="Top Repositories">
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {stats.topRepositories.slice(0, 5).map((repo) => (
                 <Link

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
 import {
   getUserProfile,
@@ -16,28 +15,25 @@ interface Params {
   }>;
 }
 
-// キャッシュ付きでユーザーデータを取得
-// 認証状態に関わらず同じ公開情報を返すため、キャッシュキーは username のみ
-function createCachedUserData(username: string, accessToken: string | null) {
-  return unstable_cache(
-    async (): Promise<{
-      profile: UserProfile | null;
-      stats: UserStats | null;
-    }> => {
-      const profile = await getUserProfile(username, accessToken);
-      
-      if (!profile) {
-        return { profile: null, stats: null };
-      }
+// ユーザーデータを取得
+// 注: クライアント側で React Query がキャッシュするため、サーバー側キャッシュは使用しない
+async function fetchUserData(
+  username: string,
+  accessToken: string | null
+): Promise<{
+  profile: UserProfile | null;
+  stats: UserStats | null;
+}> {
+  const profile = await getUserProfile(username, accessToken);
 
-      const repositories = await getUserRepositories(username, accessToken);
-      const stats = calculateUserStats(repositories);
+  if (!profile) {
+    return { profile: null, stats: null };
+  }
 
-      return { profile, stats };
-    },
-    [`user-profile:${username}`],
-    { revalidate: 3600, tags: [`user:${username}`] }
-  );
+  const repositories = await getUserRepositories(username, accessToken);
+  const stats = calculateUserStats(repositories);
+
+  return { profile, stats };
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
@@ -55,7 +51,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     const session = await auth();
     const accessToken = session?.accessToken ?? null;
 
-    const { profile, stats } = await createCachedUserData(username, accessToken)();
+    const { profile, stats } = await fetchUserData(username, accessToken);
 
     if (!profile) {
       return NextResponse.json(
