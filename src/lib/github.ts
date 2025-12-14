@@ -118,6 +118,76 @@ export async function getPublicRepository(owner: string, repo: string) {
   return repository as Repository;
 }
 
+// 公開リポジトリを検索（未認証対応）
+export interface SearchRepositoryResult {
+  nameWithOwner: string;
+  description: string | null;
+  stargazerCount: number;
+  primaryLanguage: { name: string; color: string } | null;
+}
+
+export async function searchPublicRepositories(
+  query: string,
+  first: number = 10
+): Promise<SearchRepositoryResult[]> {
+  if (!query || query.length < 2) {
+    return [];
+  }
+
+  const client = createPublicGitHubClient();
+
+  try {
+    const { search } = await client<{
+      search: {
+        repositoryCount: number;
+        nodes: Array<{
+          nameWithOwner: string;
+          description: string | null;
+          isPrivate: boolean;
+          primaryLanguage: { name: string; color: string } | null;
+          stargazerCount: number;
+        }>;
+      };
+    }>(`
+      query($query: String!, $first: Int!) {
+        search(query: $query, type: REPOSITORY, first: $first) {
+          repositoryCount
+          nodes {
+            ... on Repository {
+              nameWithOwner
+              description
+              isPrivate
+              primaryLanguage {
+                name
+                color
+              }
+              stargazerCount
+            }
+          }
+        }
+      }
+    `, { query: `${query} in:name`, first });
+
+    // レート制限を更新
+    await updateRateLimit(client, true);
+
+    // Publicリポジトリのみ返す（nullノードを除外）
+    return search.nodes
+      .filter((node): node is NonNullable<typeof node> => 
+        node !== null && node.nameWithOwner !== undefined && !node.isPrivate
+      )
+      .map(({ nameWithOwner, description, stargazerCount, primaryLanguage }) => ({
+        nameWithOwner,
+        description,
+        stargazerCount,
+        primaryLanguage,
+      }));
+  } catch (error) {
+    console.error("Search repositories error:", error);
+    throw error;
+  }
+}
+
 // リポジトリ一覧を取得
 export async function getRepositories(accessToken: string) {
   const client = createGitHubClient(accessToken);

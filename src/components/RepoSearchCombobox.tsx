@@ -1,13 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Search, Clock, ChevronDown, X, Lock, Globe } from "lucide-react";
+import { Search, Clock, ChevronDown, X, Lock, Globe, Star, Loader2 } from "lucide-react";
 import { Repository } from "@/lib/github";
+import { useSearchRepositories, SearchResult } from "@/hooks/useSearchRepositories";
+
+export type RepoSearchVariant = "default" | "compact" | "hero";
 
 interface RepoSearchComboboxProps {
-  repositories: Repository[];
-  selectedRepo: string;
+  repositories?: Repository[];
+  selectedRepo?: string;
   onSelectRepo: (repo: string) => void;
+  variant?: RepoSearchVariant;
+  placeholder?: string;
 }
 
 const RECENT_REPOS_KEY = "github-insights-recent-repos";
@@ -40,9 +45,11 @@ function saveRecentRepo(repo: string) {
 }
 
 export default function RepoSearchCombobox({
-  repositories,
-  selectedRepo,
+  repositories = [],
+  selectedRepo = "",
   onSelectRepo,
+  variant = "default",
+  placeholder = "リポジトリ名で検索、または owner/repo を入力...",
 }: RepoSearchComboboxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -50,6 +57,13 @@ export default function RepoSearchCombobox({
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // useSearchRepositories フックを使用
+  const { results, isLoading, isDebouncing } = useSearchRepositories(inputValue, {
+    userRepositories: repositories,
+    recentRepos,
+    enabled: isOpen,
+  });
 
   // 外側クリックでドロップダウンを閉じる
   useEffect(() => {
@@ -99,18 +113,6 @@ export default function RepoSearchCombobox({
     [inputValue, handleSelectRepo]
   );
 
-  // フィルタリングされたリポジトリ
-  const filteredRepos = repositories.filter((repo) =>
-    repo.nameWithOwner.toLowerCase().includes(inputValue.toLowerCase())
-  );
-
-  // フィルタリングされた最近のリポジトリ（自分のリポジトリと重複しないもの）
-  const filteredRecent = recentRepos.filter(
-    (repo) =>
-      !repositories.some((r) => r.nameWithOwner === repo) &&
-      repo.toLowerCase().includes(inputValue.toLowerCase())
-  );
-
   // 入力値が既存リポジトリにマッチしない外部リポジトリか判定
   const isExternalRepoInput =
     inputValue.trim() &&
@@ -118,6 +120,19 @@ export default function RepoSearchCombobox({
     !repositories.some(
       (r) => r.nameWithOwner.toLowerCase() === inputValue.trim().toLowerCase()
     );
+
+  // 結果をソースごとにグループ化
+  const userResults = results.filter((r) => r.source === "user");
+  const historyResults = results.filter((r) => r.source === "history");
+  const popularResults = results.filter((r) => r.source === "popular");
+  const searchResults = results.filter((r) => r.source === "search");
+
+  // variant に応じたスタイル
+  const inputSizeClass = variant === "hero" 
+    ? "py-4 text-lg" 
+    : variant === "compact" 
+    ? "py-2 text-sm" 
+    : "py-3";
 
   return (
     <div ref={containerRef} className="relative">
@@ -135,8 +150,8 @@ export default function RepoSearchCombobox({
               if (!isOpen) setIsOpen(true);
             }}
             onFocus={() => setIsOpen(true)}
-            placeholder="リポジトリ名で検索、または owner/repo を入力..."
-            className="w-full pl-10 pr-20 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            placeholder={placeholder}
+            className={`w-full pl-10 pr-20 ${inputSizeClass} rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {inputValue && (
@@ -193,84 +208,62 @@ export default function RepoSearchCombobox({
             </div>
           )}
 
-          {/* 最近分析したリポジトリ */}
-          {filteredRecent.length > 0 && (
-            <div className="p-2 border-b border-gray-100 dark:border-gray-700">
-              <p className="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                <Clock className="w-3 h-3 inline mr-1" />
-                最近の分析
-              </p>
-              {filteredRecent.map((repo) => (
-                <button
-                  key={repo}
-                  type="button"
-                  onClick={() => handleSelectRepo(repo)}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 text-left"
-                >
-                  <div className="shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                  </div>
-                  <span className="text-gray-700 dark:text-gray-300">{repo}</span>
-                </button>
-              ))}
+          {/* ローディング表示 */}
+          {(isLoading || isDebouncing) && inputValue.length >= 2 && (
+            <div className="p-3 flex items-center gap-2 text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">検索中...</span>
             </div>
           )}
 
           {/* 自分のリポジトリ */}
-          {filteredRepos.length > 0 && (
-            <div className="p-2">
-              <p className="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                自分のリポジトリ
-              </p>
-              {filteredRepos.map((repo) => (
-                <button
-                  key={repo.id}
-                  type="button"
-                  onClick={() => handleSelectRepo(repo.nameWithOwner)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors ${
-                    selectedRepo === repo.nameWithOwner
-                      ? "bg-purple-50 dark:bg-purple-900/30"
-                      : "hover:bg-gray-50 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  <div
-                    className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                      selectedRepo === repo.nameWithOwner
-                        ? "bg-purple-100 dark:bg-purple-900"
-                        : "bg-gray-100 dark:bg-gray-700"
-                    }`}
-                  >
-                    {repo.isPrivate ? (
-                      <Lock className="w-4 h-4 text-purple-500" />
-                    ) : (
-                      <Globe className="w-4 h-4 text-gray-500" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={`font-medium truncate ${
-                        selectedRepo === repo.nameWithOwner
-                          ? "text-purple-700 dark:text-purple-300"
-                          : "text-gray-900 dark:text-white"
-                      }`}
-                    >
-                      {repo.nameWithOwner}
-                    </p>
-                    {repo.description && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {repo.description}
-                      </p>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
+          {userResults.length > 0 && (
+            <ResultSection
+              title="自分のリポジトリ"
+              icon={<Globe className="w-3 h-3 inline mr-1" />}
+              results={userResults}
+              selectedRepo={selectedRepo}
+              onSelect={handleSelectRepo}
+              showDetails
+            />
+          )}
+
+          {/* 最近分析したリポジトリ */}
+          {historyResults.length > 0 && (
+            <ResultSection
+              title="最近の分析"
+              icon={<Clock className="w-3 h-3 inline mr-1" />}
+              results={historyResults}
+              selectedRepo={selectedRepo}
+              onSelect={handleSelectRepo}
+            />
+          )}
+
+          {/* 人気リポジトリ */}
+          {popularResults.length > 0 && (
+            <ResultSection
+              title={inputValue ? "人気のリポジトリ" : "おすすめ"}
+              icon={<Star className="w-3 h-3 inline mr-1" />}
+              results={popularResults}
+              selectedRepo={selectedRepo}
+              onSelect={handleSelectRepo}
+            />
+          )}
+
+          {/* 検索結果 */}
+          {searchResults.length > 0 && (
+            <ResultSection
+              title="検索結果"
+              icon={<Search className="w-3 h-3 inline mr-1" />}
+              results={searchResults}
+              selectedRepo={selectedRepo}
+              onSelect={handleSelectRepo}
+              showDetails
+            />
           )}
 
           {/* 検索結果なし */}
-          {filteredRepos.length === 0 &&
-            filteredRecent.length === 0 &&
-            !isExternalRepoInput && (
+          {results.length === 0 && !isExternalRepoInput && !isLoading && !isDebouncing && (
               <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                 {inputValue ? (
                   <>
@@ -286,6 +279,95 @@ export default function RepoSearchCombobox({
             )}
         </div>
       )}
+    </div>
+  );
+}
+
+// 結果セクションコンポーネント
+interface ResultSectionProps {
+  title: string;
+  icon: React.ReactNode;
+  results: SearchResult[];
+  selectedRepo: string;
+  onSelect: (repo: string) => void;
+  showDetails?: boolean;
+}
+
+function ResultSection({
+  title,
+  icon,
+  results,
+  selectedRepo,
+  onSelect,
+  showDetails = false,
+}: ResultSectionProps) {
+  return (
+    <div className="p-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+      <p className="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        {icon}
+        {title}
+      </p>
+      {results.map((result) => (
+        <button
+          key={result.nameWithOwner}
+          type="button"
+          onClick={() => onSelect(result.nameWithOwner)}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors ${
+            selectedRepo === result.nameWithOwner
+              ? "bg-purple-50 dark:bg-purple-900/30"
+              : "hover:bg-gray-50 dark:hover:bg-gray-700"
+          }`}
+        >
+          <div
+            className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+              selectedRepo === result.nameWithOwner
+                ? "bg-purple-100 dark:bg-purple-900"
+                : "bg-gray-100 dark:bg-gray-700"
+            }`}
+          >
+            {result.source === "history" ? (
+              <Clock className="w-4 h-4 text-gray-500" />
+            ) : result.source === "popular" ? (
+              <Star className="w-4 h-4 text-yellow-500" />
+            ) : result.source === "user" ? (
+              <Globe className="w-4 h-4 text-gray-500" />
+            ) : (
+              <Search className="w-4 h-4 text-gray-500" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p
+              className={`font-medium truncate ${
+                selectedRepo === result.nameWithOwner
+                  ? "text-purple-700 dark:text-purple-300"
+                  : "text-gray-900 dark:text-white"
+              }`}
+            >
+              {result.nameWithOwner}
+            </p>
+            {showDetails && result.description && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                {result.description}
+              </p>
+            )}
+            {showDetails && result.stargazerCount !== undefined && result.stargazerCount > 0 && (
+              <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                <Star className="w-3 h-3" />
+                {result.stargazerCount.toLocaleString()}
+                {result.primaryLanguage && (
+                  <span className="ml-2 flex items-center gap-1">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: result.primaryLanguage.color }}
+                    />
+                    {result.primaryLanguage.name}
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+        </button>
+      ))}
     </div>
   );
 }

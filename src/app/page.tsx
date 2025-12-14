@@ -1,28 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Globe, Lock, Search, BarChart3, Languages, TrendingUp, Users, Flame } from "lucide-react";
+import { Globe, Lock, BarChart3, Languages, TrendingUp, Users, Flame } from "lucide-react";
 import { signInWithPublicScope, signInWithPrivateScope } from "@/lib/actions";
+import RepoSearchCombobox from "@/components/RepoSearchCombobox";
 
 export default function Home() {
-  const [repoInput, setRepoInput] = useState("");
-  const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleRepoSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    
-    // owner/repo 形式かチェック
-    const match = repoInput.trim().match(/^([^/]+)\/([^/]+)$/);
-    if (!match) {
-      setError("「owner/repo」の形式で入力してください（例: facebook/react）");
-      return;
+  const handleRepoSelect = (repo: string) => {
+    const [owner, repoName] = repo.split("/");
+    if (owner && repoName) {
+      router.push(`/repo/${owner}/${repoName}`);
     }
-    
-    const [, owner, repo] = match;
-    router.push(`/repo/${owner}/${repo}`);
   };
 
   return (
@@ -56,27 +46,11 @@ export default function Home() {
 
           {/* リポジトリ検索フォーム */}
           <div className="max-w-xl mx-auto mb-8">
-            <form onSubmit={handleRepoSearch} className="relative">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={repoInput}
-                  onChange={(e) => setRepoInput(e.target.value)}
-                  placeholder="リポジトリ名で検索（例: facebook/react）"
-                  className="w-full pl-12 pr-24 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-2 px-4 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors"
-                >
-                  分析
-                </button>
-              </div>
-            </form>
-            {error && (
-              <p className="text-red-400 text-sm mt-2">{error}</p>
-            )}
+            <RepoSearchCombobox
+              onSelectRepo={handleRepoSelect}
+              variant="hero"
+              placeholder="リポジトリを検索（例: facebook/react）"
+            />
             <p className="text-gray-400 text-sm mt-2">
               ログインなしでPublicリポジトリを分析できます
             </p>
