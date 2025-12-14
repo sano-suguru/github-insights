@@ -219,10 +219,10 @@ function ContributorRow({
                 {/* モバイル: 固定位置モーダル */}
                 <div className="sm:hidden fixed inset-0 z-50 flex items-center justify-center p-4">
                   <div 
-                    className="absolute inset-0 bg-black/50"
+                    className="absolute inset-0 bg-black/50 z-0"
                     onClick={() => setShowBadgePopover(false)}
                   />
-                  <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="relative z-10 w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4 animate-in fade-in zoom-in-95 duration-200">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-base font-medium text-gray-900 dark:text-white">獲得バッジ</span>
                       <button
