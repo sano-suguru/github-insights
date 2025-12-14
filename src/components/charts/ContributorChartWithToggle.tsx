@@ -20,7 +20,7 @@ export default function ContributorChartWithToggle({ contributors, contributorDe
   const hasDetailData = contributorDetails.length > 0;
 
   return (
-    <div>
+    <div className="min-h-[340px]">
       {/* ヘッダー with トグル */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">

@@ -27,6 +27,8 @@ const COLORS = [
   "#84cc16",
 ];
 
+// Note: このコンポーネントは dynamic import (ssr: false) で使用されるため、
+// クライアントサイドでのみレンダリングされる
 export default function ContributorsChart({ data }: Props) {
   if (data.length === 0) {
     return (
@@ -43,7 +45,7 @@ export default function ContributorsChart({ data }: Props) {
   }));
 
   return (
-    <div className="h-[280px] min-h-[280px]">
+    <div className="h-[280px] min-h-[280px] w-full">
       <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <BarChart data={chartData} layout="vertical">
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
