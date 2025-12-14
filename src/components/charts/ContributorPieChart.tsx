@@ -21,6 +21,9 @@ const COLORS = [
   "#84cc16", // lime
 ];
 
+// 「その他」カテゴリ用の識別子
+const OTHERS_LOGIN = "__others__";
+
 export type MetricType = "commits" | "additions" | "deletions";
 
 interface Props {
@@ -75,6 +78,7 @@ export default function ContributorPieChart({ data, metric }: Props) {
   const rawData = top7.map((contributor) => {
     const value = getMetricValue(contributor);
     return {
+      login: contributor.login,
       name: contributor.name || contributor.login,
       value,
       percentage: total > 0 ? Math.round((value / total) * 100 * 10) / 10 : 0,
@@ -85,6 +89,7 @@ export default function ContributorPieChart({ data, metric }: Props) {
   if (others.length > 0) {
     const othersValue = others.reduce((sum, c) => sum + getMetricValue(c), 0);
     rawData.push({
+      login: OTHERS_LOGIN,
       name: `その他 (${others.length}名)`,
       value: othersValue,
       percentage: total > 0 ? Math.round((othersValue / total) * 100 * 10) / 10 : 0,
@@ -96,7 +101,7 @@ export default function ContributorPieChart({ data, metric }: Props) {
     .sort((a, b) => b.percentage - a.percentage)
     .map((item, index) => ({
       ...item,
-      color: item.name.startsWith("その他") ? "#6b7280" : COLORS[index % COLORS.length],
+      color: item.login === OTHERS_LOGIN ? "#6b7280" : COLORS[index % COLORS.length],
     }));
 
   return (
@@ -113,8 +118,8 @@ export default function ContributorPieChart({ data, metric }: Props) {
             dataKey="value"
             labelLine={false}
           >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
+            {chartData.map((entry) => (
+              <Cell key={entry.login} fill={entry.color} />
             ))}
           </Pie>
           <Tooltip
@@ -135,14 +140,21 @@ export default function ContributorPieChart({ data, metric }: Props) {
             }}
           />
           <Legend
-            formatter={(value) => {
-              const item = chartData.find(d => d.name === value);
-              return (
-                <span className="text-sm text-gray-600 dark:text-gray-300">
-                  {value} <span className="text-gray-400">({item?.percentage}%)</span>
-                </span>
-              );
-            }}
+            content={() => (
+              <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
+                {chartData.map((item) => (
+                  <li key={item.login} className="flex items-center gap-1.5">
+                    <span
+                      className="w-3 h-3 rounded-sm"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                      {item.name} <span className="text-gray-400">({item.percentage}%)</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           />
         </PieChart>
       </ResponsiveContainer>

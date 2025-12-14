@@ -47,8 +47,8 @@ export default function LanguagesPieChart({ data }: Props) {
             dataKey="value"
             labelLine={false}
           >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
+            {chartData.map((entry) => (
+              <Cell key={entry.name} fill={entry.color} />
             ))}
           </Pie>
           <Tooltip
@@ -67,14 +67,21 @@ export default function LanguagesPieChart({ data }: Props) {
             }}
           />
           <Legend
-            formatter={(value) => {
-              const item = chartData.find(d => d.name === value);
-              return (
-                <span className="text-sm text-gray-600 dark:text-gray-300">
-                  {value} <span className="text-gray-400">({item?.value}%)</span>
-                </span>
-              );
-            }}
+            content={() => (
+              <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
+                {chartData.map((item) => (
+                  <li key={item.name} className="flex items-center gap-1.5">
+                    <span
+                      className="w-3 h-3 rounded-sm"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                      {item.name} <span className="text-gray-400">({item.value}%)</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           />
         </PieChart>
       </ResponsiveContainer>
