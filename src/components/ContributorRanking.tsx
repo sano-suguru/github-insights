@@ -119,14 +119,14 @@ function ContributorRow({
 
   return (
     <div
-      className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+      className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-colors ${
         isCurrentUser
           ? "bg-purple-50 dark:bg-purple-900/30 ring-2 ring-purple-500"
           : "bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800"
       }`}
     >
       {/* 順位 */}
-      <div className="shrink-0 w-8 text-center">
+      <div className="shrink-0 w-6 sm:w-8 text-center">
         {contributor.rank <= 3 ? (
           <div className={`w-6 h-6 mx-auto rounded-full flex items-center justify-center ${
             contributor.rank === 1 
@@ -158,7 +158,7 @@ function ContributorRow({
           alt={contributor.name}
           width={40}
           height={40}
-          className="rounded-full ring-2 ring-transparent hover:ring-purple-500 transition-all"
+          className="rounded-full ring-2 ring-transparent hover:ring-purple-500 transition-all w-8 h-8 sm:w-10 sm:h-10"
         />
       </a>
 
@@ -214,12 +214,18 @@ function ContributorRow({
       </div>
 
       {/* スコア */}
-      <div className="shrink-0 text-right">
+      <div className="shrink-0 text-right hidden sm:block">
         <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
           <TrendingUp className="w-4 h-4" />
           <span className="font-bold">{contributor.score.toLocaleString()}</span>
         </div>
         <span className="text-xs text-gray-500">スコア</span>
+      </div>
+      {/* モバイル用スコア（コンパクト） */}
+      <div className="shrink-0 sm:hidden">
+        <span className="text-sm font-bold text-purple-600 dark:text-purple-400">
+          {contributor.score.toLocaleString()}
+        </span>
       </div>
 
       {/* カード生成ボタン */}
@@ -229,10 +235,10 @@ function ContributorRow({
             e.stopPropagation();
             onCardClick();
           }}
-          className="shrink-0 p-2 rounded-lg text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
+          className="shrink-0 p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
           title="貢献度カードを生成"
         >
-          <ImageIcon className="w-5 h-5" />
+          <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       )}
     </div>

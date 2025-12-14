@@ -180,32 +180,35 @@ function DashboardContent() {
 
       {/* ヘッダー */}
       <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur shadow-sm border-b border-gray-200/50 dark:border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-linear-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                  </svg>
-                </div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  GitHub Insights
-                </h1>
-              </Link>
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            {/* ロゴ */}
+            <Link href="/" className="flex items-center gap-2 sm:gap-4 shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-linear-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+              </div>
+              <h1 className="hidden sm:block text-xl font-bold text-gray-900 dark:text-white">
+                GitHub Insights
+              </h1>
+            </Link>
 
-            <div className="flex items-center gap-4">
+            {/* 右側: ユーザー情報 */}
+            <div className="flex items-center gap-2 sm:gap-4">
               {session?.user && (
-                <div className="flex items-center gap-3">
-                  {/* スコープバッジ */}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {/* スコープバッジ - モバイルではアイコンのみ */}
                   {session.scope && (
-                    <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+                    <span className={`inline-flex items-center gap-1 text-xs px-1.5 sm:px-2 py-1 rounded-full ${
                       session.scope.includes("repo") 
                         ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
                         : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
                     }`}>
-                      {session.scope.includes("repo") ? <><Lock className="w-3 h-3" /> Private</> : <><Globe className="w-3 h-3" /> Public</>}
+                      {session.scope.includes("repo") 
+                        ? <><Lock className="w-3 h-3" /><span className="hidden sm:inline"> Private</span></> 
+                        : <><Globe className="w-3 h-3" /><span className="hidden sm:inline"> Public</span></>
+                      }
                     </span>
                   )}
                   {session.user.image && (
@@ -214,20 +217,21 @@ function DashboardContent() {
                       alt={session.user.name || "User"}
                       width={32}
                       height={32}
-                      className="rounded-full"
+                      className="rounded-full w-7 h-7 sm:w-8 sm:h-8"
                     />
                   )}
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="hidden md:block text-sm text-gray-700 dark:text-gray-300 max-w-[120px] truncate">
                     {session.user.name}
                   </span>
                 </div>
               )}
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1.5 sm:px-3 sm:py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="Sign out"
               >
                 <LogOut className="w-4 h-4" />
-                Sign out
+                <span className="hidden sm:inline">Sign out</span>
               </button>
             </div>
           </div>
@@ -276,35 +280,35 @@ function DashboardContent() {
             />
           </div>
         ) : stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
             <StatCard
               label="Commits"
               value={stats.commits.toLocaleString()}
-              icon={<GitCommit className="w-5 h-5 text-purple-500" />}
+              icon={<GitCommit className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />}
             />
             <StatCard
               label="Pull Requests"
               value={stats.pullRequests.toLocaleString()}
-              icon={<GitPullRequest className="w-5 h-5 text-blue-500" />}
+              icon={<GitPullRequest className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />}
             />
             <StatCard
               label="Issues"
               value={stats.issues.toLocaleString()}
-              icon={<CircleDot className="w-5 h-5 text-green-500" />}
+              icon={<CircleDot className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />}
             />
             <StatCard
               label="Stars"
               value={stats.stars.toLocaleString()}
-              icon={<Star className="w-5 h-5 text-yellow-500" />}
+              icon={<Star className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />}
             />
           </div>
         )}
 
         {/* グラフエリア */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Languages */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
               <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
               Languages
             </h2>
@@ -320,9 +324,9 @@ function DashboardContent() {
           </div>
 
           {/* Commits */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 sm:mb-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
                 Commits
               </h2>
@@ -346,7 +350,7 @@ function DashboardContent() {
           </div>
 
           {/* Contributors */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300">
             <ChartSkeletonWrapper isLoading={contributorsLoading || detailsLoading} skeleton={<BarChartSkeleton />}>
               <ChartErrorWrapper
                 isError={contributorsError || detailsError}
@@ -365,8 +369,8 @@ function DashboardContent() {
           </div>
 
           {/* Activity */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
               <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
               Activity
             </h2>
@@ -437,14 +441,14 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 group overflow-hidden">
+    <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-3 sm:p-4 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 group overflow-hidden">
       {/* グラデーション装飾 */}
       <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <div className="flex items-center gap-3">
-        <div className="shrink-0 p-2 rounded-lg bg-gray-100 dark:bg-gray-700/50">{icon}</div>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="shrink-0 p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700/50">{icon}</div>
         <div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">{label}</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{label}</p>
+          <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
             {value}
           </p>
         </div>
@@ -494,59 +498,61 @@ function MyContributionSummary({
 
   return (
     <>
-      <div className="mt-8 bg-linear-to-r from-purple-600 to-pink-600 rounded-xl shadow-lg p-6 text-white">
-        <div className="flex items-center justify-between mb-4">
+      <div className="mt-8 bg-linear-to-r from-purple-600 to-pink-600 rounded-xl shadow-lg p-4 sm:p-6 text-white">
+        <div className="flex items-center justify-between mb-4 gap-2">
           <div className="flex items-center gap-2">
-            <Trophy className="w-6 h-6" />
-            <h2 className="text-lg font-semibold">Your Contribution</h2>
+            <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
+            <h2 className="text-base sm:text-lg font-semibold">Your Contribution</h2>
           </div>
           <button
             onClick={() => setIsCardModalOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs sm:text-sm font-medium transition-colors"
           >
-            <Share2 className="w-4 h-4" />
-            カードを生成
+            <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">カードを生成</span>
+            <span className="xs:hidden">共有</span>
           </button>
         </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      {/* 統計グリッド - 横スクロール可能 */}
+      <div className="flex sm:grid sm:grid-cols-5 gap-3 sm:gap-4 mb-6 overflow-x-auto pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
         {/* Rank */}
-        <div className="bg-white/10 rounded-lg p-3 text-center">
-          <p className="text-3xl font-bold">#{myStats.rank}</p>
-          <p className="text-sm text-white/80">of {contributors.length}</p>
+        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-[100px] sm:w-auto">
+          <p className="text-2xl sm:text-3xl font-bold">#{myStats.rank}</p>
+          <p className="text-xs sm:text-sm text-white/80">of {contributors.length}</p>
         </div>
 
         {/* Commits */}
-        <div className="bg-white/10 rounded-lg p-3 text-center">
+        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-[100px] sm:w-auto">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <GitCommit className="w-4 h-4" />
+            <GitCommit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <p className="text-2xl font-bold">{myStats.commits.toLocaleString()}</p>
-          <p className="text-sm text-white/80">Commits</p>
+          <p className="text-xl sm:text-2xl font-bold">{myStats.commits.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-white/80">Commits</p>
         </div>
 
         {/* Additions */}
-        <div className="bg-white/10 rounded-lg p-3 text-center">
+        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-[100px] sm:w-auto">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <p className="text-2xl font-bold">{formatLargeNumber(myStats.additions)}</p>
-          <p className="text-sm text-white/80">Additions</p>
+          <p className="text-xl sm:text-2xl font-bold">{formatLargeNumber(myStats.additions)}</p>
+          <p className="text-xs sm:text-sm text-white/80">Additions</p>
         </div>
 
         {/* Deletions */}
-        <div className="bg-white/10 rounded-lg p-3 text-center">
+        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-[100px] sm:w-auto">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <Minus className="w-4 h-4" />
+            <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <p className="text-2xl font-bold">{formatLargeNumber(myStats.deletions)}</p>
-          <p className="text-sm text-white/80">Deletions</p>
+          <p className="text-xl sm:text-2xl font-bold">{formatLargeNumber(myStats.deletions)}</p>
+          <p className="text-xs sm:text-sm text-white/80">Deletions</p>
         </div>
 
         {/* Score */}
-        <div className="bg-white/10 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold">{myStats.score.toLocaleString()}</p>
-          <p className="text-sm text-white/80">Score</p>
+        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-[100px] sm:w-auto">
+          <p className="text-xl sm:text-2xl font-bold">{myStats.score.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-white/80">Score</p>
         </div>
       </div>
 
