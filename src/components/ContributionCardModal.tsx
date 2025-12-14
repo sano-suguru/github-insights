@@ -193,7 +193,7 @@ export default function ContributionCardModal({
           </div>
         </div>
 
-        {/* 全画面プレビュー（モバイル用） */}
+        {/* 全画面プレビュー（モバイル用・90度回転で大きく表示） */}
         {isFullscreen && (
           <div 
             className="fixed inset-0 z-60 bg-black flex items-center justify-center"
@@ -201,7 +201,7 @@ export default function ContributionCardModal({
           >
             <button
               onClick={() => setIsFullscreen(false)}
-              className="absolute top-4 right-4 p-3 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors"
+              className="absolute top-4 right-4 p-3 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors z-10"
             >
               <Minimize2 className="w-6 h-6" />
             </button>
@@ -209,7 +209,13 @@ export default function ContributionCardModal({
             <img
               src={cardUrl}
               alt="Contribution Card"
-              className="max-w-full max-h-full object-contain p-4"
+              className="object-contain rotate-90 origin-center"
+              style={{
+                maxWidth: '100vh',
+                maxHeight: '100vw',
+                width: 'auto',
+                height: 'auto',
+              }}
             />
           </div>
         )}
