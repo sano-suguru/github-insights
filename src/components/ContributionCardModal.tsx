@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Download, Link, Code, User, FolderGit2, Lightbulb, Loader2 } from "lucide-react";
+import { X, Download, Link, Code, User, FolderGit2, Lightbulb, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { ContributorDetailStat } from "@/lib/github";
 
 type CardType = "repo" | "user";
@@ -25,6 +25,7 @@ export default function ContributionCardModal({
   const [copiedMarkdown, setCopiedMarkdown] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [cardType, setCardType] = useState<CardType>(
     owner && repo ? "repo" : "user"
   );
@@ -155,11 +156,24 @@ export default function ContributionCardModal({
 
         {/* プレビュー */}
         <div className={hasRepoContext ? "p-6" : "p-6 pt-12"}>
-          <div className="relative bg-gray-100 dark:bg-gray-900 rounded-xl overflow-hidden aspect-1200/630">
+          <div 
+            className="relative bg-gray-100 dark:bg-gray-900 rounded-xl overflow-hidden aspect-1200/630 cursor-pointer sm:cursor-default group"
+            onClick={() => {
+              // モバイルのみタップで全画面
+              if (window.innerWidth < 640 && imageLoaded) setIsFullscreen(true);
+            }}
+          >
             {/* ローディングスピナー */}
             {!imageLoaded && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+              </div>
+            )}
+            {/* 拡大ヒント（モバイルのみ） */}
+            {imageLoaded && (
+              <div className="absolute bottom-2 right-2 sm:hidden bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                <Maximize2 className="w-3 h-3" />
+                タップで拡大
               </div>
             )}
             {/* 
@@ -178,6 +192,27 @@ export default function ContributionCardModal({
             />
           </div>
         </div>
+
+        {/* 全画面プレビュー（モバイル用） */}
+        {isFullscreen && (
+          <div 
+            className="fixed inset-0 z-60 bg-black flex items-center justify-center"
+            onClick={() => setIsFullscreen(false)}
+          >
+            <button
+              onClick={() => setIsFullscreen(false)}
+              className="absolute top-4 right-4 p-3 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors"
+            >
+              <Minimize2 className="w-6 h-6" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={cardUrl}
+              alt="Contribution Card"
+              className="max-w-full max-h-full object-contain p-4"
+            />
+          </div>
+        )}
 
         {/* アクションボタン */}
         <div className="px-6 pb-4 flex flex-wrap gap-3">
