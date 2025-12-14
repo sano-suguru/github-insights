@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Search, Clock, ChevronDown, X, Lock, Globe, Star, Loader2 } from "lucide-react";
+import { Search, Clock, ChevronDown, X, Globe, Star, Loader2 } from "lucide-react";
 import { Repository } from "@/lib/github";
 import { useSearchRepositories, SearchResult } from "@/hooks/useSearchRepositories";
 
@@ -44,6 +44,19 @@ function saveRecentRepo(repo: string) {
   }
 }
 
+// ローカルストレージから特定のリポジトリを削除
+function removeRecentRepo(repo: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const recent = getRecentRepos().filter(
+      (r) => r.toLowerCase() !== repo.toLowerCase()
+    );
+    localStorage.setItem(RECENT_REPOS_KEY, JSON.stringify(recent));
+  } catch {
+    // ignore storage errors
+  }
+}
+
 export default function RepoSearchCombobox({
   repositories = [],
   selectedRepo = "",
@@ -55,6 +68,7 @@ export default function RepoSearchCombobox({
   const [inputValue, setInputValue] = useState("");
   const [recentRepos, setRecentRepos] = useState<string[]>(() => getRecentRepos());
   const [error, setError] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +93,22 @@ export default function RepoSearchCombobox({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // リポジトリを選択
+  // リポジトリの存在確認
+  const validateRepository = useCallback(async (repo: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`https://api.github.com/repos/${repo}`, {
+        headers: {
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": "GitHub-Insights",
+        },
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // リポジトリを選択（検索結果やpopularからの選択 - 既に存在確認済み）
   const handleSelectRepo = useCallback(
     (repo: string) => {
       onSelectRepo(repo);
@@ -92,9 +121,31 @@ export default function RepoSearchCombobox({
     [onSelectRepo]
   );
 
-  // 入力値で検索/選択
+  // 履歴からのリポジトリ選択（存在確認が必要）
+  const handleSelectFromHistory = useCallback(
+    async (repo: string) => {
+      setIsValidating(true);
+      setError("");
+      
+      const exists = await validateRepository(repo);
+      setIsValidating(false);
+      
+      if (!exists) {
+        // 存在しないリポジトリは履歴から削除
+        removeRecentRepo(repo);
+        setRecentRepos(getRecentRepos());
+        setError(`「${repo}」は存在しないため履歴から削除しました`);
+        return;
+      }
+      
+      handleSelectRepo(repo);
+    },
+    [validateRepository, handleSelectRepo]
+  );
+
+  // 入力値で検索/選択（手動入力 - 存在確認が必要）
   const handleSubmit = useCallback(
-    (e?: React.FormEvent) => {
+    async (e?: React.FormEvent) => {
       e?.preventDefault();
       setError("");
 
@@ -108,9 +159,26 @@ export default function RepoSearchCombobox({
         return;
       }
 
+      // ユーザーのリポジトリまたは検索結果に含まれていれば存在確認不要
+      const isKnownRepo = results.some(
+        (r) => r.nameWithOwner.toLowerCase() === trimmed.toLowerCase()
+      );
+
+      if (!isKnownRepo) {
+        // 外部リポジトリの場合は存在確認
+        setIsValidating(true);
+        const exists = await validateRepository(trimmed);
+        setIsValidating(false);
+
+        if (!exists) {
+          setError("リポジトリが見つかりません");
+          return;
+        }
+      }
+
       handleSelectRepo(trimmed);
     },
-    [inputValue, handleSelectRepo]
+    [inputValue, handleSelectRepo, results, validateRepository]
   );
 
   // 入力値が既存リポジトリにマッチしない外部リポジトリか判定
@@ -190,18 +258,23 @@ export default function RepoSearchCombobox({
             <div className="p-2 border-b border-gray-100 dark:border-gray-700">
               <button
                 type="button"
-                onClick={() => handleSelectRepo(inputValue.trim())}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/30 text-left"
+                onClick={() => handleSubmit()}
+                disabled={isValidating}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/30 text-left disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="shrink-0 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-                  <Search className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  {isValidating ? (
+                    <Loader2 className="w-4 h-4 text-purple-600 dark:text-purple-400 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  )}
                 </div>
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {inputValue.trim()}
                   </p>
                   <p className="text-xs text-purple-600 dark:text-purple-400">
-                    外部リポジトリを分析
+                    {isValidating ? "リポジトリを確認中..." : "外部リポジトリを分析"}
                   </p>
                 </div>
               </button>
@@ -235,7 +308,8 @@ export default function RepoSearchCombobox({
               icon={<Clock className="w-3 h-3 inline mr-1" />}
               results={historyResults}
               selectedRepo={selectedRepo}
-              onSelect={handleSelectRepo}
+              onSelect={handleSelectFromHistory}
+              isValidating={isValidating}
             />
           )}
 
@@ -291,6 +365,7 @@ interface ResultSectionProps {
   selectedRepo: string;
   onSelect: (repo: string) => void;
   showDetails?: boolean;
+  isValidating?: boolean;
 }
 
 function ResultSection({
@@ -300,6 +375,7 @@ function ResultSection({
   selectedRepo,
   onSelect,
   showDetails = false,
+  isValidating = false,
 }: ResultSectionProps) {
   return (
     <div className="p-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
@@ -312,7 +388,8 @@ function ResultSection({
           key={result.nameWithOwner}
           type="button"
           onClick={() => onSelect(result.nameWithOwner)}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors ${
+          disabled={isValidating}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             selectedRepo === result.nameWithOwner
               ? "bg-purple-50 dark:bg-purple-900/30"
               : "hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -325,7 +402,9 @@ function ResultSection({
                 : "bg-gray-100 dark:bg-gray-700"
             }`}
           >
-            {result.source === "history" ? (
+            {isValidating ? (
+              <Loader2 className="w-4 h-4 text-gray-500 animate-spin" />
+            ) : result.source === "history" ? (
               <Clock className="w-4 h-4 text-gray-500" />
             ) : result.source === "popular" ? (
               <Star className="w-4 h-4 text-yellow-500" />
