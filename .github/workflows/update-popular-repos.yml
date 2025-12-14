@@ -1,0 +1,41 @@
+name: Update Popular Repos
+
+on:
+  schedule:
+    # 毎日 UTC 0:00 (JST 9:00) に実行
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    # 手動実行も可能
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch popular repositories
+        run: npx tsx scripts/fetch-popular-repos.ts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit and push if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update popular repos [skip ci]"
+          file_pattern: "public/data/popular-repos.json"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
