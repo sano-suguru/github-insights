@@ -37,6 +37,26 @@ const ICONS = {
   star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
 };
 
+// バッジの色マップ（ダッシュボードと統一）
+const BADGE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  // 人気/影響力ベース（紫〜ピンク系）
+  "Influencer": { bg: "rgba(168, 85, 247, 0.3)", text: "#e9d5ff", border: "rgba(168, 85, 247, 0.6)" },
+  "Popular": { bg: "rgba(236, 72, 153, 0.3)", text: "#fbcfe8", border: "rgba(236, 72, 153, 0.6)" },
+  // リポジトリ数ベース（グリーン系）
+  "Prolific": { bg: "rgba(16, 185, 129, 0.3)", text: "#a7f3d0", border: "rgba(16, 185, 129, 0.6)" },
+  "Builder": { bg: "rgba(20, 184, 166, 0.3)", text: "#99f6e4", border: "rgba(20, 184, 166, 0.6)" },
+  // PR数ベース（ブルー系）
+  "PR Master": { bg: "rgba(59, 130, 246, 0.3)", text: "#bfdbfe", border: "rgba(59, 130, 246, 0.6)" },
+  "Contributor": { bg: "rgba(99, 102, 241, 0.3)", text: "#c7d2fe", border: "rgba(99, 102, 241, 0.6)" },
+  // 古参ユーザー（アンバー系）
+  "Veteran": { bg: "rgba(245, 158, 11, 0.3)", text: "#fde68a", border: "rgba(245, 158, 11, 0.6)" },
+};
+
+// バッジの色を取得
+function getBadgeColors(badge: string): { bg: string; text: string; border: string } {
+  return BADGE_COLORS[badge] || { bg: "rgba(139, 92, 246, 0.3)", text: "#ddd6fe", border: "rgba(139, 92, 246, 0.6)" };
+}
+
 // ユーザー統計の型
 interface UserStats {
   name: string;
@@ -338,22 +358,26 @@ export async function GET(
                   flexWrap: "wrap",
                 }}
               >
-                {badges.slice(0, 4).map((badge, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      backgroundColor: COLORS.badgeBg,
-                      color: COLORS.badgeText,
-                      padding: "10px 18px",
-                      borderRadius: 20,
-                      fontSize: 18,
-                      fontWeight: 500,
-                      border: `1px solid ${COLORS.badgeBorder}`,
-                    }}
-                  >
-                    {badge}
-                  </span>
-                ))}
+                {badges.slice(0, 4).map((badge, i) => {
+                  const colors = getBadgeColors(badge);
+                  return (
+                    <span
+                      key={i}
+                      style={{
+                        backgroundColor: colors.bg,
+                        color: colors.text,
+                        padding: "10px 18px",
+                        borderRadius: 20,
+                        fontSize: 18,
+                        fontWeight: 600,
+                        border: `1px solid ${colors.border}`,
+                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+                      }}
+                    >
+                      {badge}
+                    </span>
+                  );
+                })}
               </div>
             )}
 

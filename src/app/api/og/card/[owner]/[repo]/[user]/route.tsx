@@ -54,6 +54,25 @@ const ICONS = {
   fire: "M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 17.03 19.32C18.86 17.66 19.5 15 18.56 12.72L18.43 12.46C18.22 12 17.66 11.2 17.66 11.2Z",
 };
 
+// バッジの色マップ（ダッシュボードと統一）
+const BADGE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  // 順位ベース（紫系）
+  "Top Contributor": { bg: "rgba(168, 85, 247, 0.3)", text: "#e9d5ff", border: "rgba(168, 85, 247, 0.6)" },
+  "Top 3": { bg: "rgba(236, 72, 153, 0.3)", text: "#fbcfe8", border: "rgba(236, 72, 153, 0.6)" },
+  // コミット数ベース（アンバー/ゴールド系）
+  "Core Contributor": { bg: "rgba(245, 158, 11, 0.3)", text: "#fde68a", border: "rgba(245, 158, 11, 0.6)" },
+  "Dedicated": { bg: "rgba(132, 204, 22, 0.3)", text: "#d9f99d", border: "rgba(132, 204, 22, 0.6)" },
+  "Active": { bg: "rgba(16, 185, 129, 0.3)", text: "#a7f3d0", border: "rgba(16, 185, 129, 0.6)" },
+  // PR/Issue ベース（ブルー系）
+  "PR Master": { bg: "rgba(59, 130, 246, 0.3)", text: "#bfdbfe", border: "rgba(59, 130, 246, 0.6)" },
+  "Bug Hunter": { bg: "rgba(249, 115, 22, 0.3)", text: "#fed7aa", border: "rgba(249, 115, 22, 0.6)" },
+};
+
+// バッジの色を取得
+function getBadgeColors(badge: string): { bg: string; text: string; border: string } {
+  return BADGE_COLORS[badge] || { bg: "rgba(139, 92, 246, 0.3)", text: "#ddd6fe", border: "rgba(139, 92, 246, 0.6)" };
+}
+
 // ランクに応じたメダルカラーを取得
 function getRankColor(rank: number): string {
   if (rank === 1) return COLORS.gold;
@@ -648,23 +667,26 @@ export async function GET(
                   flexWrap: "wrap",
                 }}
               >
-                {stats.badges.map((badge, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      background: `linear-gradient(135deg, ${COLORS.badgeBg}, rgba(236, 72, 153, 0.15))`,
-                      color: COLORS.badgeText,
-                      padding: "10px 18px",
-                      borderRadius: 20,
-                      fontSize: 18,
-                      fontWeight: 600,
-                      border: `1px solid ${COLORS.badgeBorder}`,
-                      boxShadow: `0 2px 8px rgba(168, 85, 247, 0.2)`,
-                    }}
-                  >
-                    {badge}
-                  </span>
-                ))}
+                {stats.badges.map((badge, i) => {
+                  const colors = getBadgeColors(badge);
+                  return (
+                    <span
+                      key={i}
+                      style={{
+                        backgroundColor: colors.bg,
+                        color: colors.text,
+                        padding: "10px 18px",
+                        borderRadius: 20,
+                        fontSize: 18,
+                        fontWeight: 600,
+                        border: `1px solid ${colors.border}`,
+                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+                      }}
+                    >
+                      {badge}
+                    </span>
+                  );
+                })}
               </div>
             )}
 
