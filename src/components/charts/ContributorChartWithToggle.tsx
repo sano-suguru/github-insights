@@ -23,7 +23,8 @@ export default function ContributorChartWithToggle({ contributors, contributorDe
     <div>
       {/* ヘッダー with トグル */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
           Contributors
         </h2>
 
