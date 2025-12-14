@@ -27,6 +27,11 @@ vi.mock("next/cache", () => ({
   unstable_cache: vi.fn((fn) => fn),
 }));
 
+// auth モック - セッションからアクセストークンを取得するため
+vi.mock("@/lib/auth", () => ({
+  auth: vi.fn(() => Promise.resolve({ accessToken: "test-token" })),
+}));
+
 // テスト用のリクエスト生成ヘルパー
 function createRequest(): NextRequest {
   return new NextRequest("http://localhost:3000/api/github/user/testuser");

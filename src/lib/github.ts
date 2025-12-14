@@ -273,15 +273,25 @@ export interface UserStats {
 }
 
 // ユーザープロファイルを取得（GitHub REST API使用）
-export async function getUserProfile(username: string): Promise<UserProfile | null> {
+export async function getUserProfile(
+  username: string,
+  accessToken?: string | null
+): Promise<UserProfile | null> {
   try {
+    const headers: HeadersInit = {
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "GitHub-Insights",
+    };
+    
+    // トークンがあれば認証ヘッダーを追加
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+
     const response = await fetch(
       `https://api.github.com/users/${encodeURIComponent(username)}`,
       {
-        headers: {
-          Accept: "application/vnd.github.v3+json",
-          "User-Agent": "GitHub-Insights",
-        },
+        headers,
         next: { revalidate: 3600 },
       }
     );
@@ -320,8 +330,14 @@ export async function getUserProfile(username: string): Promise<UserProfile | nu
 }
 
 // ユーザーの公開リポジトリを取得（GraphQL API使用）
-export async function getUserRepositories(username: string): Promise<UserRepository[]> {
-  const client = createPublicGitHubClient();
+export async function getUserRepositories(
+  username: string,
+  accessToken?: string | null
+): Promise<UserRepository[]> {
+  // トークンがあれば認証済み、なければ未認証クライアント
+  const client = accessToken
+    ? createGitHubClient(accessToken)
+    : createPublicGitHubClient();
 
   try {
     const { user } = await client<{

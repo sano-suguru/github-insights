@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
+import { auth } from "@/lib/auth";
 import {
   getUserProfile,
   getUserRepositories,
@@ -16,19 +17,20 @@ interface Params {
 }
 
 // キャッシュ付きでユーザーデータを取得
-function createCachedUserData(username: string) {
+// 認証状態に関わらず同じ公開情報を返すため、キャッシュキーは username のみ
+function createCachedUserData(username: string, accessToken: string | null) {
   return unstable_cache(
     async (): Promise<{
       profile: UserProfile | null;
       stats: UserStats | null;
     }> => {
-      const profile = await getUserProfile(username);
+      const profile = await getUserProfile(username, accessToken);
       
       if (!profile) {
         return { profile: null, stats: null };
       }
 
-      const repositories = await getUserRepositories(username);
+      const repositories = await getUserRepositories(username, accessToken);
       const stats = calculateUserStats(repositories);
 
       return { profile, stats };
@@ -49,7 +51,11 @@ export async function GET(request: NextRequest, { params }: Params) {
       );
     }
 
-    const { profile, stats } = await createCachedUserData(username)();
+    // セッションからアクセストークンを取得（あれば認証済み、なければ未認証）
+    const session = await auth();
+    const accessToken = session?.accessToken ?? null;
+
+    const { profile, stats } = await createCachedUserData(username, accessToken)();
 
     if (!profile) {
       return NextResponse.json(
