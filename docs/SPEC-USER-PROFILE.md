@@ -1,7 +1,7 @@
 # ユーザー検索・プロファイル機能 仕様書
 
 > 作成日: 2025-12-14
-> ステータス: 計画中
+> ステータス: 実装中（基本機能完了）
 
 ## 1. 概要
 
@@ -67,14 +67,16 @@ GET https://api.github.com/users/{login}
 
 ### 3.4 検索結果の表示項目
 
-| 項目 | 必須 | ソース |
-|------|------|--------|
-| アバター画像 | ✅ | Search API |
-| ログイン名 (`login`) | ✅ | Search API |
-| 表示名 (`name`) | ○ | Users API |
-| フォロワー数 | ○ | Users API |
-| 公開リポジトリ数 | ○ | Users API |
-| User/Organization 区別 | △ | Search API (`type`) |
+> ⚠️ **実装時の変更**: レート制限対策として、Search APIの結果のみを使用。詳細情報（name, followers, publicRepos）はユーザープロファイルページで表示。
+
+| 項目 | 必須 | ソース | 実装状況 |
+|------|------|--------|----------|
+| アバター画像 | ✅ | Search API | ✅ 実装済み |
+| ログイン名 (`login`) | ✅ | Search API | ✅ 実装済み |
+| 表示名 (`name`) | ○ | Users API | ❌ 検索結果では省略（プロファイルページで表示） |
+| フォロワー数 | ○ | Users API | ❌ 検索結果では省略（プロファイルページで表示） |
+| 公開リポジトリ数 | ○ | Users API | ❌ 検索結果では省略（プロファイルページで表示） |
+| User/Organization 区別 | △ | Search API (`type`) | ✅ 実装済み |
 
 ### 3.5 検索結果UIモック
 
@@ -152,14 +154,16 @@ GET https://api.github.com/users/{login}
 
 ### 4.4 統計グラフ
 
-| グラフ | 種類 | データソース | 説明 |
-|--------|------|-------------|------|
-| 言語統計 | 円グラフ | リポジトリ一覧の `language` | 全リポジトリの言語割合 |
-| アクティビティ | ヒートマップ | イベント履歴 | 直近90日の活動頻度 |
-| 貢献タイプ分布 | 円グラフ | PR数/Issue数/イベント | 活動の内訳 |
-| 人気リポジトリ | リスト | リポジトリ一覧 | スター数上位5件 |
+| グラフ | 種類 | データソース | 説明 | 実装状況 |
+|--------|------|-------------|------|----------|
+| 言語統計 | 円グラフ | リポジトリ一覧の `language` | 全リポジトリの言語割合 | ✅ 実装済み |
+| アクティビティ | ヒートマップ | イベント履歴 | 直近90日の活動頻度 | ❌ 未実装 |
+| 貢献タイプ分布 | 円グラフ | PR数/Issue数/イベント | 活動の内訳 | ❌ 未実装 |
+| 人気リポジトリ | リスト | リポジトリ一覧 | スター数上位10件 | ✅ 実装済み |
 
 ### 4.5 バッジ
+
+> ⚠️ **未実装**: ユーザープロファイルページでのバッジ表示は未実装。既存の `/api/og/card/user/[user]` のロジックを流用予定。
 
 既存の `/api/og/card/user/[user]` と同じロジックを使用:
 
@@ -174,6 +178,9 @@ GET https://api.github.com/users/{login}
 | Veteran | 2015年以前にアカウント作成 |
 
 ### 4.6 OGカード生成
+
+> ⚠️ **未実装**: ユーザープロファイルページからのOGカード生成ボタンは未実装。API自体は既存。
+
 既存の `/api/og/card/user/[user]` を使用。モーダルで表示・ダウンロード・共有。
 
 ---
@@ -185,20 +192,33 @@ GET https://api.github.com/users/{login}
 ```
 src/
 ├── app/
-│   └── user/
-│       └── [username]/
-│           └── page.tsx          # ユーザープロファイルページ
+│   ├── user/
+│   │   └── [username]/
+│   │       └── page.tsx          # ✅ ユーザープロファイルページ
+│   └── api/
+│       └── github/
+│           ├── __tests__/
+│           │   ├── search-users.test.ts  # ✅ ユーザー検索APIテスト
+│           │   └── user.test.ts          # ✅ ユーザープロファイルAPIテスト
+│           ├── search-users/
+│           │   └── route.ts      # ✅ ユーザー検索API
+│           └── user/
+│               └── [username]/
+│                   └── route.ts  # ✅ ユーザープロファイルAPI
 ├── components/
-│   ├── RepoSearchCombobox.tsx    # 修正: ユーザー検索対応
-│   ├── UserProfileHeader.tsx     # 新規: プロファイルヘッダー
-│   ├── UserProfileCard.tsx       # 新規: OGカードモーダル
+│   ├── RepoSearchCombobox.tsx    # ✅ 修正: ユーザー検索対応
+│   ├── UserProfileHeader.tsx     # ❌ 未作成（page.tsx内に実装）
+│   ├── UserProfileCard.tsx       # ❌ 未作成（OGカードモーダルは未実装）
 │   └── charts/
-│       └── ContributionTypePie.tsx  # 新規: 貢献タイプ円グラフ
+│       ├── LanguagesPieChart.tsx # ✅ 既存を再利用
+│       └── ContributionTypePie.tsx  # ❌ 未作成
 ├── hooks/
-│   ├── useSearchRepositories.ts  # 修正 → useSearch.ts にリネーム
-│   └── useUserProfile.ts         # 新規: ユーザー統計取得
+│   ├── useSearchRepositories.ts  # ✅ 修正: ユーザー検索モード追加
+│   └── useUserProfile.ts         # ❌ 未作成（page.tsx内でfetch）
 └── lib/
-    └── github.ts                 # 修正: ユーザー検索API追加
+    ├── github.ts                 # ✅ 修正: ユーザー検索API追加
+    └── __tests__/
+        └── github.test.ts        # ✅ ヘルパー関数テスト追加
 ```
 
 ### 5.2 実装順序

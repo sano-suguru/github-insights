@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "./useDebounce";
-import { SearchRepositoryResult } from "@/lib/github";
+import { SearchRepositoryResult, SearchUserResult } from "@/lib/github";
 import { Repository } from "@/lib/github";
+
+// 検索最小文字数の定数
+export const MIN_USER_SEARCH_QUERY_LENGTH = 1;
+export const MIN_REPO_SEARCH_QUERY_LENGTH = 2;
 
 // 人気リポジトリデータの型
 interface PopularReposData {
@@ -53,6 +57,30 @@ async function searchRemoteRepos(
   return data.repositories || [];
 }
 
+// GitHub Users Search API からユーザー検索
+async function searchRemoteUsers(
+  query: string
+): Promise<SearchUserResult[]> {
+  if (!query || query.length < 1) {
+    return [];
+  }
+
+  const response = await fetch(
+    `/api/github/search-users?q=${encodeURIComponent(query)}`
+  );
+
+  if (!response.ok) {
+    if (response.status === 429) {
+      console.warn("Rate limit exceeded for user search API");
+      return [];
+    }
+    throw new Error("User search failed");
+  }
+
+  const data = await response.json();
+  return data.users || [];
+}
+
 // Featured リポジトリを取得
 async function getFeaturedRepos(): Promise<string[]> {
   try {
@@ -64,6 +92,7 @@ async function getFeaturedRepos(): Promise<string[]> {
   }
 }
 
+// リポジトリ検索結果の型
 export interface SearchResult {
   nameWithOwner: string;
   source: "user" | "history" | "popular" | "search";
@@ -72,10 +101,30 @@ export interface SearchResult {
   primaryLanguage?: { name: string; color: string } | null;
 }
 
+// ユーザー検索結果の型（UI用）
+export interface UserSearchResult {
+  login: string;
+  avatarUrl: string;
+  name: string | null;
+  followers: number;
+  publicRepos: number;
+  type: "User" | "Organization";
+}
+
 interface UseSearchRepositoriesOptions {
   userRepositories?: Repository[];
   recentRepos?: string[];
   enabled?: boolean;
+}
+
+// ユーザー検索モードかどうか判定
+function isUserSearchQuery(query: string): boolean {
+  return query.startsWith("@");
+}
+
+// @を除いたクエリを取得
+function getUserSearchQuery(query: string): string {
+  return query.slice(1);
 }
 
 export function useSearchRepositories(
@@ -85,24 +134,44 @@ export function useSearchRepositories(
   const { userRepositories = [], recentRepos = [], enabled = true } = options;
 
   const debouncedQuery = useDebounce(query, 300);
+  
+  // ユーザー検索モード判定
+  const isUserSearch = isUserSearchQuery(query);
+  const userQuery = isUserSearch ? getUserSearchQuery(query) : "";
+  const debouncedUserQuery = isUserSearchQuery(debouncedQuery) 
+    ? getUserSearchQuery(debouncedQuery) 
+    : "";
 
   // Featured リポジトリを取得（初期表示用）
   const { data: featuredRepos = [] } = useQuery({
     queryKey: ["featuredRepos"],
     queryFn: getFeaturedRepos,
     staleTime: 1000 * 60 * 60, // 1時間
-    enabled,
+    enabled: enabled && !isUserSearch,
   });
 
-  // ローカル検索（即座に実行、デバウンスなし）
+  // ユーザー検索（デバウンス後に実行）
+  const {
+    data: userResults = [],
+    isLoading: isUserLoading,
+    error: userError,
+  } = useQuery({
+    queryKey: ["userSearch", debouncedUserQuery],
+    queryFn: () => searchRemoteUsers(debouncedUserQuery),
+    staleTime: 1000 * 60 * 5, // 5分
+    enabled: enabled && isUserSearch && debouncedUserQuery.length >= MIN_USER_SEARCH_QUERY_LENGTH,
+    retry: false,
+  });
+
+  // ローカル検索（即座に実行、デバウンスなし）- リポジトリ検索時のみ
   const { data: localResults = [] } = useQuery({
     queryKey: ["localSearch", query],
     queryFn: () => searchLocalRepos(query),
     staleTime: 1000 * 60 * 5, // 5分
-    enabled: enabled && query.length >= 1,
+    enabled: enabled && !isUserSearch && query.length >= MIN_USER_SEARCH_QUERY_LENGTH,
   });
 
-  // リモート検索（デバウンス後に実行）
+  // リモート検索（デバウンス後に実行）- リポジトリ検索時のみ
   const {
     data: remoteResults = [],
     isLoading: isRemoteLoading,
@@ -111,7 +180,7 @@ export function useSearchRepositories(
     queryKey: ["remoteSearch", debouncedQuery],
     queryFn: () => searchRemoteRepos(debouncedQuery),
     staleTime: 1000 * 60 * 5, // 5分
-    enabled: enabled && debouncedQuery.length >= 2,
+    enabled: enabled && !isUserSearch && debouncedQuery.length >= MIN_REPO_SEARCH_QUERY_LENGTH,
     retry: false,
   });
 
@@ -127,67 +196,84 @@ export function useSearchRepositories(
     }
   };
 
-  if (query) {
-    // 入力がある場合
+  // リポジトリ検索モードの場合
+  if (!isUserSearch) {
+    if (query) {
+      // 入力がある場合
 
-    // 1. ユーザーのリポジトリからマッチ
-    const lowerQuery = query.toLowerCase();
-    userRepositories
-      .filter((repo) =>
-        repo.nameWithOwner.toLowerCase().includes(lowerQuery)
-      )
-      .slice(0, 5)
-      .forEach((repo) => {
+      // 1. ユーザーのリポジトリからマッチ
+      const lowerQuery = query.toLowerCase();
+      userRepositories
+        .filter((repo) =>
+          repo.nameWithOwner.toLowerCase().includes(lowerQuery)
+        )
+        .slice(0, 5)
+        .forEach((repo) => {
+          addResult({
+            nameWithOwner: repo.nameWithOwner,
+            source: "user",
+            description: repo.description,
+            stargazerCount: repo.stargazerCount,
+            primaryLanguage: repo.primaryLanguage,
+          });
+        });
+
+      // 2. 履歴からマッチ
+      recentRepos
+        .filter((repo) => repo.toLowerCase().includes(lowerQuery))
+        .slice(0, 3)
+        .forEach((repo) => {
+          addResult({ nameWithOwner: repo, source: "history" });
+        });
+
+      // 3. ローカル検索結果（人気リポジトリJSON）
+      localResults.slice(0, 5).forEach((repo) => {
+        addResult({ nameWithOwner: repo, source: "popular" });
+      });
+
+      // 4. リモート検索結果
+      remoteResults.slice(0, 10).forEach((repo) => {
         addResult({
           nameWithOwner: repo.nameWithOwner,
-          source: "user",
+          source: "search",
           description: repo.description,
           stargazerCount: repo.stargazerCount,
           primaryLanguage: repo.primaryLanguage,
         });
       });
+    } else {
+      // 入力がない場合
 
-    // 2. 履歴からマッチ
-    recentRepos
-      .filter((repo) => repo.toLowerCase().includes(lowerQuery))
-      .slice(0, 3)
-      .forEach((repo) => {
+      // 1. 履歴を表示
+      recentRepos.slice(0, 5).forEach((repo) => {
         addResult({ nameWithOwner: repo, source: "history" });
       });
 
-    // 3. ローカル検索結果（人気リポジトリJSON）
-    localResults.slice(0, 5).forEach((repo) => {
-      addResult({ nameWithOwner: repo, source: "popular" });
-    });
-
-    // 4. リモート検索結果
-    remoteResults.slice(0, 10).forEach((repo) => {
-      addResult({
-        nameWithOwner: repo.nameWithOwner,
-        source: "search",
-        description: repo.description,
-        stargazerCount: repo.stargazerCount,
-        primaryLanguage: repo.primaryLanguage,
+      // 2. Featured リポジトリを表示
+      featuredRepos.slice(0, 5).forEach((repo) => {
+        addResult({ nameWithOwner: repo, source: "popular" });
       });
-    });
-  } else {
-    // 入力がない場合
-
-    // 1. 履歴を表示
-    recentRepos.slice(0, 5).forEach((repo) => {
-      addResult({ nameWithOwner: repo, source: "history" });
-    });
-
-    // 2. Featured リポジトリを表示
-    featuredRepos.slice(0, 5).forEach((repo) => {
-      addResult({ nameWithOwner: repo, source: "popular" });
-    });
+    }
   }
+
+  // 検索モードとローディング状態を判定
+  const minQueryLength = isUserSearch ? MIN_USER_SEARCH_QUERY_LENGTH : MIN_REPO_SEARCH_QUERY_LENGTH;
+  const currentQuery = isUserSearch ? userQuery : query;
+  const currentDebouncedQuery = isUserSearch ? debouncedUserQuery : debouncedQuery;
+  const currentIsLoading = isUserSearch ? isUserLoading : isRemoteLoading;
+
+  const hasMinLength = currentQuery.length >= minQueryLength;
+  const hasDebouncedMinLength = currentDebouncedQuery.length >= minQueryLength;
+
+  const isLoading = currentIsLoading && hasDebouncedMinLength;
+  const isDebouncing = currentQuery !== currentDebouncedQuery && hasMinLength;
 
   return {
     results,
-    isLoading: isRemoteLoading && debouncedQuery.length >= 2,
-    isDebouncing: query !== debouncedQuery && query.length >= 2,
-    error: remoteError,
+    userResults: isUserSearch ? userResults : [],
+    isUserSearch,
+    isLoading,
+    isDebouncing,
+    error: isUserSearch ? userError : remoteError,
   };
 }

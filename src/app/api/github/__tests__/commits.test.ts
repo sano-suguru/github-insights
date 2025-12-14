@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 import type { Session } from "next-auth";
 import { GET } from "../commits/route";
@@ -41,7 +41,12 @@ const createMockCommit = (overrides = {}): CommitInfo => ({
 describe("GET /api/github/commits", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
     mockAuth.mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("owner が未指定の場合は 400 エラーを返す", async () => {

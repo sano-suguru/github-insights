@@ -127,7 +127,7 @@ export default function CommitsLineChart({ data, days = 30 }: Props) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={280}>
+    <ResponsiveContainer width="100%" height={280} minWidth={0} minHeight={0}>
       <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           {/* メインのエリアグラデーション（シャープで控えめ） */}

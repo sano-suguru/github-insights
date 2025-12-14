@@ -35,7 +35,7 @@ export default function LanguagesPieChart({ data }: Props) {
 
   return (
     <div className="relative">
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={280} minWidth={0} minHeight={0}>
         <PieChart>
           <Pie
             data={chartData}

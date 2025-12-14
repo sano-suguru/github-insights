@@ -134,6 +134,25 @@ AUTH_SECRET=<NextAuth 用シークレット>
 - Storybook でコンポーネントの視覚的なテストも可能
 - 優先順位: API ロジック → フック → コンポーネント
 
+### MCP サーバーの活用
+
+利用可能な MCP サーバーを積極的に活用すること：
+
+| MCP           | このプロジェクトでの用途                               |
+| ------------- | ------------------------------------------------------ |
+| **Context7**  | TanStack Query, Next.js, Recharts 等のドキュメント参照 |
+| **GitHub**    | Issue/PR 管理、コード検索、Copilot へのタスク割り当て  |
+| **GitKraken** | Git 操作（commit, push, stash, blame）                 |
+| **Serena**    | シンボル検索、参照一覧、リファクタリング支援           |
+
+**推奨される使用場面:**
+
+- ライブラリの API 仕様確認 → Context7 で最新ドキュメント取得
+- バグ修正時の Issue 作成 → GitHub MCP で Issue 作成
+- 変更のコミット → GitKraken MCP で `git add` → `git commit`
+- 関数の使用箇所を調査 → Serena で `find_referencing_symbols`
+- 大規模リファクタリング → Serena で影響範囲を特定してから編集
+
 ## デプロイ（Vercel）
 
 ### 環境変数設定

@@ -1,5 +1,35 @@
 import { graphql } from "@octokit/graphql";
 
+// カスタムエラークラス
+export class GitHubRateLimitError extends Error {
+  constructor(message = "GitHub API rate limit exceeded") {
+    super(message);
+    this.name = "GitHubRateLimitError";
+  }
+}
+
+// レート制限エラーかどうかを判定するヘルパー関数
+export function isRateLimitError(error: unknown): boolean {
+  if (error instanceof GitHubRateLimitError) {
+    return true;
+  }
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return message.includes("rate limit") || message.includes("403");
+  }
+  return false;
+}
+
+// GitHubアカウントタイプをバリデーション付きで取得
+export type GitHubAccountType = "User" | "Organization";
+export function parseAccountType(type: unknown): GitHubAccountType {
+  if (type === "User" || type === "Organization") {
+    return type;
+  }
+  // 未知のタイプはデフォルトで "User" として扱う
+  return "User";
+}
+
 // レート制限情報
 export interface RateLimitInfo {
   limit: number;
@@ -184,6 +214,272 @@ export async function searchPublicRepositories(
       }));
   } catch (error) {
     console.error("Search repositories error:", error);
+    // GraphQL APIのレート制限エラーを変換
+    if (isRateLimitError(error)) {
+      throw new GitHubRateLimitError();
+    }
+    throw error;
+  }
+}
+
+// ユーザー検索結果の型
+export interface SearchUserResult {
+  login: string;
+  avatarUrl: string;
+  name: string | null;
+  followers: number;
+  publicRepos: number;
+  type: "User" | "Organization";
+}
+
+// ユーザープロファイルの詳細型
+export interface UserProfile {
+  login: string;
+  avatarUrl: string;
+  name: string | null;
+  bio: string | null;
+  company: string | null;
+  location: string | null;
+  blog: string | null;
+  twitterUsername: string | null;
+  followers: number;
+  following: number;
+  publicRepos: number;
+  publicGists: number;
+  createdAt: string;
+  type: "User" | "Organization";
+}
+
+// ユーザーの公開リポジトリ型
+export interface UserRepository {
+  name: string;
+  nameWithOwner: string;
+  description: string | null;
+  stargazerCount: number;
+  forkCount: number;
+  primaryLanguage: { name: string; color: string } | null;
+  updatedAt: string;
+  isArchived: boolean;
+  isFork: boolean;
+}
+
+// ユーザープロファイル統計型
+export interface UserStats {
+  totalStars: number;
+  totalForks: number;
+  totalRepos: number;
+  languageBreakdown: { name: string; color: string; count: number; percentage: number }[];
+  topRepositories: UserRepository[];
+}
+
+// ユーザープロファイルを取得（GitHub REST API使用）
+export async function getUserProfile(username: string): Promise<UserProfile | null> {
+  try {
+    const response = await fetch(
+      `https://api.github.com/users/${encodeURIComponent(username)}`,
+      {
+        headers: {
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": "GitHub-Insights",
+        },
+        next: { revalidate: 3600 },
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      if (response.status === 403 || response.status === 429) {
+        throw new GitHubRateLimitError();
+      }
+      throw new Error(`Get user profile failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      login: data.login,
+      avatarUrl: data.avatar_url,
+      name: data.name || null,
+      bio: data.bio || null,
+      company: data.company || null,
+      location: data.location || null,
+      blog: data.blog || null,
+      twitterUsername: data.twitter_username || null,
+      followers: data.followers || 0,
+      following: data.following || 0,
+      publicRepos: data.public_repos || 0,
+      publicGists: data.public_gists || 0,
+      createdAt: data.created_at,
+      type: parseAccountType(data.type),
+    };
+  } catch (error) {
+    console.error("Get user profile error:", error);
+    throw error;
+  }
+}
+
+// ユーザーの公開リポジトリを取得（GraphQL API使用）
+export async function getUserRepositories(username: string): Promise<UserRepository[]> {
+  const client = createPublicGitHubClient();
+
+  try {
+    const { user } = await client<{
+      user: {
+        repositories: {
+          nodes: {
+            name: string;
+            nameWithOwner: string;
+            description: string | null;
+            stargazerCount: number;
+            forkCount: number;
+            primaryLanguage: { name: string; color: string } | null;
+            updatedAt: string;
+            isArchived: boolean;
+            isFork: boolean;
+          }[];
+        };
+      } | null;
+    }>(`
+      query($username: String!) {
+        user(login: $username) {
+          repositories(
+            first: 100
+            privacy: PUBLIC
+            orderBy: { field: STARGAZERS, direction: DESC }
+            ownerAffiliations: [OWNER]
+          ) {
+            nodes {
+              name
+              nameWithOwner
+              description
+              stargazerCount
+              forkCount
+              primaryLanguage {
+                name
+                color
+              }
+              updatedAt
+              isArchived
+              isFork
+            }
+          }
+        }
+      }
+    `, { username });
+
+    if (!user) {
+      return [];
+    }
+
+    return user.repositories.nodes.map((repo) => ({
+      name: repo.name,
+      nameWithOwner: repo.nameWithOwner,
+      description: repo.description,
+      stargazerCount: repo.stargazerCount,
+      forkCount: repo.forkCount,
+      primaryLanguage: repo.primaryLanguage,
+      updatedAt: repo.updatedAt,
+      isArchived: repo.isArchived,
+      isFork: repo.isFork,
+    }));
+  } catch (error) {
+    console.error("Get user repositories error:", error);
+    // GraphQL APIのレート制限エラーを変換
+    if (isRateLimitError(error)) {
+      throw new GitHubRateLimitError();
+    }
+    throw error;
+  }
+}
+
+// ユーザー統計を計算
+export function calculateUserStats(repositories: UserRepository[]): UserStats {
+  const totalStars = repositories.reduce((sum, repo) => sum + repo.stargazerCount, 0);
+  const totalForks = repositories.reduce((sum, repo) => sum + repo.forkCount, 0);
+  const totalRepos = repositories.length;
+
+  // 言語の統計を計算
+  const languageMap: Record<string, { color: string; count: number }> = {};
+  repositories.forEach((repo) => {
+    if (repo.primaryLanguage) {
+      const { name, color } = repo.primaryLanguage;
+      if (!languageMap[name]) {
+        languageMap[name] = { color, count: 0 };
+      }
+      languageMap[name].count += 1;
+    }
+  });
+
+  const languageBreakdown = Object.entries(languageMap)
+    .map(([name, { color, count }]) => ({
+      name,
+      color,
+      count,
+      percentage: totalRepos > 0 ? Math.round((count / totalRepos) * 100) : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // トップリポジトリ（スター数順上位10件）
+  const topRepositories = repositories
+    .filter((repo) => !repo.isFork && !repo.isArchived)
+    .slice(0, 10);
+
+  return {
+    totalStars,
+    totalForks,
+    totalRepos,
+    languageBreakdown,
+    topRepositories,
+  };
+}
+
+// ユーザーを検索（GitHub REST API使用）
+// Note: レート制限を考慮し、Search APIの結果のみを使用（詳細はユーザーページで取得）
+export async function searchUsers(
+  query: string,
+  perPage: number = 5
+): Promise<SearchUserResult[]> {
+  if (!query || query.length < 1) {
+    return [];
+  }
+
+  try {
+    // Search API でユーザーを検索（1リクエストのみ）
+    const searchResponse = await fetch(
+      `https://api.github.com/search/users?q=${encodeURIComponent(query)}&per_page=${perPage}`,
+      {
+        headers: {
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": "GitHub-Insights",
+        },
+        next: { revalidate: 60 },
+      }
+    );
+
+    if (!searchResponse.ok) {
+      if (searchResponse.status === 403 || searchResponse.status === 429) {
+        throw new GitHubRateLimitError();
+      }
+      throw new Error(`Search users failed: ${searchResponse.status}`);
+    }
+
+    const searchData = await searchResponse.json();
+    const users = searchData.items || [];
+
+    // Search APIの結果のみを使用（詳細取得による追加APIコールを省略）
+    // followers/publicReposは検索結果には含まれないため0を設定
+    // 詳細情報はユーザーページ(/user/[username])で表示される
+    return users.map((user: { login: string; avatar_url: string; type: string }) => ({
+      login: user.login,
+      avatarUrl: user.avatar_url,
+      name: null,
+      followers: 0,
+      publicRepos: 0,
+      type: parseAccountType(user.type),
+    }));
+  } catch (error) {
+    console.error("Search users error:", error);
     throw error;
   }
 }
@@ -392,10 +688,7 @@ export async function getCommitHistory(
         });
         break;
       } catch (error: unknown) {
-        const isRateLimited = error instanceof Error && 
-          (error.message.includes('403') || error.message.includes('rate limit'));
-        
-        if (isRateLimited && retries < maxRetries - 1) {
+        if (isRateLimitError(error) && retries < maxRetries - 1) {
           // 指数バックオフでリトライ（1秒、2秒、4秒）
           const delay = Math.pow(2, retries) * 1000;
           console.warn(`Rate limited, retrying in ${delay}ms...`);

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
-import { searchPublicRepositories, getPublicRateLimitInfo, GitHubRateLimitError } from "@/lib/github";
+import { searchUsers, getPublicRateLimitInfo, GitHubRateLimitError } from "@/lib/github";
 
 // 検索結果をキャッシュ（60秒）
-const cachedSearch = (query: string) =>
+const createCachedSearchUsers = (query: string) =>
   unstable_cache(
-    async () => searchPublicRepositories(query, 10),
-    [`search:${query}`],
-    { revalidate: 60, tags: ["search"] }
+    async () => searchUsers(query, 5),
+    [`search-users:${query}`],
+    { revalidate: 60, tags: ["search-users"] }
   );
 
 export async function GET(request: NextRequest) {
@@ -15,17 +15,17 @@ export async function GET(request: NextRequest) {
   const query = searchParams.get("q");
 
   // クエリが短すぎる場合は空配列を返す
-  if (!query || query.length < 2) {
-    return NextResponse.json({ repositories: [] });
+  if (!query || query.length < 1) {
+    return NextResponse.json({ users: [] });
   }
 
   try {
-    const searchFn = cachedSearch(query);
-    const repositories = await searchFn();
+    const searchFn = createCachedSearchUsers(query);
+    const users = await searchFn();
     const rateLimit = getPublicRateLimitInfo();
 
     return NextResponse.json(
-      { repositories, rateLimit },
+      { users, rateLimit },
       {
         headers: {
           "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error("Search API error:", error);
+    console.error("Search Users API error:", error);
 
     if (error instanceof GitHubRateLimitError) {
       const rateLimit = getPublicRateLimitInfo();
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Search failed", message: "検索に失敗しました" },
+      { error: "Search failed", message: "ユーザー検索に失敗しました" },
       { status: 500 }
     );
   }

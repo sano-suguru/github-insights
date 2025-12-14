@@ -106,7 +106,7 @@ export default function ContributorPieChart({ data, metric }: Props) {
 
   return (
     <div className="relative">
-      <ResponsiveContainer width="100%" height={320}>
+      <ResponsiveContainer width="100%" height={320} minWidth={0} minHeight={0}>
         <PieChart>
           <Pie
             data={chartData}

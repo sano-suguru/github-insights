@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Search, Clock, ChevronDown, X, Globe, Star, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Clock, ChevronDown, X, Globe, Star, Loader2, User, Users, Building2 } from "lucide-react";
 import { Repository } from "@/lib/github";
-import { useSearchRepositories, SearchResult } from "@/hooks/useSearchRepositories";
+import { useSearchRepositories, SearchResult, UserSearchResult, MIN_USER_SEARCH_QUERY_LENGTH, MIN_REPO_SEARCH_QUERY_LENGTH } from "@/hooks/useSearchRepositories";
 
 export type RepoSearchVariant = "default" | "compact" | "hero";
 
@@ -62,8 +63,9 @@ export default function RepoSearchCombobox({
   selectedRepo = "",
   onSelectRepo,
   variant = "default",
-  placeholder = "リポジトリ名で検索、または owner/repo を入力...",
+  placeholder = "リポジトリ名で検索、または @username でユーザー検索...",
 }: RepoSearchComboboxProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [recentRepos, setRecentRepos] = useState<string[]>(() => getRecentRepos());
@@ -73,7 +75,7 @@ export default function RepoSearchCombobox({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // useSearchRepositories フックを使用
-  const { results, isLoading, isDebouncing } = useSearchRepositories(inputValue, {
+  const { results, userResults, isUserSearch, isLoading, isDebouncing } = useSearchRepositories(inputValue, {
     userRepositories: repositories,
     recentRepos,
     enabled: isOpen,
@@ -119,6 +121,17 @@ export default function RepoSearchCombobox({
       setError("");
     },
     [onSelectRepo]
+  );
+
+  // ユーザーを選択してプロファイルページに遷移
+  const handleSelectUser = useCallback(
+    (username: string) => {
+      setInputValue("");
+      setIsOpen(false);
+      setError("");
+      router.push(`/user/${username}`);
+    },
+    [router]
   );
 
   // 履歴からのリポジトリ選択（存在確認が必要）
@@ -183,17 +196,26 @@ export default function RepoSearchCombobox({
 
   // 入力値が既存リポジトリにマッチしない外部リポジトリか判定
   const isExternalRepoInput =
+    !isUserSearch &&
     inputValue.trim() &&
     /^[^/]+\/[^/]+$/.test(inputValue.trim()) &&
     !repositories.some(
       (r) => r.nameWithOwner.toLowerCase() === inputValue.trim().toLowerCase()
     );
 
-  // 結果をソースごとにグループ化
-  const userResults = results.filter((r) => r.source === "user");
+  // 結果をソースごとにグループ化（リポジトリ検索用）
+  const myRepoResults = results.filter((r) => r.source === "user");
   const historyResults = results.filter((r) => r.source === "history");
   const popularResults = results.filter((r) => r.source === "popular");
   const searchResults = results.filter((r) => r.source === "search");
+
+  // ユーザー検索関連の表示条件
+  // Note: inputValueは@を含むため、ユーザー検索時は +1 する
+  const minInputLengthForUserSearch = MIN_USER_SEARCH_QUERY_LENGTH + 1; // @の分
+  const shouldShowNoUserResults =
+    isUserSearch && userResults.length === 0 && !isLoading && !isDebouncing && inputValue.length >= minInputLengthForUserSearch;
+  const shouldShowUserSearchHint =
+    isUserSearch && inputValue.length < minInputLengthForUserSearch && !isLoading && !isDebouncing;
 
   // variant に応じたスタイル
   const inputSizeClass = variant === "hero" 
@@ -282,19 +304,50 @@ export default function RepoSearchCombobox({
           )}
 
           {/* ローディング表示 */}
-          {(isLoading || isDebouncing) && inputValue.length >= 2 && (
+          {(isLoading || isDebouncing) && inputValue.length >= (isUserSearch ? minInputLengthForUserSearch : MIN_REPO_SEARCH_QUERY_LENGTH) && (
             <div className="p-3 flex items-center gap-2 text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm">検索中...</span>
+              <span className="text-sm">{isUserSearch ? "ユーザーを検索中..." : "検索中..."}</span>
+            </div>
+          )}
+
+          {/* ユーザー検索結果 */}
+          {isUserSearch && userResults.length > 0 && (
+            <UserResultSection
+              results={userResults}
+              onSelect={handleSelectUser}
+            />
+          )}
+
+          {/* ユーザー検索結果なし */}
+          {shouldShowNoUserResults && (
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+              <p>一致するユーザーがありません</p>
+              <p className="text-sm mt-1">
+                ユーザー名で検索してください（例: @vercel）
+              </p>
+            </div>
+          )}
+
+          {/* ユーザー検索モードのヒント */}
+          {shouldShowUserSearchHint && (
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Users className="w-5 h-5" />
+                <p className="font-medium">ユーザー検索モード</p>
+              </div>
+              <p className="text-sm">
+                ユーザー名を入力して GitHub ユーザーを検索
+              </p>
             </div>
           )}
 
           {/* 自分のリポジトリ */}
-          {userResults.length > 0 && (
+          {!isUserSearch && myRepoResults.length > 0 && (
             <ResultSection
               title="自分のリポジトリ"
               icon={<Globe className="w-3 h-3 inline mr-1" />}
-              results={userResults}
+              results={myRepoResults}
               selectedRepo={selectedRepo}
               onSelect={handleSelectRepo}
               showDetails
@@ -302,7 +355,7 @@ export default function RepoSearchCombobox({
           )}
 
           {/* 最近分析したリポジトリ */}
-          {historyResults.length > 0 && (
+          {!isUserSearch && historyResults.length > 0 && (
             <ResultSection
               title="最近の分析"
               icon={<Clock className="w-3 h-3 inline mr-1" />}
@@ -314,7 +367,7 @@ export default function RepoSearchCombobox({
           )}
 
           {/* 人気リポジトリ */}
-          {popularResults.length > 0 && (
+          {!isUserSearch && popularResults.length > 0 && (
             <ResultSection
               title={inputValue ? "人気のリポジトリ" : "おすすめ"}
               icon={<Star className="w-3 h-3 inline mr-1" />}
@@ -325,7 +378,7 @@ export default function RepoSearchCombobox({
           )}
 
           {/* 検索結果 */}
-          {searchResults.length > 0 && (
+          {!isUserSearch && searchResults.length > 0 && (
             <ResultSection
               title="検索結果"
               icon={<Search className="w-3 h-3 inline mr-1" />}
@@ -337,13 +390,16 @@ export default function RepoSearchCombobox({
           )}
 
           {/* 検索結果なし */}
-          {results.length === 0 && !isExternalRepoInput && !isLoading && !isDebouncing && (
+          {!isUserSearch && results.length === 0 && !isExternalRepoInput && !isLoading && !isDebouncing && (
               <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                 {inputValue ? (
                   <>
                     <p>一致するリポジトリがありません</p>
                     <p className="text-sm mt-1">
                       外部リポジトリを分析するには「owner/repo」形式で入力してください
+                    </p>
+                    <p className="text-sm">
+                      ユーザーを検索するには「@username」と入力してください
                     </p>
                   </>
                 ) : (
@@ -444,6 +500,58 @@ function ResultSection({
                 )}
               </p>
             )}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ユーザー結果セクションコンポーネント
+interface UserResultSectionProps {
+  results: UserSearchResult[];
+  onSelect: (username: string) => void;
+}
+
+function UserResultSection({ results, onSelect }: UserResultSectionProps) {
+  return (
+    <div className="p-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+      <p className="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        <Users className="w-3 h-3 inline mr-1" />
+        ユーザー・組織
+      </p>
+      {results.map((user) => (
+        <button
+          key={user.login}
+          type="button"
+          onClick={() => onSelect(user.login)}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={user.avatarUrl}
+            alt={user.login}
+            className="shrink-0 w-8 h-8 rounded-full"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-gray-900 dark:text-white truncate">
+                {user.login}
+              </p>
+              {user.type === "Organization" ? (
+                <Building2 className="w-3 h-3 text-gray-400 shrink-0" />
+              ) : (
+                <User className="w-3 h-3 text-gray-400 shrink-0" />
+              )}
+            </div>
+            {user.name && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                {user.name}
+              </p>
+            )}
+            <p className="text-xs text-purple-500 dark:text-purple-400">
+              クリックしてプロフィールを見る
+            </p>
           </div>
         </button>
       ))}
