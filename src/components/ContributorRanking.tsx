@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { ContributorDetailStat } from "@/lib/github";
 import { calculateBadges, sortBadgesByImportance, Badge } from "@/lib/badges";
 import { 
   TrendingUp, GitCommit, Plus, Minus, GitPullRequest, 
-  Crown, Trophy, Medal, Award, Star, Eye, Cpu, Eraser, Sparkles, ExternalLink, ImageIcon 
+  Crown, Trophy, Medal, Award, Star, Eye, Cpu, Eraser, Sparkles, ExternalLink, ImageIcon, X 
 } from "lucide-react";
 import ContributionCardModal from "./ContributionCardModal";
 
@@ -113,9 +113,25 @@ function ContributorRow({
   onCardClick: () => void;
   showCardButton: boolean;
 }) {
+  const [showBadgePopover, setShowBadgePopover] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const badges = sortBadgesByImportance(
     calculateBadges(contributor, totalContributors)
   );
+
+  // ポップオーバー外クリックで閉じる
+  useEffect(() => {
+    if (!showBadgePopover) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setShowBadgePopover(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showBadgePopover]);
 
   return (
     <div
@@ -182,15 +198,51 @@ function ContributorRow({
             <span className="text-xs text-purple-500">(あなた)</span>
           )}
         </div>
-        {/* バッジ（最大3つ表示） */}
-        <div className="flex flex-wrap gap-1 mt-1">
-          {badges.slice(0, 3).map((badge) => (
-            <BadgeChip key={badge.id} badge={badge} />
-          ))}
-          {badges.length > 3 && (
-            <span className="text-xs text-gray-400">+{badges.length - 3}</span>
-          )}
-        </div>
+        {/* バッジ（タップで一覧表示） */}
+        {badges.length > 0 && (
+          <div className="relative mt-1" ref={popoverRef}>
+            <button
+              onClick={() => setShowBadgePopover(!showBadgePopover)}
+              className="flex flex-wrap gap-1 items-center cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              {badges.slice(0, 3).map((badge) => (
+                <BadgeChip key={badge.id} badge={badge} />
+              ))}
+              {badges.length > 3 && (
+                <span className="text-xs text-gray-400">+{badges.length - 3}</span>
+              )}
+            </button>
+            
+            {/* バッジ一覧ポップオーバー */}
+            {showBadgePopover && (
+              <div className="absolute left-0 top-full mt-2 z-50 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">獲得バッジ</span>
+                  <button
+                    onClick={() => setShowBadgePopover(false)}
+                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <X className="w-4 h-4 text-gray-400" />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {badges.map((badge) => {
+                    const IconComponent = iconMap[badge.iconName];
+                    return (
+                      <div key={badge.id} className={`flex items-start gap-2 p-2 rounded-lg ${badge.color}`}>
+                        {IconComponent && <IconComponent className="w-4 h-4 shrink-0 mt-0.5" />}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">{badge.name}</p>
+                          <p className="text-xs opacity-80">{badge.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 統計 */}
