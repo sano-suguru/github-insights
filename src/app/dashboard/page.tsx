@@ -19,6 +19,16 @@ import { useRepositories } from "@/hooks/useRepositories";
 import { useCommitHistory, usePrefetchCommitHistory } from "@/hooks/useCommitHistory";
 import { useLanguageStats, useContributorStats, useContributorDetails, useRepositoryStats } from "@/hooks/useRepoData";
 import { ChartErrorWrapper } from "@/components/ErrorDisplay";
+import {
+  StatsGridSkeleton,
+  PieChartSkeleton,
+  LineChartSkeleton,
+  HeatmapSkeleton,
+  BarChartSkeleton,
+  RankingSkeleton,
+  MyContributionSkeleton,
+  ChartSkeletonWrapper,
+} from "@/components/Skeleton";
 
 // SSR無効化してチャートを読み込み
 const LanguagesPieChart = dynamic(
@@ -108,19 +118,19 @@ function DashboardContent() {
     enabled: !!activeRepo,
   });
 
-  const { data: contributors = [], isError: contributorsError, error: contributorsErrorData, refetch: refetchContributors } = useContributorStats({
+  const { data: contributors = [], isLoading: contributorsLoading, isError: contributorsError, error: contributorsErrorData, refetch: refetchContributors } = useContributorStats({
     owner,
     repo,
     enabled: !!activeRepo,
   });
 
-  const { data: contributorDetails = [], isError: detailsError, error: detailsErrorData, refetch: refetchDetails } = useContributorDetails({
+  const { data: contributorDetails = [], isLoading: detailsLoading, isError: detailsError, error: detailsErrorData, refetch: refetchDetails } = useContributorDetails({
     owner,
     repo,
     enabled: !!activeRepo,
   });
 
-  const { data: stats, isError: statsError, error: statsErrorData, refetch: refetchStats } = useRepositoryStats({
+  const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErrorData, refetch: refetchStats } = useRepositoryStats({
     owner,
     repo,
     enabled: !!activeRepo,
@@ -132,8 +142,6 @@ function DashboardContent() {
       router.push("/login");
     }
   }, [status, router]);
-
-  const dataLoading = langLoading || commitsLoading;
 
   if (status === "loading" || reposLoading) {
     return (
@@ -244,7 +252,7 @@ function DashboardContent() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors group ${
-                  dataLoading ? "animate-pulse shadow-lg shadow-purple-500/30" : ""
+                  langLoading || commitsLoading ? "animate-pulse shadow-lg shadow-purple-500/30" : ""
                 }`}
               >
                 <Github className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -255,147 +263,163 @@ function DashboardContent() {
           )}
         </div>
 
-        {dataLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        {/* 統計カード */}
+        {statsLoading ? (
+          <StatsGridSkeleton />
+        ) : statsError ? (
+          <div className="mb-8">
+            <ChartErrorWrapper
+              isError={true}
+              error={statsErrorData}
+              onRetry={() => refetchStats()}
+              errorHeight="h-24"
+            />
           </div>
-        ) : (
-          <>
-            {/* 統計カード */}
-            {statsError ? (
-              <div className="mb-8">
-                <ChartErrorWrapper
-                  isError={true}
-                  error={statsErrorData}
-                  onRetry={() => refetchStats()}
-                  errorHeight="h-24"
-                />
-              </div>
-            ) : stats && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <StatCard
-                  label="Commits"
-                  value={stats.commits.toLocaleString()}
-                  icon={<GitCommit className="w-5 h-5 text-purple-500" />}
-                />
-                <StatCard
-                  label="Pull Requests"
-                  value={stats.pullRequests.toLocaleString()}
-                  icon={<GitPullRequest className="w-5 h-5 text-blue-500" />}
-                />
-                <StatCard
-                  label="Issues"
-                  value={stats.issues.toLocaleString()}
-                  icon={<CircleDot className="w-5 h-5 text-green-500" />}
-                />
-                <StatCard
-                  label="Stars"
-                  value={stats.stars.toLocaleString()}
-                  icon={<Star className="w-5 h-5 text-yellow-500" />}
-                />
-              </div>
-            )}
+        ) : stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <StatCard
+              label="Commits"
+              value={stats.commits.toLocaleString()}
+              icon={<GitCommit className="w-5 h-5 text-purple-500" />}
+            />
+            <StatCard
+              label="Pull Requests"
+              value={stats.pullRequests.toLocaleString()}
+              icon={<GitPullRequest className="w-5 h-5 text-blue-500" />}
+            />
+            <StatCard
+              label="Issues"
+              value={stats.issues.toLocaleString()}
+              icon={<CircleDot className="w-5 h-5 text-green-500" />}
+            />
+            <StatCard
+              label="Stars"
+              value={stats.stars.toLocaleString()}
+              icon={<Star className="w-5 h-5 text-yellow-500" />}
+            />
+          </div>
+        )}
 
-            {/* グラフエリア */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Languages */}
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
-                  Languages
-                </h2>
-                <ChartErrorWrapper
-                  isError={langError}
-                  error={langErrorData}
-                  onRetry={() => refetchLanguages()}
+        {/* グラフエリア */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Languages */}
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
+              Languages
+            </h2>
+            <ChartSkeletonWrapper isLoading={langLoading} skeleton={<PieChartSkeleton />}>
+              <ChartErrorWrapper
+                isError={langError}
+                error={langErrorData}
+                onRetry={() => refetchLanguages()}
                 >
                   <LanguagesPieChart data={languages} />
-                </ChartErrorWrapper>
-              </div>
+              </ChartErrorWrapper>
+            </ChartSkeletonWrapper>
+          </div>
 
-              {/* Commits */}
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
-                    Commits
-                  </h2>
-                  <PeriodSelector
-                    selectedDays={selectedDays}
-                    onPeriodChange={setSelectedDays}
-                    onPeriodHover={handlePeriodHover}
-                    isLoading={commitsFetching}
-                    isAuthenticated={!!session?.accessToken}
-                  />
-                </div>
-                <ChartErrorWrapper
-                  isError={commitsError}
-                  error={commitsErrorData}
-                  onRetry={() => refetchCommits()}
-                >
-                  <CommitsLineChart data={commits} days={selectedDays} />
-                </ChartErrorWrapper>
-              </div>
-
-              {/* コントリビューター（棒グラフ/円グラフ切り替え） */}
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
-                <ChartErrorWrapper
-                  isError={contributorsError || detailsError}
-                  error={contributorsErrorData || detailsErrorData}
-                  onRetry={() => {
-                    refetchContributors();
-                    refetchDetails();
-                  }}
-                >
-                  <ContributorChartWithToggle
-                    contributors={contributors}
-                    contributorDetails={contributorDetails}
-                  />
-                </ChartErrorWrapper>
-              </div>
-
-              {/* Activity */}
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
-                  Activity
-                </h2>
-                <ChartErrorWrapper
-                  isError={commitsError}
-                  error={commitsErrorData}
-                  onRetry={() => refetchCommits()}
-                >
-                  <ActivityHeatmap data={commits} />
-                </ChartErrorWrapper>
-              </div>
-            </div>
-
-            {/* Your Contribution */}
-            {session?.login && contributorDetails.length > 0 && (
-              <MyContributionSummary
-                contributors={contributorDetails}
-                currentUserLogin={session.login}
-                owner={owner}
-                repo={repo}
+          {/* Commits */}
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
+                Commits
+              </h2>
+              <PeriodSelector
+                selectedDays={selectedDays}
+                onPeriodChange={setSelectedDays}
+                onPeriodHover={handlePeriodHover}
+                isLoading={commitsFetching}
+                isAuthenticated={!!session?.accessToken}
               />
-            )}
+            </div>
+            <ChartSkeletonWrapper isLoading={commitsLoading} skeleton={<LineChartSkeleton />}>
+              <ChartErrorWrapper
+                isError={commitsError}
+                error={commitsErrorData}
+                onRetry={() => refetchCommits()}
+              >
+                <CommitsLineChart data={commits} days={selectedDays} />
+              </ChartErrorWrapper>
+            </ChartSkeletonWrapper>
+          </div>
 
-            {/* Ranking */}
-            {contributorDetails.length > 0 && (
-              <div className="mt-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                  <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
-                  Ranking
-                </h2>
-                <ContributorRanking
-                  contributors={contributorDetails}
-                  currentUserLogin={session?.login}
-                  owner={owner}
-                  repo={repo}
+          {/* Contributors */}
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
+            <ChartSkeletonWrapper isLoading={contributorsLoading || detailsLoading} skeleton={<BarChartSkeleton />}>
+              <ChartErrorWrapper
+                isError={contributorsError || detailsError}
+                error={contributorsErrorData || detailsErrorData}
+                onRetry={() => {
+                  refetchContributors();
+                  refetchDetails();
+                }}
+              >
+                <ContributorChartWithToggle
+                  contributors={contributors}
+                  contributorDetails={contributorDetails}
                 />
-              </div>
-            )}
-          </>
+              </ChartErrorWrapper>
+            </ChartSkeletonWrapper>
+          </div>
+
+          {/* Activity */}
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-shadow duration-300">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
+              Activity
+            </h2>
+            <ChartSkeletonWrapper isLoading={commitsLoading} skeleton={<HeatmapSkeleton />}>
+              <ChartErrorWrapper
+                isError={commitsError}
+                error={commitsErrorData}
+                onRetry={() => refetchCommits()}
+              >
+                <ActivityHeatmap data={commits} />
+              </ChartErrorWrapper>
+            </ChartSkeletonWrapper>
+          </div>
+        </div>
+
+        {/* Your Contribution */}
+        {session?.login && (
+          detailsLoading ? (
+            <div className="mt-8">
+              <MyContributionSkeleton />
+            </div>
+          ) : contributorDetails.length > 0 && (
+            <MyContributionSummary
+              contributors={contributorDetails}
+              currentUserLogin={session.login}
+              owner={owner}
+              repo={repo}
+            />
+          )
+        )}
+
+        {/* Ranking */}
+        {detailsLoading ? (
+          <div className="mt-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
+              Ranking
+            </h2>
+            <RankingSkeleton />
+          </div>
+        ) : contributorDetails.length > 0 && (
+          <div className="mt-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
+              Ranking
+            </h2>
+            <ContributorRanking
+              contributors={contributorDetails}
+              currentUserLogin={session?.login}
+              owner={owner}
+              repo={repo}
+            />
+          </div>
         )}
       </main>
     </div>
