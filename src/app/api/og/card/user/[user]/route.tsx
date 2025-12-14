@@ -425,9 +425,35 @@ export async function GET(
             marginTop: 20,
           }}
         >
-          <span style={{ color: COLORS.gray500, fontSize: 16 }}>
-            github-insights-orpin.vercel.app
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {/* GitHubロゴ */}
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                background: `linear-gradient(135deg, ${COLORS.purple500}, ${COLORS.pink500})`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                <path d={ICONS.github} />
+              </svg>
+            </div>
+            <span
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.purple400}, ${COLORS.pink500})`,
+                backgroundClip: "text",
+                color: "transparent",
+                fontSize: 22,
+                fontWeight: 700,
+              }}
+            >
+              GitHub Insights
+            </span>
+          </div>
         </div>
       </div>
     ),

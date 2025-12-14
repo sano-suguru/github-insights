@@ -722,9 +722,6 @@ export async function GET(
               GitHub Insights
             </span>
           </div>
-          <span style={{ color: COLORS.gray500, fontSize: 16 }}>
-            github-insights-orpin.vercel.app
-          </span>
         </div>
       </div>
     ),
