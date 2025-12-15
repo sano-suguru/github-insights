@@ -6,6 +6,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
 const eslintConfig = defineConfig([
+  ...storybook.configs["flat/recommended"],
   ...nextVitals,
   ...nextTs,
   // Override default ignores of eslint-config-next.
@@ -15,6 +16,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Test coverage output:
+    "coverage/**",
   ]),
 ]);
 

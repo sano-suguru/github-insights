@@ -1,12 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { graphql } from "@octokit/graphql";
 
-// モック用の型定義
-type MockedGraphQL = ReturnType<typeof graphql.defaults> & {
-  mockResolvedValue: (value: unknown) => void;
-  mockRejectedValue: (error: Error) => void;
-};
-
 // @octokit/graphql のモック
 const mockGraphqlClient = vi.fn();
 vi.mock("@octokit/graphql", () => ({
