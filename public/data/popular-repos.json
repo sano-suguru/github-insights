@@ -69,8 +69,8 @@
       "streamlit/streamlit",
       "files-community/Files",
       "usebruno/bruno",
-      "appsmithorg/appsmith",
-      "koalaman/shellcheck"
+      "koalaman/shellcheck",
+      "appsmithorg/appsmith"
     ],
     "css": [
       "twbs/bootstrap",
@@ -412,5 +412,5 @@
     "wenzhixin/bootstrap-table",
     "xtermjs/xterm.js"
   ],
-  "lastUpdated": "2025-12-14"
+  "lastUpdated": "2025-12-15"
 }
