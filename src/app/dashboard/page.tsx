@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import { GitCommit, GitPullRequest, CircleDot, Star, Plus, Minus, Trophy, Crown, Medal, Award, Eye, Cpu, Eraser, Sparkles, ExternalLink, Share2, Github } from "lucide-react";
+import { GitCommit, GitPullRequest, CircleDot, Star, Plus, Minus, Trophy, ExternalLink, Share2, Github } from "lucide-react";
 import { ContributorDetailStat } from "@/lib/github";
 import { calculateBadges, sortBadgesByImportance } from "@/lib/badges";
 import dynamic from "next/dynamic";
@@ -376,20 +376,6 @@ function StatCard({
   );
 }
 
-// アイコン名からコンポーネントを取得するマップ
-const badgeIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Crown,
-  Trophy,
-  Medal,
-  Award,
-  Star,
-  GitPullRequest,
-  Eye,
-  Cpu,
-  Eraser,
-  Sparkles,
-};
-
 // あなたの貢献サマリーコンポーネント
 function MyContributionSummary({
   contributors,
@@ -481,14 +467,14 @@ function MyContributionSummary({
           <p className="text-sm text-white/80 mb-2">Badges</p>
           <div className="flex flex-wrap gap-2">
             {badges.map((badge) => {
-              const IconComponent = badgeIconMap[badge.iconName];
+              const IconComponent = badge.icon;
               return (
                 <span
                   key={badge.id}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 rounded-full text-sm"
                   title={badge.description}
                 >
-                  {IconComponent && <IconComponent className="w-4 h-4" />}
+                  <IconComponent className="w-4 h-4" />
                   <span>{badge.name}</span>
                 </span>
               );

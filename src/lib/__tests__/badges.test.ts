@@ -3,6 +3,7 @@ import {
   calculateBadges,
   sortBadgesByImportance,
   BADGES,
+  BADGE_PRIORITY,
 } from "@/lib/badges";
 import { ContributorDetailStat } from "@/lib/github";
 
@@ -165,9 +166,9 @@ describe("calculateBadges", () => {
 describe("sortBadgesByImportance", () => {
   it("TOP_CONTRIBUTORが最も重要なバッジとして最初に来る", () => {
     const badges = [
-      BADGES.FIRST_COMMIT,
-      BADGES.TOP_CONTRIBUTOR,
-      BADGES.ACTIVE_CONTRIBUTOR,
+      BADGES.first_commit,
+      BADGES.top_contributor,
+      BADGES.active_contributor,
     ];
     const sorted = sortBadgesByImportance(badges);
     
@@ -176,10 +177,10 @@ describe("sortBadgesByImportance", () => {
 
   it("重要度順にソートされる", () => {
     const badges = [
-      BADGES.FIRST_COMMIT,
-      BADGES.TOP_3,
-      BADGES.CORE_CONTRIBUTOR,
-      BADGES.TOP_CONTRIBUTOR,
+      BADGES.first_commit,
+      BADGES.top_3,
+      BADGES.core_contributor,
+      BADGES.top_contributor,
     ];
     const sorted = sortBadgesByImportance(badges);
     
@@ -201,8 +202,10 @@ describe("BADGES定義", () => {
       expect(badge).toHaveProperty("id");
       expect(badge).toHaveProperty("name");
       expect(badge).toHaveProperty("description");
-      expect(badge).toHaveProperty("iconName");
+      expect(badge).toHaveProperty("icon");
       expect(badge).toHaveProperty("color");
+      expect(badge).toHaveProperty("category");
+      expect(["contributor", "user"]).toContain(badge.category);
     });
   });
 
@@ -210,5 +213,19 @@ describe("BADGES定義", () => {
     const ids = Object.values(BADGES).map((b) => b.id);
     const uniqueIds = new Set(ids);
     expect(ids.length).toBe(uniqueIds.size);
+  });
+
+  it("すべてのバッジIDがBADGE_PRIORITYに登録されている", () => {
+    const allBadgeIds = Object.values(BADGES).map((b) => b.id);
+    
+    // すべてのバッジIDがBADGE_PRIORITYに含まれていること
+    allBadgeIds.forEach((id) => {
+      expect(BADGE_PRIORITY).toContain(id);
+    });
+    
+    // BADGE_PRIORITYに存在しないIDがないこと（無効なエントリがないか）
+    BADGE_PRIORITY.forEach((id) => {
+      expect(allBadgeIds).toContain(id);
+    });
   });
 });

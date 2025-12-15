@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -15,8 +16,11 @@ import {
   ExternalLink,
   AlertCircle,
   Code2,
+  Camera,
+  X,
 } from "lucide-react";
 import { UserProfile, UserStats } from "@/lib/github";
+import { calculateUserBadges, Badge } from "@/lib/badges";
 import DashboardLayout, { StatCard, SectionCard } from "@/components/DashboardLayout";
 
 // チャートコンポーネント（SSR無効化）
@@ -24,6 +28,156 @@ const LanguagesPieChart = dynamic(
   () => import("@/components/charts/LanguagesPieChart"),
   { ssr: false }
 );
+
+// バッジチップ
+function BadgeChip({ badge }: { badge: Badge }) {
+  const IconComponent = badge.icon;
+  
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}
+      title={badge.description}
+    >
+      <IconComponent className="w-3 h-3" />
+      <span>{badge.name}</span>
+    </span>
+  );
+}
+
+// ユーザーカードモーダル
+interface UserCardModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  username: string;
+  name: string;
+}
+
+function UserCardModal({ isOpen, onClose, username, name }: UserCardModalProps) {
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedMarkdown, setCopiedMarkdown] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  if (!isOpen) return null;
+
+  const cardUrl = `/api/og/card/user/${username}`;
+  const fullUrl = `${typeof window !== "undefined" ? window.location.origin : ""}${cardUrl}`;
+
+  // 画像をダウンロード
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const response = await fetch(cardUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${username}-github-card.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  // URLをコピー
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } catch (error) {
+      console.error("Copy failed:", error);
+    }
+  };
+
+  // Markdown埋め込みコードをコピー
+  const handleCopyMarkdown = async () => {
+    // Markdown構文に影響する文字をエスケープ
+    const escapedName = name.replace(/[[\]()]/g, "\\$&");
+    const markdown = `[![${escapedName}'s GitHub Profile](${fullUrl})](https://github.com/${username})`;
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setCopiedMarkdown(true);
+      setTimeout(() => setCopiedMarkdown(false), 2000);
+    } catch (error) {
+      console.error("Copy failed:", error);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative z-50 w-full max-w-2xl bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {/* ヘッダー */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            GitHub Profile Card
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* カードプレビュー */}
+        <div className="p-6 bg-gray-50 dark:bg-gray-900">
+          <div className="relative aspect-video max-w-xl mx-auto rounded-lg overflow-hidden shadow-lg">
+            {!imageLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" />
+              </div>
+            )}
+            {/* OG画像APIエンドポイントはNext.js Imageで最適化できないためnative imgを使用 */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={cardUrl}
+              alt={`${name}'s GitHub Profile Card`}
+              className={`w-full h-full object-cover ${imageLoaded ? "" : "opacity-0"}`}
+              onLoad={() => setImageLoaded(true)}
+            />
+          </div>
+        </div>
+
+        {/* アクションボタン */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-3 justify-center">
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-400 text-white rounded-lg transition-colors text-sm font-medium"
+          >
+            {downloading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+            ) : (
+              <Star className="w-4 h-4" />
+            )}
+            Download
+          </button>
+          <button
+            onClick={handleCopyUrl}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors text-sm font-medium"
+          >
+            <LinkIcon className="w-4 h-4" />
+            {copiedUrl ? "Copied!" : "Copy URL"}
+          </button>
+          <button
+            onClick={handleCopyMarkdown}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors text-sm font-medium"
+          >
+            <Code2 className="w-4 h-4" />
+            {copiedMarkdown ? "Copied!" : "Copy Markdown"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ユーザーデータを取得する関数
 async function fetchUserData(username: string): Promise<{
@@ -48,6 +202,8 @@ async function fetchUserData(username: string): Promise<{
 export default function UserProfilePage() {
   const params = useParams();
   const username = params.username as string;
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [showBadgePopover, setShowBadgePopover] = useState(false);
 
   const {
     data,
@@ -185,6 +341,107 @@ export default function UserProfilePage() {
                 Joined {joinedDate}
               </span>
             </div>
+
+            {/* バッジ */}
+            {(() => {
+              const badges = calculateUserBadges({
+                followers: profile.followers,
+                publicRepos: stats.totalRepos,
+                createdAt: profile.createdAt,
+              });
+              if (badges.length === 0) return null;
+              return (
+                <div className="relative mt-4">
+                  <button
+                    onClick={() => setShowBadgePopover(!showBadgePopover)}
+                    aria-expanded={showBadgePopover}
+                    aria-label={`${badges.length}個のバッジを表示`}
+                    className="flex flex-wrap gap-2 items-center cursor-pointer hover:opacity-80 transition-opacity"
+                  >
+                    {badges.slice(0, 4).map((badge) => (
+                      <BadgeChip key={badge.id} badge={badge} />
+                    ))}
+                    {badges.length > 4 && (
+                      <span className="text-xs text-gray-400">+{badges.length - 4}</span>
+                    )}
+                  </button>
+                  
+                  {/* バッジ一覧ポップオーバー */}
+                  {showBadgePopover && (
+                    <>
+                      {/* モバイル: 固定位置モーダル */}
+                      <div className="sm:hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div 
+                          className="fixed inset-0 bg-black/50"
+                          onClick={() => setShowBadgePopover(false)}
+                        />
+                        <div className="relative z-50 w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4 animate-in fade-in zoom-in-95 duration-200">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-base font-medium text-gray-900 dark:text-white">Badges</span>
+                            <button
+                              onClick={() => setShowBadgePopover(false)}
+                              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            >
+                              <X className="w-5 h-5 text-gray-400" />
+                            </button>
+                          </div>
+                          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                            {badges.map((badge) => {
+                              const IconComponent = badge.icon;
+                              return (
+                                <div key={badge.id} className={`flex items-start gap-2 p-2.5 rounded-lg ${badge.color}`}>
+                                  <IconComponent className="w-5 h-5 shrink-0 mt-0.5" />
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium">{badge.name}</p>
+                                    <p className="text-xs opacity-80">{badge.description}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* デスクトップ: 相対位置ポップオーバー */}
+                      <div className="hidden sm:block absolute left-0 top-full mt-2 z-50 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">Badges</span>
+                          <button
+                            onClick={() => setShowBadgePopover(false)}
+                            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <X className="w-4 h-4 text-gray-400" />
+                          </button>
+                        </div>
+                        <div className="space-y-2">
+                          {badges.map((badge) => {
+                            const IconComponent = badge.icon;
+                            return (
+                              <div key={badge.id} className={`flex items-start gap-2 p-2 rounded-lg ${badge.color}`}>
+                                <IconComponent className="w-4 h-4 shrink-0 mt-0.5" />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium">{badge.name}</p>
+                                  <p className="text-xs opacity-80">{badge.description}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* カード生成ボタン */}
+            <button
+              onClick={() => setShowCardModal(true)}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              <Camera className="w-4 h-4" />
+              Generate Card
+            </button>
           </div>
 
           {/* フォロワー統計 */}
@@ -304,6 +561,16 @@ export default function UserProfilePage() {
           </SectionCard>
         )}
       </div>
+
+      {/* OGカード生成モーダル */}
+      {showCardModal && (
+        <UserCardModal
+          isOpen={showCardModal}
+          onClose={() => setShowCardModal(false)}
+          username={profile.login}
+          name={profile.name || profile.login}
+        />
+      )}
     </DashboardLayout>
   );
 }

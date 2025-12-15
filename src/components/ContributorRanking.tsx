@@ -6,23 +6,9 @@ import { ContributorDetailStat } from "@/lib/github";
 import { calculateBadges, sortBadgesByImportance, Badge } from "@/lib/badges";
 import { 
   TrendingUp, GitCommit, Plus, Minus, GitPullRequest, 
-  Crown, Trophy, Medal, Award, Star, Eye, Cpu, Eraser, Sparkles, ExternalLink, ImageIcon, X 
+  Crown, Medal, ExternalLink, ImageIcon, X 
 } from "lucide-react";
 import ContributionCardModal from "./ContributionCardModal";
-
-// アイコン名からコンポーネントを取得するマップ
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Crown,
-  Trophy,
-  Medal,
-  Award,
-  Star,
-  GitPullRequest,
-  Eye,
-  Cpu,
-  Eraser,
-  Sparkles,
-};
 
 interface ContributorRankingProps {
   contributors: ContributorDetailStat[];
@@ -234,10 +220,10 @@ function ContributorRow({
                     </div>
                     <div className="space-y-2 max-h-[60vh] overflow-y-auto">
                       {badges.map((badge) => {
-                        const IconComponent = iconMap[badge.iconName];
+                        const IconComponent = badge.icon;
                         return (
                           <div key={badge.id} className={`flex items-start gap-2 p-2.5 rounded-lg ${badge.color}`}>
-                            {IconComponent && <IconComponent className="w-5 h-5 shrink-0 mt-0.5" />}
+                            <IconComponent className="w-5 h-5 shrink-0 mt-0.5" />
                             <div className="min-w-0">
                               <p className="text-sm font-medium">{badge.name}</p>
                               <p className="text-xs opacity-80">{badge.description}</p>
@@ -262,10 +248,10 @@ function ContributorRow({
                   </div>
                   <div className="space-y-2">
                     {badges.map((badge) => {
-                      const IconComponent = iconMap[badge.iconName];
+                      const IconComponent = badge.icon;
                       return (
                         <div key={badge.id} className={`flex items-start gap-2 p-2 rounded-lg ${badge.color}`}>
-                          {IconComponent && <IconComponent className="w-4 h-4 shrink-0 mt-0.5" />}
+                          <IconComponent className="w-4 h-4 shrink-0 mt-0.5" />
                           <div className="min-w-0">
                             <p className="text-sm font-medium">{badge.name}</p>
                             <p className="text-xs opacity-80">{badge.description}</p>
@@ -335,14 +321,14 @@ function ContributorRow({
 
 // バッジチップ（すりガラス風）
 function BadgeChip({ badge }: { badge: Badge }) {
-  const IconComponent = iconMap[badge.iconName];
+  const IconComponent = badge.icon;
   
   return (
     <span
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}
       title={badge.description}
     >
-      {IconComponent && <IconComponent className="w-3 h-3" />}
+      <IconComponent className="w-3 h-3" />
       <span className="hidden lg:inline">{badge.name}</span>
     </span>
   );

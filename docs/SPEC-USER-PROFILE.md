@@ -1,8 +1,8 @@
 # ユーザー検索・プロファイル機能 仕様書
 
 > 作成日: 2025-12-14
-> 更新日: 2025-12-14
-> ステータス: 実装中（UI統一リファクタリング予定）
+> 更新日: 2025-12-15
+> ステータス: バッジ・OGカードモーダル実装済み（ヒートマップ・貢献タイプ分布未実装）
 
 ## 1. 概要
 
@@ -215,31 +215,47 @@ GET https://api.github.com/users/{login}
 | グラフ | 種類 | データソース | 説明 | 実装状況 |
 |--------|------|-------------|------|----------|
 | 言語統計 | 円グラフ | リポジトリ一覧の `language` | 全リポジトリの言語割合 | ✅ 実装済み |
-| アクティビティ | ヒートマップ | イベント履歴 | 直近90日の活動頻度 | ❌ 未実装 |
-| 貢献タイプ分布 | 円グラフ | PR数/Issue数/イベント | 活動の内訳 | ❌ 未実装 |
-| 人気リポジトリ | リスト | リポジトリ一覧 | スター数上位10件 | ✅ 実装済み |
+| アクティビティ | ヒートマップ | イベント履歴 | 直近90日の活動頻度 | ❌ 未実装（Phase 2） |
+| 貢献タイプ分布 | 円グラフ | PR数/Issue数/イベント | 活動の内訳 | ❌ 未実装（Phase 2） |
+| 人気リポジトリ | リスト | リポジトリ一覧 | スター数上位5件 | ✅ 実装済み |
 
 ### 5.5 バッジ
 
-> ⚠️ **未実装**: ユーザープロファイルページでのバッジ表示は未実装。既存の `/api/og/card/user/[user]` のロジックを流用予定。
+`lib/badges.ts` の `calculateUserBadges()` を使用してバッジを計算・表示。
 
-既存の `/api/og/card/user/[user]` と同じロジックを使用:
+| バッジID | 表示名 | 条件 | カテゴリ |
+|----------|--------|------|----------|
+| `influencer` | Influencer | フォロワー 1,000人以上 | user |
+| `popular` | Popular | フォロワー 100人以上 | user |
+| `prolific` | Prolific | リポジトリ 50個以上 | user |
+| `builder` | Builder | リポジトリ 20個以上 | user |
+| `user_pr_master` | PR Master | PR 100件以上 | user |
+| `user_contributor` | Contributor | PR 50件以上 | user |
+| `veteran` | Veteran | 2015年以前にアカウント作成 | user |
 
-| バッジ | 条件 |
-|--------|------|
-| Influencer | フォロワー 1,000人以上 |
-| Popular | フォロワー 100人以上 |
-| Prolific | リポジトリ 50個以上 |
-| Builder | リポジトリ 20個以上 |
-| PR Master | PR 100件以上 |
-| Contributor | PR 50件以上 |
-| Veteran | 2015年以前にアカウント作成 |
+**UI仕様:**
+- プロファイルカード内にバッジチップとして表示（最大4個）
+- 5個以上の場合は「+N」表示
+- クリックでポップオーバー（全バッジ一覧）
+- モバイル: フルスクリーンモーダル
+- デスクトップ: 相対位置ポップオーバー
+- アクセシビリティ: `aria-expanded`, `aria-label` 対応
 
 ### 5.6 OGカード生成
 
-> ⚠️ **未実装**: ユーザープロファイルページからのOGカード生成ボタンは未実装。API自体は既存。
+✅ **実装済み**: `UserCardModal` コンポーネントで実装。
 
-既存の `/api/og/card/user/[user]` を使用。モーダルで表示・ダウンロード・共有。
+**機能:**
+| 機能 | 説明 |
+|------|------|
+| プレビュー | `/api/og/card/user/[username]` からOG画像を表示 |
+| ダウンロード | PNG形式でダウンロード（`{username}-github-card.png`） |
+| URL コピー | OG画像の完全URLをクリップボードにコピー |
+| Markdown コピー | 埋め込み用Markdownをコピー（特殊文字エスケープ対応） |
+
+**Markdownエスケープ:**
+- `[]()` などMarkdown構文に影響する文字をバックスラッシュでエスケープ
+- 例: `Test [Name]` → `Test \[Name\]`
 
 ---
 
@@ -264,13 +280,13 @@ src/
 │               └── [username]/
 │                   └── route.ts  # ✅ ユーザープロファイルAPI
 ├── components/
-│   ├── AppHeader.tsx             # ❌ 共通ヘッダー（新規作成予定）
-│   ├── DashboardLayout.tsx       # ❌ 統一レイアウト（新規作成予定）
+│   ├── AppHeader.tsx             # ✅ 共通ヘッダー
+│   ├── DashboardLayout.tsx       # ✅ 統一レイアウト（StatCard, SectionCard含む）
 │   ├── RepoSearchCombobox.tsx    # ✅ 修正: ユーザー検索対応
-│   ├── UserProfileCard.tsx       # ❌ 未作成（OGカードモーダルは未実装）
 │   └── charts/
 │       ├── LanguagesPieChart.tsx # ✅ 既存を再利用
-│       └── ContributionTypePie.tsx  # ❌ 未作成
+│       ├── ActivityHeatmap.tsx   # ❌ 未作成（Phase 2）
+│       └── ContributionTypePie.tsx  # ❌ 未作成（Phase 2）
 ├── hooks/
 │   ├── useSearchRepositories.ts  # ✅ 修正: ユーザー検索モード追加
 │   └── useUserProfile.ts         # ❌ 未作成（page.tsx内でfetch）
@@ -284,13 +300,15 @@ src/
 
 | 順序 | タスク | 依存関係 | 状態 |
 |------|--------|----------|------|
-| 1 | `AppHeader.tsx` 共通ヘッダー作成 | - | ❌ 未着手 |
-| 2 | `DashboardLayout.tsx` 統一レイアウト作成 | 1 | ❌ 未着手 |
-| 3 | `/user/[username]/page.tsx` 新デザイン適用 | 2 | ❌ 未着手 |
-| 4 | `/repo/[owner]/[repo]/page.tsx` 新デザイン適用 | 2 | ❌ 未着手 |
-| 5 | `/dashboard/page.tsx` 共通コンポーネントに置き換え | 2 | ❌ 未着手 |
-| 6 | 各種グラフコンポーネント作成 | 3 | ❌ 未着手 |
-| 7 | OGカードモーダル連携 | 3 | ❌ 未着手 |
+| 1 | `AppHeader.tsx` 共通ヘッダー作成 | - | ✅ 完了 |
+| 2 | `DashboardLayout.tsx` 統一レイアウト作成 | 1 | ✅ 完了 |
+| 3 | `/user/[username]/page.tsx` 新デザイン適用 | 2 | ✅ 完了 |
+| 4 | `/repo/[owner]/[repo]/page.tsx` 新デザイン適用 | 2 | ✅ 完了 |
+| 5 | `/dashboard/page.tsx` 共通コンポーネントに置き換え | 2 | ✅ 完了 |
+| 6 | バッジ表示・ポップオーバー | 3 | ✅ 完了 |
+| 7 | OGカードモーダル（Download/Copy URL/Copy Markdown） | 3 | ✅ 完了 |
+| 8 | アクティビティヒートマップ | 3 | ❌ Phase 2 |
+| 9 | 貢献タイプ分布グラフ | 3 | ❌ Phase 2 |
 
 ---
 
@@ -302,9 +320,11 @@ src/
 - Search API: 30回/分
 
 **対策:**
-- サーバーサイドキャッシュ（Route Handler）
-- クライアントサイドキャッシュ（React Query staleTime）
+- クライアントサイドキャッシュ（React Query staleTime: 30分）
 - デバウンスによるリクエスト削減
+
+> ⚠️ **注意**: サーバーサイドの `unstable_cache` は認証トークンのクロージャ問題があるため使用しない。
+> キャッシュされた関数内の `accessToken` が最初のリクエスト時の値で固定され、認証状態が正しく反映されない。
 
 ### 6.2 制約事項
 | 項目 | 制約 | 対応 |
