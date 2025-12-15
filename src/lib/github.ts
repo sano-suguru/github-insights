@@ -60,7 +60,7 @@ export function createPublicGitHubClient() {
 }
 
 // レート制限を取得・更新
-async function updateRateLimit(client: typeof graphql, isPublic: boolean) {
+async function updateRateLimit(client: typeof graphql, isUnauthenticated: boolean) {
   try {
     const { rateLimit } = await client<{
       rateLimit: {
@@ -87,7 +87,8 @@ async function updateRateLimit(client: typeof graphql, isPublic: boolean) {
       used: rateLimit.used,
     };
     
-    if (isPublic) {
+    // 未認証の場合はグローバル状態を更新（後方互換性のため）
+    if (isUnauthenticated) {
       publicRateLimitInfo = info;
     }
     
@@ -156,15 +157,24 @@ export interface SearchRepositoryResult {
   primaryLanguage: { name: string; color: string } | null;
 }
 
-export async function searchPublicRepositories(
+export interface SearchRepositoriesResult {
+  repositories: SearchRepositoryResult[];
+  rateLimit: RateLimitInfo | null;
+}
+
+export async function searchRepositories(
+  accessToken: string | null,
   query: string,
   first: number = 10
-): Promise<SearchRepositoryResult[]> {
+): Promise<SearchRepositoriesResult> {
   if (!query || query.length < 2) {
-    return [];
+    return { repositories: [], rateLimit: null };
   }
 
-  const client = createPublicGitHubClient();
+  const client = accessToken
+    ? createGitHubClient(accessToken)
+    : createPublicGitHubClient();
+  const isUnauthenticated = !accessToken;
 
   try {
     const { search } = await client<{
@@ -199,10 +209,10 @@ export async function searchPublicRepositories(
     `, { query: `${query} in:name`, first });
 
     // レート制限を更新
-    await updateRateLimit(client, true);
+    const rateLimit = await updateRateLimit(client, isUnauthenticated);
 
     // Publicリポジトリのみ返す（nullノードを除外）
-    return search.nodes
+    const repositories = search.nodes
       .filter((node): node is NonNullable<typeof node> => 
         node !== null && node.nameWithOwner !== undefined && !node.isPrivate
       )
@@ -212,6 +222,8 @@ export async function searchPublicRepositories(
         stargazerCount,
         primaryLanguage,
       }));
+
+    return { repositories, rateLimit };
   } catch (error) {
     console.error("Search repositories error:", error);
     // GraphQL APIのレート制限エラーを変換
@@ -452,23 +464,35 @@ export function calculateUserStats(repositories: UserRepository[]): UserStats {
 
 // ユーザーを検索（GitHub REST API使用）
 // Note: レート制限を考慮し、Search APIの結果のみを使用（詳細はユーザーページで取得）
+export interface SearchUsersResult {
+  users: SearchUserResult[];
+  rateLimit: RateLimitInfo | null;
+}
+
 export async function searchUsers(
+  accessToken: string | null,
   query: string,
   perPage: number = 5
-): Promise<SearchUserResult[]> {
+): Promise<SearchUsersResult> {
   if (!query || query.length < 1) {
-    return [];
+    return { users: [], rateLimit: null };
   }
 
   try {
     // Search API でユーザーを検索（1リクエストのみ）
+    const headers: HeadersInit = {
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "GitHub-Insights",
+    };
+    
+    if (accessToken) {
+      headers.Authorization = `token ${accessToken}`;
+    }
+
     const searchResponse = await fetch(
       `https://api.github.com/search/users?q=${encodeURIComponent(query)}&per_page=${perPage}`,
       {
-        headers: {
-          Accept: "application/vnd.github.v3+json",
-          "User-Agent": "GitHub-Insights",
-        },
+        headers,
         next: { revalidate: 60 },
       }
     );
@@ -483,10 +507,28 @@ export async function searchUsers(
     const searchData = await searchResponse.json();
     const users = searchData.items || [];
 
+    // レート制限情報をヘッダーから取得
+    const rateLimitInfo: RateLimitInfo | null = (() => {
+      const limit = searchResponse.headers.get("x-ratelimit-limit");
+      const remaining = searchResponse.headers.get("x-ratelimit-remaining");
+      const reset = searchResponse.headers.get("x-ratelimit-reset");
+      const used = searchResponse.headers.get("x-ratelimit-used");
+      
+      if (limit && remaining && reset) {
+        return {
+          limit: parseInt(limit, 10),
+          remaining: parseInt(remaining, 10),
+          resetAt: new Date(parseInt(reset, 10) * 1000),
+          used: used ? parseInt(used, 10) : 0,
+        };
+      }
+      return null;
+    })();
+
     // Search APIの結果のみを使用（詳細取得による追加APIコールを省略）
     // followers/publicReposは検索結果には含まれないため0を設定
     // 詳細情報はユーザーページ(/user/[username])で表示される
-    return users.map((user: { login: string; avatar_url: string; type: string }) => ({
+    const userResults = users.map((user: { login: string; avatar_url: string; type: string }) => ({
       login: user.login,
       avatarUrl: user.avatar_url,
       name: null,
@@ -494,6 +536,8 @@ export async function searchUsers(
       publicRepos: 0,
       type: parseAccountType(user.type),
     }));
+
+    return { users: userResults, rateLimit: rateLimitInfo };
   } catch (error) {
     console.error("Search users error:", error);
     throw error;
