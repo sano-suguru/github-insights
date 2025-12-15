@@ -6,6 +6,10 @@
 
 GitHub リポジトリ・ユーザーの貢献度を可視化する Web アプリケーション
 
+**デモ**: [github-insights-orpin.vercel.app](https://github-insights-orpin.vercel.app)
+
+![Dashboard](docs/screenshots/dashboard.png)
+
 ---
 
 ## なぜ作ったか
@@ -40,6 +44,8 @@ GitHub の貢献データは **Contributions グラフ、リポジトリペー�
 ## OG カード
 
 OSS 貢献を SNS でアピールするためのカード。`@vercel/og` を使用して Edge Runtime で動的に生成する。
+
+![OG Card Example](docs/screenshots/og-card-user.png)
 
 | エンドポイント | 用途 | シェア例 |
 |---------------|------|--------|
