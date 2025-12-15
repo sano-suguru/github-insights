@@ -7,7 +7,7 @@ interface Props {
   data: CommitInfo[];
 }
 
-const DAYS = ["日", "月", "火", "水", "木", "金", "土"];
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_LABELS = HOURS.filter((h) => h % 3 === 0); // 3時間ごとのラベル (0, 3, 6, ..., 21)
 const HOUR_LABEL_MIN_WIDTH = `${100 / HOUR_LABELS.length}%`; // 各ラベルの最小幅
@@ -91,7 +91,7 @@ export default function ActivityHeatmap({ data }: Props) {
 
         {/* 凡例 */}
         <div className="flex items-center justify-end gap-2 mt-4">
-          <span className="text-xs text-gray-500 dark:text-gray-400">少ない</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">Less</span>
           <div className="flex gap-0.5">
             <div className="w-4 h-4 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
             <div className="w-4 h-4 rounded-sm bg-purple-200 dark:bg-purple-900"></div>
@@ -99,7 +99,7 @@ export default function ActivityHeatmap({ data }: Props) {
             <div className="w-4 h-4 rounded-sm bg-purple-500 dark:bg-purple-600"></div>
             <div className="w-4 h-4 rounded-sm bg-purple-600 dark:bg-purple-500"></div>
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400">多い</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">More</span>
         </div>
       </div>
     </div>

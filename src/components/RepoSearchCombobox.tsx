@@ -549,9 +549,6 @@ function UserResultSection({ results, onSelect }: UserResultSectionProps) {
                 {user.name}
               </p>
             )}
-            <p className="text-xs text-purple-500 dark:text-purple-400">
-              クリックしてプロフィールを見る
-            </p>
           </div>
         </button>
       ))}

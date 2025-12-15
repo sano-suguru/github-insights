@@ -9,6 +9,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useLanguageStats, useContributorStats, useRepositoryStats } from "@/hooks/useRepoData";
 import { useCommitHistory } from "@/hooks/useCommitHistory";
 import DashboardLayout, { SectionCard } from "@/components/DashboardLayout";
+import {
+  PieChartSkeleton,
+  LineChartSkeleton,
+  HeatmapSkeleton,
+  BarChartSkeleton,
+  ChartSkeletonWrapper,
+} from "@/components/Skeleton";
 
 // SSR無効化してチャートを読み込み
 const LanguagesPieChart = dynamic(
@@ -46,13 +53,13 @@ export default function PublicRepoPage() {
   });
 
   // 各データ取得（React Query）
-  const { data: languages = [] } = useLanguageStats({
+  const { data: languages = [], isLoading: langLoading } = useLanguageStats({
     owner,
     repo,
     enabled: !!repository,
   });
 
-  const { data: commits = [] } = useCommitHistory({
+  const { data: commits = [], isLoading: commitsLoading } = useCommitHistory({
     accessToken: null,
     owner,
     repo,
@@ -60,7 +67,7 @@ export default function PublicRepoPage() {
     enabled: !!repository,
   });
 
-  const { data: contributors = [] } = useContributorStats({
+  const { data: contributors = [], isLoading: contributorsLoading } = useContributorStats({
     owner,
     repo,
     enabled: !!repository,
@@ -220,19 +227,27 @@ export default function PublicRepoPage() {
       {/* グラフエリア */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SectionCard title="Languages">
-          <LanguagesPieChart data={languages} />
+          <ChartSkeletonWrapper isLoading={langLoading} skeleton={<PieChartSkeleton />}>
+            <LanguagesPieChart data={languages} />
+          </ChartSkeletonWrapper>
         </SectionCard>
 
         <SectionCard title="Commits">
-          <CommitsLineChart data={commits} />
+          <ChartSkeletonWrapper isLoading={commitsLoading} skeleton={<LineChartSkeleton />}>
+            <CommitsLineChart data={commits} />
+          </ChartSkeletonWrapper>
         </SectionCard>
 
         <SectionCard title="Contributors">
-          <ContributorsChart data={contributors} />
+          <ChartSkeletonWrapper isLoading={contributorsLoading} skeleton={<BarChartSkeleton />}>
+            <ContributorsChart data={contributors} />
+          </ChartSkeletonWrapper>
         </SectionCard>
 
         <SectionCard title="Activity">
-          <ActivityHeatmap data={commits} />
+          <ChartSkeletonWrapper isLoading={commitsLoading} skeleton={<HeatmapSkeleton />}>
+            <ActivityHeatmap data={commits} />
+          </ChartSkeletonWrapper>
         </SectionCard>
       </div>
     </DashboardLayout>

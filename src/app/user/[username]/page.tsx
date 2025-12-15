@@ -18,6 +18,7 @@ import {
   Code2,
   Camera,
   X,
+  Github,
 } from "lucide-react";
 import { UserProfile, UserStats, UserEvent } from "@/lib/github";
 import { calculateUserBadges, Badge } from "@/lib/badges";
@@ -299,7 +300,7 @@ export default function UserProfilePage() {
   return (
     <DashboardLayout>
       {/* プロファイルヘッダー */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 md:p-8 mb-6">
+      <div className="relative z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 md:p-8 mb-6">
         <div className="flex flex-col md:flex-row gap-6">
           {/* アバター */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -327,7 +328,7 @@ export default function UserProfilePage() {
               href={`https://github.com/${profile.login}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 flex items-center gap-1 mb-4"
+              className="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors mb-4"
             >
               @{profile.login}
               <ExternalLink className="w-3 h-3" />
@@ -549,8 +550,8 @@ export default function UserProfilePage() {
         {/* Top Repositories */}
         {stats.topRepositories.length > 0 && (
           <SectionCard title="Top Repositories">
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {stats.topRepositories.slice(0, 5).map((repo) => (
+            <div className="space-y-3">
+              {stats.topRepositories.slice(0, 3).map((repo) => (
                 <Link
                   key={repo.nameWithOwner}
                   href={`/repo/${repo.nameWithOwner}`}

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ContributorDetailStat } from "@/lib/github";
 import { calculateBadges, sortBadgesByImportance, Badge } from "@/lib/badges";
 import { 
@@ -149,10 +150,8 @@ function ContributorRow({
       </div>
 
       {/* アバター */}
-      <a
-        href={`https://github.com/${contributor.login}`}
-        target="_blank"
-        rel="noopener noreferrer"
+      <Link
+        href={`/user/${contributor.login}`}
         className="shrink-0 hover:opacity-80 transition-opacity"
       >
         <Image
@@ -162,24 +161,21 @@ function ContributorRow({
           height={40}
           className="rounded-full ring-2 ring-transparent hover:ring-purple-500 transition-all w-8 h-8 sm:w-10 sm:h-10"
         />
-      </a>
+      </Link>
 
       {/* 名前とバッジ */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <a
-            href={`https://github.com/${contributor.login}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`font-medium truncate hover:underline inline-flex items-center gap-1 group ${
+          <Link
+            href={`/user/${contributor.login}`}
+            className={`font-medium truncate hover:underline ${
               isCurrentUser
                 ? "text-purple-700 dark:text-purple-300"
                 : "text-gray-900 dark:text-white"
             }`}
           >
             {contributor.name}
-            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
-          </a>
+          </Link>
           {isCurrentUser && (
             <span className="text-xs text-purple-500">(あなた)</span>
           )}
