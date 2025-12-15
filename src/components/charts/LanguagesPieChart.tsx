@@ -87,7 +87,7 @@ export default function LanguagesPieChart({ data }: Props) {
       </ResponsiveContainer>
 
       {/* 中央に言語数を表示 */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ marginBottom: "40px" }}>
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none mb-10">
         <div className="text-center">
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {data.length}

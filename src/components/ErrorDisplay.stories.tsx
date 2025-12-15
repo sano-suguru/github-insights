@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ErrorDisplay, ChartErrorWrapper } from "./ErrorDisplay";
 
 const meta: Meta<typeof ErrorDisplay> = {

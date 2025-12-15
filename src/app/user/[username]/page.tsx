@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -19,13 +19,23 @@ import {
   Camera,
   X,
 } from "lucide-react";
-import { UserProfile, UserStats } from "@/lib/github";
+import { UserProfile, UserStats, UserEvent } from "@/lib/github";
 import { calculateUserBadges, Badge } from "@/lib/badges";
 import DashboardLayout, { StatCard, SectionCard } from "@/components/DashboardLayout";
 
 // チャートコンポーネント（SSR無効化）
 const LanguagesPieChart = dynamic(
   () => import("@/components/charts/LanguagesPieChart"),
+  { ssr: false }
+);
+
+const UserActivityHeatmap = dynamic(
+  () => import("@/components/charts/UserActivityHeatmap"),
+  { ssr: false }
+);
+
+const ContributionTypePie = dynamic(
+  () => import("@/components/charts/ContributionTypePie"),
   { ssr: false }
 );
 
@@ -183,6 +193,7 @@ function UserCardModal({ isOpen, onClose, username, name }: UserCardModalProps) 
 async function fetchUserData(username: string): Promise<{
   profile: UserProfile;
   stats: UserStats;
+  events: UserEvent[];
 }> {
   const response = await fetch(`/api/github/user/${encodeURIComponent(username)}`);
   
@@ -215,6 +226,23 @@ export default function UserProfilePage() {
     staleTime: 1000 * 60 * 30, // 30分
     retry: false,
   });
+
+  // Contribution Types セクションのスクリーンリーダー向けサマリー
+  const userEvents = data?.events;
+  const contributionTypeSummary = useMemo(() => {
+    if (!userEvents || userEvents.length === 0) return "";
+    
+    const typeCount: Record<string, number> = {};
+    userEvents.forEach((e) => {
+      typeCount[e.type] = (typeCount[e.type] || 0) + 1;
+    });
+    const total = userEvents.length;
+    return Object.entries(typeCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([type, count]) => `${type}: ${Math.round((count / total) * 100)}%`)
+      .join(", ");
+  }, [userEvents]);
 
   // エラー状態
   if (error || (!isLoading && !data)) {
@@ -262,7 +290,7 @@ export default function UserProfilePage() {
     return <DashboardLayout isLoading />;
   }
 
-  const { profile, stats } = data;
+  const { profile, stats, events } = data;
   const joinedDate = new Date(profile.createdAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -557,6 +585,23 @@ export default function UserProfilePage() {
                   </div>
                 </Link>
               ))}
+            </div>
+          </SectionCard>
+        )}
+
+        {/* Activity Heatmap */}
+        {events.length > 0 && (
+          <SectionCard title="Activity Heatmap">
+            <UserActivityHeatmap events={events} />
+          </SectionCard>
+        )}
+
+        {/* Contribution Type Distribution */}
+        {events.length > 0 && (
+          <SectionCard title="Contribution Types">
+            <p className="sr-only">{contributionTypeSummary}</p>
+            <div aria-hidden="true">
+              <ContributionTypePie events={events} />
             </div>
           </SectionCard>
         )}

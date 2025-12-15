@@ -500,6 +500,92 @@ export async function searchUsers(
   }
 }
 
+// ユーザーイベント型（GitHub Events API）
+export interface UserEvent {
+  id: string;
+  type: string;
+  createdAt: string;
+  repo: {
+    name: string;
+  };
+}
+
+// GitHub Events APIのレスポンス型
+interface GitHubEventResponse {
+  id: string;
+  type: string;
+  created_at: string;
+  repo: { name: string };
+}
+
+// ユーザーイベントを取得（GitHub REST API使用）
+// 直近90日程度のイベントを取得（最大300件、GitHub APIの制限により最新100件×3ページ）
+export async function getUserEvents(
+  username: string,
+  accessToken?: string | null
+): Promise<UserEvent[]> {
+  const headers: HeadersInit = {
+    Accept: "application/vnd.github.v3+json",
+    "User-Agent": "GitHub-Insights",
+  };
+
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const allEvents: UserEvent[] = [];
+  
+  try {
+    // 最大3ページ（300件）まで取得
+    for (let page = 1; page <= 3; page++) {
+      const response = await fetch(
+        `https://api.github.com/users/${encodeURIComponent(username)}/events?per_page=100&page=${page}`,
+        {
+          headers,
+          next: { revalidate: 300 }, // 5分キャッシュ
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return [];
+        }
+        if (response.status === 403 || response.status === 429) {
+          throw new GitHubRateLimitError();
+        }
+        throw new Error(`Get user events failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (!Array.isArray(data) || data.length === 0) {
+        break; // データがなければ終了
+      }
+
+      const events: UserEvent[] = data.map((event: GitHubEventResponse) => ({
+        id: event.id,
+        type: event.type,
+        createdAt: event.created_at,
+        repo: {
+          name: event.repo.name,
+        },
+      }));
+
+      allEvents.push(...events);
+
+      // 取得したデータが100件未満ならこれ以上ページはない
+      if (data.length < 100) {
+        break;
+      }
+    }
+
+    return allEvents;
+  } catch (error) {
+    console.error("Get user events error:", error);
+    throw error;
+  }
+}
+
 // リポジトリ一覧を取得
 export async function getRepositories(accessToken: string) {
   const client = createGitHubClient(accessToken);

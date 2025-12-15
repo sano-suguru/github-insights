@@ -1,10 +1,10 @@
 "use client";
 
-import { CommitInfo } from "@/lib/github";
+import { UserEvent } from "@/lib/github";
 import { useMemo } from "react";
 
 interface Props {
-  data: CommitInfo[];
+  events: UserEvent[];
 }
 
 const DAYS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -12,22 +12,26 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_LABELS = HOURS.filter((h) => h % 3 === 0); // 3時間ごとのラベル (0, 3, 6, ..., 21)
 const HOUR_LABEL_MIN_WIDTH = `${100 / HOUR_LABELS.length}%`; // 各ラベルの最小幅
 
-export default function ActivityHeatmap({ data }: Props) {
+/**
+ * ユーザーイベントのアクティビティヒートマップ
+ * 曜日×時間帯でイベント頻度を可視化
+ */
+export default function UserActivityHeatmap({ events }: Props) {
   // 曜日×時間帯のマトリックスを作成
   const heatmapData = useMemo(() => {
     const matrix: number[][] = Array.from({ length: 7 }, () =>
       Array(24).fill(0)
     );
 
-    data.forEach((commit) => {
-      const date = new Date(commit.committedDate);
+    events.forEach((event) => {
+      const date = new Date(event.createdAt);
       const day = date.getDay();
       const hour = date.getHours();
       matrix[day][hour]++;
     });
 
     return matrix;
-  }, [data]);
+  }, [events]);
 
   // 最大値を取得（色の濃さ計算用）
   const maxValue = useMemo(() => {
@@ -44,7 +48,7 @@ export default function ActivityHeatmap({ data }: Props) {
     return "bg-purple-600 dark:bg-purple-500";
   };
 
-  if (data.length === 0) {
+  if (events.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
         活動データがありません
@@ -82,7 +86,7 @@ export default function ActivityHeatmap({ data }: Props) {
                   className={`flex-1 h-6 rounded-sm ${getColor(
                     heatmapData[dayIndex][hour]
                   )} transition-colors cursor-default`}
-                  title={`${day} ${hour}:00 - ${heatmapData[dayIndex][hour]} commits`}
+                  title={`${day} ${hour}:00 - ${heatmapData[dayIndex][hour]} アクティビティ`}
                 />
               ))}
             </div>
