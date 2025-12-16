@@ -87,10 +87,9 @@ function DashboardContent() {
   // 実際に使用するリポジトリ（選択されていない場合は最初のリポジトリ）
   const activeRepo = selectedRepo || (repositories.length > 0 ? repositories[0].nameWithOwner : "");
 
-  // リポジトリ選択時にURLを更新
+  // リポジトリ選択時に /repo/owner/repo へ遷移
   const handleSelectRepo = useCallback((repo: string) => {
-    setSelectedRepo(repo);
-    router.push(`/dashboard?repo=${encodeURIComponent(repo)}`, { scroll: false });
+    router.push(`/repo/${repo}`, { scroll: false });
   }, [router]);
 
   // 選択リポジトリのowner/repo
@@ -140,6 +139,13 @@ function DashboardContent() {
       router.push("/login");
     }
   }, [status, router]);
+
+  // URLにリポジトリが指定されていれば /repo/owner/repo へリダイレクト
+  useEffect(() => {
+    if (repoFromUrl && status === "authenticated") {
+      router.replace(`/repo/${repoFromUrl}`);
+    }
+  }, [repoFromUrl, status, router]);
 
   if (status === "loading" || reposLoading) {
     return (

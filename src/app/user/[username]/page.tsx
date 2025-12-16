@@ -524,7 +524,7 @@ export default function UserProfilePage() {
         />
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Languages */}
         {stats.languageBreakdown.length > 0 && (
           <SectionCard title="Languages">
@@ -534,7 +534,7 @@ export default function UserProfilePage() {
                 `${lang.name}: ${lang.percentage}%`
               ).join(", ")}
             </p>
-            <div className="h-64" aria-hidden="true">
+            <div className="h-48 sm:h-64" aria-hidden="true">
               <LanguagesPieChart
                 data={stats.languageBreakdown.slice(0, 8).map((lang) => ({
                   name: lang.name,
@@ -550,25 +550,25 @@ export default function UserProfilePage() {
         {/* Top Repositories */}
         {stats.topRepositories.length > 0 && (
           <SectionCard title="Top Repositories">
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {stats.topRepositories.slice(0, 3).map((repo) => (
                 <Link
                   key={repo.nameWithOwner}
                   href={`/repo/${repo.nameWithOwner}`}
-                  className="block p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
+                  className="block p-2 sm:p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900 dark:text-white truncate">
+                      <p className="font-medium text-sm sm:text-base text-gray-900 dark:text-white truncate">
                         {repo.name}
                       </p>
                       {repo.description && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
                           {repo.description}
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 ml-4 shrink-0">
+                    <div className="flex items-center gap-3 sm:ml-4 shrink-0">
                       {repo.primaryLanguage && (
                         <span className="flex items-center gap-1 text-xs text-gray-500">
                           <span
@@ -578,7 +578,7 @@ export default function UserProfilePage() {
                           {repo.primaryLanguage.name}
                         </span>
                       )}
-                      <span className="flex items-center gap-1 text-sm text-gray-500">
+                      <span className="flex items-center gap-1 text-xs sm:text-sm text-gray-500">
                         <Star className="w-3 h-3" />
                         {repo.stargazerCount.toLocaleString()}
                       </span>
