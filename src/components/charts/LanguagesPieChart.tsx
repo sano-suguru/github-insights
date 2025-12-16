@@ -68,18 +68,23 @@ export default function LanguagesPieChart({ data }: Props) {
           />
           <Legend
             content={() => (
-              <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
-                {chartData.map((item) => (
-                  <li key={item.name} className="flex items-center gap-1.5">
+              <ul className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1.5 mt-2 px-2">
+                {chartData.slice(0, 6).map((item) => (
+                  <li key={item.name} className="flex items-center gap-1.5 min-w-0">
                     <span
-                      className="w-3 h-3 rounded-sm"
+                      className="w-2.5 h-2.5 rounded-sm shrink-0"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                    <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">
                       {item.name} <span className="text-gray-400">({item.value}%)</span>
                     </span>
                   </li>
                 ))}
+                {chartData.length > 6 && (
+                  <li className="flex items-center gap-1.5 text-xs text-gray-400">
+                    +{chartData.length - 6} more
+                  </li>
+                )}
               </ul>
             )}
           />
