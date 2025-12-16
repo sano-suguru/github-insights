@@ -149,8 +149,8 @@
       "bregman-arie/devops-exercises",
       "louislam/uptime-kuma",
       "netdata/netdata",
-      "moby/moby",
       "Stirling-Tools/Stirling-PDF",
+      "moby/moby",
       "traefik/traefik",
       "appwrite/appwrite",
       "wagoodman/dive",
@@ -412,5 +412,5 @@
     "wenzhixin/bootstrap-table",
     "xtermjs/xterm.js"
   ],
-  "lastUpdated": "2025-12-15"
+  "lastUpdated": "2025-12-16"
 }
