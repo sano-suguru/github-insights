@@ -534,7 +534,7 @@ export default function UserProfilePage() {
                 `${lang.name}: ${lang.percentage}%`
               ).join(", ")}
             </p>
-            <div className="h-48 sm:h-64" aria-hidden="true">
+            <div className="h-72 sm:h-64" aria-hidden="true">
               <LanguagesPieChart
                 data={stats.languageBreakdown.slice(0, 8).map((lang) => ({
                   name: lang.name,
