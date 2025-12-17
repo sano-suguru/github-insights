@@ -14,6 +14,7 @@ import {
   calculateInsightScore,
   calculateAccountYears,
 } from "@/lib/insight-score";
+import { calculateWrappedBadges } from "@/lib/badges";
 
 interface Params {
   params: Promise<{
@@ -119,6 +120,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     // NOTE: GitHub APIの制約により、followers/stars/forks/reposは「現在の値」を使用。
     // PRs/Issuesのみ年間データを使用するハイブリッド指標となる。
     // 過去年のWrappedでは、これらの累計値が当時より増加している可能性がある。
+    const accountYears = calculateAccountYears(profile.createdAt);
     const insightScore = calculateInsightScore({
       followers: profile.followers,
       totalStars: stats.totalStars,
@@ -126,7 +128,19 @@ export async function GET(request: NextRequest, { params }: Params) {
       publicRepos: stats.totalRepos,
       totalPRs: yearlyStats.prs,
       totalIssues: yearlyStats.issues,
-      accountYears: calculateAccountYears(profile.createdAt),
+      accountYears,
+    });
+
+    // バッジを計算
+    const badges = calculateWrappedBadges({
+      longestStreak: contributionCalendar.longestStreak,
+      totalContributions: contributionCalendar.totalContributions,
+      prs: yearlyStats.prs,
+      languageCount: stats.languageBreakdown.length,
+      activityType: activityTime.type,
+      contributionGrowth: growth?.contributions ?? null,
+      accountYears,
+      isFirstYear: memberSinceYear === year,
     });
 
     return NextResponse.json({
@@ -149,6 +163,13 @@ export async function GET(request: NextRequest, { params }: Params) {
         peakHour: activityTime.peakHour,
       },
       topLanguages,
+      // 獲得バッジ
+      badges: badges.map((b) => ({
+        id: b.id,
+        name: b.name,
+        description: b.description,
+        rarity: b.rarity,
+      })),
       insightScore: {
         score: insightScore.score,
         rank: insightScore.rank,

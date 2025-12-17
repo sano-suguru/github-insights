@@ -16,8 +16,16 @@ import {
   Hammer,
   GitMerge,
   Shield,
+  Flame,
+  Zap,
+  Rocket,
+  Languages,
+  Moon,
+  Sunrise,
+  TrendingUp,
+  Activity,
 } from "lucide-react";
-import { ContributorDetailStat } from "./github";
+import type { ContributorDetailStat, ActivityTimeType } from "./github";
 
 // ========== OG カード用バッジ色スキーム ==========
 
@@ -361,4 +369,284 @@ export function calculateUserBadges(stats: UserProfileStats): Badge[] {
   }
 
   return badges;
+}
+
+// ========== GitHub Wrapped 用バッジ ==========
+
+// Wrapped バッジの希少度
+export type WrappedBadgeRarity = "common" | "rare" | "epic" | "legendary";
+
+// Wrapped バッジ定義
+export interface WrappedBadge {
+  id: string;
+  name: string;
+  description: string;
+  icon: LucideIcon;
+  rarity: WrappedBadgeRarity;
+}
+
+// Wrapped用バッジ定義
+export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
+  // ストリーク系
+  "streak-7": {
+    id: "streak-7",
+    name: "Week Warrior",
+    description: "7 day streak",
+    icon: Flame,
+    rarity: "common",
+  },
+  "streak-30": {
+    id: "streak-30",
+    name: "Code Marathon",
+    description: "30 day streak",
+    icon: Flame,
+    rarity: "rare",
+  },
+  "streak-100": {
+    id: "streak-100",
+    name: "Streak Legend",
+    description: "100 day streak",
+    icon: Flame,
+    rarity: "legendary",
+  },
+
+  // 活動量系
+  "contributions-100": {
+    id: "contributions-100",
+    name: "Active",
+    description: "100+ contributions",
+    icon: Activity,
+    rarity: "common",
+  },
+  "contributions-500": {
+    id: "contributions-500",
+    name: "Power User",
+    description: "500+ contributions",
+    icon: Zap,
+    rarity: "rare",
+  },
+  "contributions-1000": {
+    id: "contributions-1000",
+    name: "Machine",
+    description: "1000+ contributions",
+    icon: Rocket,
+    rarity: "epic",
+  },
+  "contributions-2000": {
+    id: "contributions-2000",
+    name: "Titan",
+    description: "2000+ contributions",
+    icon: Crown,
+    rarity: "legendary",
+  },
+
+  // PR系
+  "prs-10": {
+    id: "prs-10",
+    name: "PR Opener",
+    description: "10+ PRs",
+    icon: GitPullRequest,
+    rarity: "common",
+  },
+  "prs-50": {
+    id: "prs-50",
+    name: "PR Master",
+    description: "50+ PRs",
+    icon: GitPullRequest,
+    rarity: "rare",
+  },
+  "prs-100": {
+    id: "prs-100",
+    name: "PR Legend",
+    description: "100+ PRs",
+    icon: GitPullRequest,
+    rarity: "epic",
+  },
+
+  // 言語系
+  "polyglot-3": {
+    id: "polyglot-3",
+    name: "Trilingual",
+    description: "3+ languages",
+    icon: Languages,
+    rarity: "common",
+  },
+  "polyglot-5": {
+    id: "polyglot-5",
+    name: "Polyglot",
+    description: "5+ languages",
+    icon: Languages,
+    rarity: "rare",
+  },
+  "polyglot-10": {
+    id: "polyglot-10",
+    name: "Language Master",
+    description: "10+ languages",
+    icon: Languages,
+    rarity: "epic",
+  },
+
+  // 時間帯系
+  "night-owl": {
+    id: "night-owl",
+    name: "Night Owl",
+    description: "Active at night",
+    icon: Moon,
+    rarity: "rare",
+  },
+  "early-bird": {
+    id: "early-bird",
+    name: "Early Bird",
+    description: "Active in morning",
+    icon: Sunrise,
+    rarity: "rare",
+  },
+
+  // 成長系
+  "growth-50": {
+    id: "growth-50",
+    name: "Rising Star",
+    description: "50%+ growth",
+    icon: TrendingUp,
+    rarity: "rare",
+  },
+  "growth-100": {
+    id: "growth-100",
+    name: "Breakout Year",
+    description: "100%+ growth",
+    icon: TrendingUp,
+    rarity: "epic",
+  },
+
+  // 特別系
+  "first-year": {
+    id: "first-year",
+    name: "Fresh Start",
+    description: "First year",
+    icon: Sparkles,
+    rarity: "common",
+  },
+  "veteran-5": {
+    id: "veteran-5",
+    name: "Veteran",
+    description: "5+ years",
+    icon: Shield,
+    rarity: "rare",
+  },
+  "veteran-10": {
+    id: "veteran-10",
+    name: "Elder",
+    description: "10+ years",
+    icon: Shield,
+    rarity: "epic",
+  },
+};
+
+// Wrapped バッジ計算用の入力
+export interface WrappedBadgeInput {
+  longestStreak: number;
+  totalContributions: number;
+  prs: number;
+  languageCount: number;
+  activityType: ActivityTimeType;
+  contributionGrowth: number | null;
+  accountYears: number;
+  isFirstYear: boolean;
+}
+
+/**
+ * Wrapped用バッジを計算
+ */
+export function calculateWrappedBadges(input: WrappedBadgeInput): WrappedBadge[] {
+  const badges: WrappedBadge[] = [];
+
+  // ストリーク系（排他的 - 最高のみ）
+  if (input.longestStreak >= 100) {
+    badges.push(WRAPPED_BADGES["streak-100"]);
+  } else if (input.longestStreak >= 30) {
+    badges.push(WRAPPED_BADGES["streak-30"]);
+  } else if (input.longestStreak >= 7) {
+    badges.push(WRAPPED_BADGES["streak-7"]);
+  }
+
+  // 活動量系（排他的）
+  if (input.totalContributions >= 2000) {
+    badges.push(WRAPPED_BADGES["contributions-2000"]);
+  } else if (input.totalContributions >= 1000) {
+    badges.push(WRAPPED_BADGES["contributions-1000"]);
+  } else if (input.totalContributions >= 500) {
+    badges.push(WRAPPED_BADGES["contributions-500"]);
+  } else if (input.totalContributions >= 100) {
+    badges.push(WRAPPED_BADGES["contributions-100"]);
+  }
+
+  // PR系（排他的）
+  if (input.prs >= 100) {
+    badges.push(WRAPPED_BADGES["prs-100"]);
+  } else if (input.prs >= 50) {
+    badges.push(WRAPPED_BADGES["prs-50"]);
+  } else if (input.prs >= 10) {
+    badges.push(WRAPPED_BADGES["prs-10"]);
+  }
+
+  // 言語系（排他的）
+  if (input.languageCount >= 10) {
+    badges.push(WRAPPED_BADGES["polyglot-10"]);
+  } else if (input.languageCount >= 5) {
+    badges.push(WRAPPED_BADGES["polyglot-5"]);
+  } else if (input.languageCount >= 3) {
+    badges.push(WRAPPED_BADGES["polyglot-3"]);
+  }
+
+  // 時間帯系
+  if (input.activityType === "night-owl") {
+    badges.push(WRAPPED_BADGES["night-owl"]);
+  } else if (input.activityType === "early-bird") {
+    badges.push(WRAPPED_BADGES["early-bird"]);
+  }
+
+  // 成長系（排他的）
+  if (input.contributionGrowth !== null) {
+    if (input.contributionGrowth >= 100) {
+      badges.push(WRAPPED_BADGES["growth-100"]);
+    } else if (input.contributionGrowth >= 50) {
+      badges.push(WRAPPED_BADGES["growth-50"]);
+    }
+  }
+
+  // 特別系
+  if (input.isFirstYear) {
+    badges.push(WRAPPED_BADGES["first-year"]);
+  }
+  if (input.accountYears >= 10) {
+    badges.push(WRAPPED_BADGES["veteran-10"]);
+  } else if (input.accountYears >= 5) {
+    badges.push(WRAPPED_BADGES["veteran-5"]);
+  }
+
+  // 希少度順にソート（legendary > epic > rare > common）
+  const rarityOrder: Record<WrappedBadgeRarity, number> = {
+    legendary: 4,
+    epic: 3,
+    rare: 2,
+    common: 1,
+  };
+
+  return badges.sort((a, b) => rarityOrder[b.rarity] - rarityOrder[a.rarity]);
+}
+
+/**
+ * Wrapped バッジの希少度に応じた色を取得
+ */
+export function getWrappedBadgeColors(rarity: WrappedBadgeRarity): { bg: string; text: string; border: string } {
+  switch (rarity) {
+    case "legendary":
+      return { bg: "#fef3c7", text: "#92400e", border: "#fbbf24" }; // 金
+    case "epic":
+      return { bg: "#ede9fe", text: "#5b21b6", border: "#8b5cf6" }; // 紫
+    case "rare":
+      return { bg: "#dbeafe", text: "#1e40af", border: "#3b82f6" }; // 青
+    default:
+      return { bg: "#f3f4f6", text: "#374151", border: "#9ca3af" }; // グレー
+  }
 }

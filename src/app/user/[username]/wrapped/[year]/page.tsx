@@ -24,11 +24,22 @@ import {
   Sun,
   Sunrise,
   Sunset,
+  Award,
 } from "lucide-react";
 import { getRankColors } from "@/lib/insight-score";
 import type { InsightRank } from "@/lib/insight-score";
 import type { ActivityTimeType } from "@/lib/github";
+import type { WrappedBadgeRarity } from "@/lib/badges";
+import { getWrappedBadgeColors, WRAPPED_BADGES } from "@/lib/badges";
 import DashboardLayout from "@/components/DashboardLayout";
+
+// バッジデータ型
+interface WrappedBadgeData {
+  id: string;
+  name: string;
+  description: string;
+  rarity: WrappedBadgeRarity;
+}
 
 interface WrappedData {
   year: number;
@@ -55,6 +66,8 @@ interface WrappedData {
     label: string;
     peakHour: number;
   };
+  // バッジ
+  badges: WrappedBadgeData[];
   topLanguages: {
     name: string;
     color: string;
@@ -324,6 +337,35 @@ export default function WrappedPage() {
               <p className="text-purple-200 text-sm">
                 Peak activity at {formatPeakHour(data.activityTime.peakHour)}
               </p>
+            </div>
+          )}
+
+          {/* Badges */}
+          {data.badges && data.badges.length > 0 && (
+            <div className="bg-white/10 backdrop-blur rounded-xl p-6 col-span-2">
+              <Award className="w-8 h-8 text-purple-400 mx-auto mb-3" />
+              <p className="text-purple-200 text-sm mb-4 text-center">Achievements</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {data.badges.slice(0, 6).map((badge) => {
+                  const colors = getWrappedBadgeColors(badge.rarity);
+                  const BadgeIcon = WRAPPED_BADGES[badge.id]?.icon || Award;
+                  return (
+                    <div
+                      key={badge.id}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                      style={{
+                        backgroundColor: colors.bg,
+                        border: `1px solid ${colors.border}`,
+                      }}
+                    >
+                      <BadgeIcon className="w-4 h-4" style={{ color: colors.text }} />
+                      <span className="text-sm font-medium" style={{ color: colors.text }}>
+                        {badge.name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
