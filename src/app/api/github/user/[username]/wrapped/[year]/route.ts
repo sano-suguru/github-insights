@@ -61,6 +61,45 @@ export async function GET(request: NextRequest, { params }: Params) {
       getContributionCalendar(username, year, accessToken),
     ]);
 
+    // 前年データを取得（成長率計算用）
+    // アカウント作成年より前の場合はスキップ
+    const memberSinceYear = new Date(profile.createdAt).getFullYear();
+    const previousYear = year - 1;
+    let previousYearData: {
+      prs: number;
+      issues: number;
+      totalContributions: number;
+    } | null = null;
+
+    if (previousYear >= memberSinceYear) {
+      const [prevStats, prevCalendar] = await Promise.all([
+        getYearlyContributionStats(username, previousYear, accessToken),
+        getContributionCalendar(username, previousYear, accessToken),
+      ]);
+      previousYearData = {
+        prs: prevStats.prs,
+        issues: prevStats.issues,
+        totalContributions: prevCalendar.totalContributions,
+      };
+    }
+
+    // 成長率を計算
+    const calculateGrowthRate = (current: number, previous: number | undefined): number | null => {
+      if (previous === undefined || previous === 0) return null;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    const growth = previousYearData
+      ? {
+          contributions: calculateGrowthRate(
+            contributionCalendar.totalContributions,
+            previousYearData.totalContributions
+          ),
+          prs: calculateGrowthRate(yearlyStats.prs, previousYearData.prs),
+          issues: calculateGrowthRate(yearlyStats.issues, previousYearData.issues),
+        }
+      : null;
+
     const stats = calculateUserStats(repositories);
 
     // 言語TOP3を取得
@@ -95,6 +134,8 @@ export async function GET(request: NextRequest, { params }: Params) {
         longestStreak: contributionCalendar.longestStreak,
         currentStreak: contributionCalendar.currentStreak,
       },
+      // 前年比成長率（%）- nullは比較データなし
+      growth,
       topLanguages,
       insightScore: {
         score: insightScore.score,

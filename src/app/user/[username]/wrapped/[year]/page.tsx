@@ -17,6 +17,8 @@ import {
   Medal,
   Flame,
   Activity,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { getRankColors } from "@/lib/insight-score";
 import type { InsightRank } from "@/lib/insight-score";
@@ -35,6 +37,12 @@ interface WrappedData {
     longestStreak?: number;
     currentStreak?: number;
   };
+  // 前年比成長率（%）
+  growth: {
+    contributions: number | null;
+    prs: number | null;
+    issues: number | null;
+  } | null;
   topLanguages: {
     name: string;
     color: string;
@@ -67,6 +75,22 @@ function formatNumber(n: number): string {
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return n.toString();
+}
+
+// 成長率バッジコンポーネント
+function GrowthBadge({ value }: { value: number | null }) {
+  if (value === null) return null;
+  
+  const isPositive = value >= 0;
+  const Icon = isPositive ? TrendingUp : TrendingDown;
+  const colorClass = isPositive ? "text-green-400" : "text-red-400";
+  
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs ${colorClass}`}>
+      <Icon className="w-3 h-3" />
+      {isPositive ? "+" : ""}{value}%
+    </span>
+  );
 }
 
 export default function WrappedPage() {
@@ -173,7 +197,12 @@ export default function WrappedPage() {
               <p className="text-5xl font-bold text-white mb-1">
                 {formatNumber(data.yearlyStats.totalContributions)}
               </p>
-              <p className="text-purple-200 text-sm">Total Contributions</p>
+              <div className="flex items-center justify-center gap-2">
+                <p className="text-purple-200 text-sm">Total Contributions</p>
+                {data.growth?.contributions !== null && (
+                  <GrowthBadge value={data.growth?.contributions ?? null} />
+                )}
+              </div>
             </div>
           )}
 
@@ -190,15 +219,18 @@ export default function WrappedPage() {
             </div>
           )}
 
-          {/* PRs - col-span調整 */}
-          <div className={`bg-white/10 backdrop-blur rounded-xl p-6 text-center ${
-            !data.yearlyStats.longestStreak || data.yearlyStats.longestStreak === 0 ? "" : ""
-          }`}>
+          {/* PRs */}
+          <div className="bg-white/10 backdrop-blur rounded-xl p-6 text-center">
             <GitPullRequest className="w-8 h-8 text-green-400 mx-auto mb-2" />
             <p className="text-4xl font-bold text-white mb-1">
               {formatNumber(data.yearlyStats.prs)}
             </p>
-            <p className="text-purple-200 text-sm">Pull Requests</p>
+            <div className="flex items-center justify-center gap-2">
+              <p className="text-purple-200 text-sm">Pull Requests</p>
+              {data.growth?.prs !== null && (
+                <GrowthBadge value={data.growth?.prs ?? null} />
+              )}
+            </div>
           </div>
 
           {/* Issues */}
@@ -207,7 +239,12 @@ export default function WrappedPage() {
             <p className="text-4xl font-bold text-white mb-1">
               {formatNumber(data.yearlyStats.issues)}
             </p>
-            <p className="text-purple-200 text-sm">Issues</p>
+            <div className="flex items-center justify-center gap-2">
+              <p className="text-purple-200 text-sm">Issues</p>
+              {data.growth?.issues !== null && (
+                <GrowthBadge value={data.growth?.issues ?? null} />
+              )}
+            </div>
           </div>
 
           {/* Languages */}
