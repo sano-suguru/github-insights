@@ -1,34 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getLanguageStats } from "@/lib/github";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
-
-// キャッシュ付きで言語統計を取得
-async function getCachedLanguageStats(
-  accessToken: string | null,
-  owner: string,
-  repo: string
-) {
-  const isAuthenticated = !!accessToken;
-  const cacheKey = `languages:${owner}:${repo}:${isAuthenticated ? "auth" : "public"}`;
-  
-  const cachedFetch = unstable_cache(
-    async () => {
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[Cache MISS] Fetching languages: ${owner}/${repo}`);
-      }
-      return await getLanguageStats(accessToken, owner, repo);
-    },
-    [cacheKey],
-    {
-      revalidate: SERVER_CACHE.LANGUAGES_REVALIDATE,
-      tags: [`languages:${owner}:${repo}`],
-    }
-  );
-
-  return cachedFetch();
-}
+import { createCachedFetch } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,8 +19,16 @@ export async function GET(request: NextRequest) {
 
     const session = await auth();
     const accessToken = session?.accessToken ?? null;
+    const isAuthenticated = !!accessToken;
 
-    const languages = await getCachedLanguageStats(accessToken, owner, repo);
+    const languages = await createCachedFetch({
+      fetcher: () => getLanguageStats(accessToken, owner, repo),
+      cacheKeyPrefix: "languages",
+      owner,
+      repo,
+      isAuthenticated,
+      revalidate: SERVER_CACHE.LANGUAGES_REVALIDATE,
+    });
 
     return NextResponse.json(languages, {
       headers: {

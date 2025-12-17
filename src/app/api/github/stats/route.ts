@@ -1,34 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getRepositoryStats } from "@/lib/github";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
-
-// キャッシュ付きでリポジトリ統計を取得
-async function getCachedRepositoryStats(
-  accessToken: string | null,
-  owner: string,
-  repo: string
-) {
-  const isAuthenticated = !!accessToken;
-  const cacheKey = `stats:${owner}:${repo}:${isAuthenticated ? "auth" : "public"}`;
-  
-  const cachedFetch = unstable_cache(
-    async () => {
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[Cache MISS] Fetching stats: ${owner}/${repo}`);
-      }
-      return await getRepositoryStats(accessToken, owner, repo);
-    },
-    [cacheKey],
-    {
-      revalidate: SERVER_CACHE.STATS_REVALIDATE,
-      tags: [`stats:${owner}:${repo}`],
-    }
-  );
-
-  return cachedFetch();
-}
+import { createCachedFetch } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,8 +19,16 @@ export async function GET(request: NextRequest) {
 
     const session = await auth();
     const accessToken = session?.accessToken ?? null;
+    const isAuthenticated = !!accessToken;
 
-    const stats = await getCachedRepositoryStats(accessToken, owner, repo);
+    const stats = await createCachedFetch({
+      fetcher: () => getRepositoryStats(accessToken, owner, repo),
+      cacheKeyPrefix: "stats",
+      owner,
+      repo,
+      isAuthenticated,
+      revalidate: SERVER_CACHE.STATS_REVALIDATE,
+    });
 
     return NextResponse.json(stats, {
       headers: {

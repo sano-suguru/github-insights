@@ -76,7 +76,7 @@ function DashboardContent() {
 
   // URLからリポジトリを取得
   const repoFromUrl = searchParams.get("repo");
-  const [selectedRepo, setSelectedRepo] = useState<string>(repoFromUrl || "");
+  const selectedRepo = repoFromUrl || "";
   const [selectedDays, setSelectedDays] = useState<number | null>(30);
 
   // リポジトリ一覧取得（React Query）

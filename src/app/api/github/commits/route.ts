@@ -1,41 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getCommitHistory } from "@/lib/github";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
-
-// キャッシュキーを生成
-function getCacheKey(owner: string, repo: string, days: number | null, isAuthenticated: boolean) {
-  return `commits:${owner}:${repo}:${days ?? "all"}:${isAuthenticated ? "auth" : "public"}`;
-}
-
-// キャッシュ付きでコミット履歴を取得
-async function getCachedCommitHistory(
-  accessToken: string | null,
-  owner: string,
-  repo: string,
-  days: number | null
-) {
-  // 認証状態でキャッシュを分ける（認証済みはより多くのデータを取得可能）
-  const isAuthenticated = !!accessToken;
-  const cacheKey = getCacheKey(owner, repo, days, isAuthenticated);
-  
-  const cachedFetch = unstable_cache(
-    async () => {
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[Cache MISS] Fetching commits: ${owner}/${repo}, days=${days}`);
-      }
-      return await getCommitHistory(accessToken, owner, repo, { days });
-    },
-    [cacheKey],
-    {
-      revalidate: SERVER_CACHE.COMMITS_REVALIDATE,
-      tags: [`commits:${owner}:${repo}`],
-    }
-  );
-
-  return cachedFetch();
-}
+import { createCachedFetch } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -67,9 +34,19 @@ export async function GET(request: NextRequest) {
     // セッションからアクセストークンを取得
     const session = await auth();
     const accessToken = session?.accessToken ?? null;
+    const isAuthenticated = !!accessToken;
 
     // キャッシュ付きでデータ取得
-    const commits = await getCachedCommitHistory(accessToken, owner, repo, days);
+    const commits = await createCachedFetch({
+      fetcher: () => getCommitHistory(accessToken, owner, repo, { days }),
+      cacheKeyPrefix: "commits",
+      owner,
+      repo,
+      isAuthenticated,
+      revalidate: SERVER_CACHE.COMMITS_REVALIDATE,
+      additionalKeyParts: [days],
+      debugLabel: `commits (days=${days})`,
+    });
 
     // レスポンスヘッダーにキャッシュ情報を追加
     return NextResponse.json(commits, {

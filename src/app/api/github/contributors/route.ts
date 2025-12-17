@@ -1,60 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getContributorStats, getContributorDetails } from "@/lib/github";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
-
-// キャッシュ付きでコントリビューター統計を取得
-async function getCachedContributorStats(
-  accessToken: string | null,
-  owner: string,
-  repo: string
-) {
-  const isAuthenticated = !!accessToken;
-  const cacheKey = `contributors:${owner}:${repo}:${isAuthenticated ? "auth" : "public"}`;
-  
-  const cachedFetch = unstable_cache(
-    async () => {
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[Cache MISS] Fetching contributors: ${owner}/${repo}`);
-      }
-      return await getContributorStats(accessToken, owner, repo);
-    },
-    [cacheKey],
-    {
-      revalidate: SERVER_CACHE.CONTRIBUTORS_REVALIDATE,
-      tags: [`contributors:${owner}:${repo}`],
-    }
-  );
-
-  return cachedFetch();
-}
-
-// キャッシュ付きでコントリビューター詳細を取得
-async function getCachedContributorDetails(
-  accessToken: string | null,
-  owner: string,
-  repo: string
-) {
-  const isAuthenticated = !!accessToken;
-  const cacheKey = `contributor-details:${owner}:${repo}:${isAuthenticated ? "auth" : "public"}`;
-  
-  const cachedFetch = unstable_cache(
-    async () => {
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[Cache MISS] Fetching contributor details: ${owner}/${repo}`);
-      }
-      return await getContributorDetails(accessToken, owner, repo);
-    },
-    [cacheKey],
-    {
-      revalidate: SERVER_CACHE.CONTRIBUTORS_REVALIDATE,
-      tags: [`contributors:${owner}:${repo}`],
-    }
-  );
-
-  return cachedFetch();
-}
+import { createCachedFetch } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -80,9 +28,26 @@ export async function GET(request: NextRequest) {
     const session = await auth();
     const accessToken = session?.accessToken ?? null;
 
+    const isAuthenticated = !!accessToken;
+    
     const data = type === "details"
-      ? await getCachedContributorDetails(accessToken, owner, repo)
-      : await getCachedContributorStats(accessToken, owner, repo);
+      ? await createCachedFetch({
+          fetcher: () => getContributorDetails(accessToken, owner, repo),
+          cacheKeyPrefix: "contributor-details",
+          owner,
+          repo,
+          isAuthenticated,
+          revalidate: SERVER_CACHE.CONTRIBUTORS_REVALIDATE,
+          debugLabel: "contributor details",
+        })
+      : await createCachedFetch({
+          fetcher: () => getContributorStats(accessToken, owner, repo),
+          cacheKeyPrefix: "contributors",
+          owner,
+          repo,
+          isAuthenticated,
+          revalidate: SERVER_CACHE.CONTRIBUTORS_REVALIDATE,
+        });
 
     return NextResponse.json(data, {
       headers: {

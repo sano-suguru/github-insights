@@ -30,3 +30,20 @@ const THEME_PALETTE = [
 export function getChartColor(_githubColor: string | null, index: number): string {
   return THEME_PALETTE[index % THEME_PALETTE.length];
 }
+
+/**
+ * ヒートマップの強度に応じた色クラスを返す
+ * ActivityHeatmap と UserActivityHeatmap で共通使用
+ * 
+ * @param value - セルの値
+ * @param maxValue - 最大値（正規化用）
+ * @returns Tailwind CSSクラス文字列
+ */
+export function getHeatmapColorClass(value: number, maxValue: number): string {
+  if (value === 0) return "bg-gray-100 dark:bg-gray-700";
+  const intensity = value / maxValue;
+  if (intensity < 0.25) return "bg-purple-200 dark:bg-purple-900";
+  if (intensity < 0.5) return "bg-purple-400 dark:bg-purple-700";
+  if (intensity < 0.75) return "bg-purple-500 dark:bg-purple-600";
+  return "bg-purple-600 dark:bg-purple-500";
+}

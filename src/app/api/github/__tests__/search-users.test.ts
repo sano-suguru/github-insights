@@ -20,6 +20,11 @@ vi.mock("next/cache", () => ({
   unstable_cache: vi.fn((fn) => fn),
 }));
 
+// auth モック - セッションからアクセストークンを取得するため
+vi.mock("@/lib/auth", () => ({
+  auth: vi.fn(() => Promise.resolve({ accessToken: "test-token" })),
+}));
+
 // テスト用のリクエスト生成ヘルパー
 function createRequest(params: Record<string, string>): NextRequest {
   const url = new URL("http://localhost:3000/api/github/search-users");
@@ -79,7 +84,7 @@ describe("GET /api/github/search-users", () => {
   });
 
   it("正常なリクエストでユーザー検索結果を返す", async () => {
-    mockSearchUsers.mockResolvedValue(mockUsers);
+    mockSearchUsers.mockResolvedValue({ users: mockUsers, rateLimit: null });
 
     const request = createRequest({ q: "test" });
     const response = await GET(request);
@@ -98,8 +103,7 @@ describe("GET /api/github/search-users", () => {
       resetAt: resetDate,
       used: 5,
     };
-    mockSearchUsers.mockResolvedValue(mockUsers);
-    mockGetPublicRateLimitInfo.mockReturnValue(rateLimitInfo);
+    mockSearchUsers.mockResolvedValue({ users: mockUsers, rateLimit: rateLimitInfo });
 
     const request = createRequest({ q: "test" });
     const response = await GET(request);

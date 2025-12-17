@@ -18,7 +18,6 @@ import {
   Code2,
   Camera,
   X,
-  Github,
 } from "lucide-react";
 import { UserProfile, UserStats, UserEvent } from "@/lib/github";
 import { calculateUserBadges, Badge } from "@/lib/badges";

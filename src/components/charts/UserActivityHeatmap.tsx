@@ -1,6 +1,7 @@
 "use client";
 
 import { UserEvent } from "@/lib/github";
+import { getHeatmapColorClass } from "@/lib/colors";
 import { useMemo } from "react";
 
 interface Props {
@@ -39,14 +40,7 @@ export default function UserActivityHeatmap({ events }: Props) {
   }, [heatmapData]);
 
   // 値に応じた色を返す
-  const getColor = (value: number) => {
-    if (value === 0) return "bg-gray-100 dark:bg-gray-700";
-    const intensity = value / maxValue;
-    if (intensity < 0.25) return "bg-purple-200 dark:bg-purple-900";
-    if (intensity < 0.5) return "bg-purple-400 dark:bg-purple-700";
-    if (intensity < 0.75) return "bg-purple-500 dark:bg-purple-600";
-    return "bg-purple-600 dark:bg-purple-500";
-  };
+  const getColor = (value: number) => getHeatmapColorClass(value, maxValue);
 
   if (events.length === 0) {
     return (

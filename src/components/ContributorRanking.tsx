@@ -7,7 +7,7 @@ import { ContributorDetailStat } from "@/lib/github";
 import { calculateBadges, sortBadgesByImportance, Badge } from "@/lib/badges";
 import { 
   TrendingUp, GitCommit, Plus, Minus, GitPullRequest, 
-  Crown, Medal, ExternalLink, ImageIcon, X 
+  Crown, Medal, ImageIcon, X 
 } from "lucide-react";
 import ContributionCardModal from "./ContributionCardModal";
 

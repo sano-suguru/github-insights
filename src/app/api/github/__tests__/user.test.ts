@@ -10,10 +10,12 @@ async function importRoute() {
 // モック設定
 const mockGetUserProfile = vi.fn<() => Promise<UserProfile | null>>();
 const mockGetUserRepositories = vi.fn<() => Promise<UserRepository[]>>();
+const mockGetUserEvents = vi.fn<() => Promise<unknown[]>>();
 const mockCalculateUserStats = vi.fn<() => UserStats>();
 vi.mock("@/lib/github", () => ({
   getUserProfile: () => mockGetUserProfile(),
   getUserRepositories: () => mockGetUserRepositories(),
+  getUserEvents: () => mockGetUserEvents(),
   calculateUserStats: () => mockCalculateUserStats(),
   GitHubRateLimitError: class extends Error {
     constructor(message = "GitHub API rate limit exceeded") {
@@ -93,6 +95,7 @@ describe("GET /api/github/user/[username]", () => {
     const { GET } = await importRoute();
     mockGetUserProfile.mockResolvedValue(mockProfile);
     mockGetUserRepositories.mockResolvedValue(mockRepositories);
+    mockGetUserEvents.mockResolvedValue([]);
     mockCalculateUserStats.mockReturnValue(mockStats);
 
     const request = createRequest();
