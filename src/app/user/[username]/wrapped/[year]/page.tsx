@@ -15,6 +15,8 @@ import {
   Download,
   AlertCircle,
   Medal,
+  Flame,
+  Activity,
 } from "lucide-react";
 import { getRankColors } from "@/lib/insight-score";
 import type { InsightRank } from "@/lib/insight-score";
@@ -29,6 +31,9 @@ interface WrappedData {
     year: number;
     prs: number;
     issues: number;
+    totalContributions?: number;
+    longestStreak?: number;
+    currentStreak?: number;
   };
   topLanguages: {
     name: string;
@@ -161,8 +166,34 @@ export default function WrappedPage() {
 
         {/* 統計グリッド */}
         <div className="grid grid-cols-2 gap-4 p-8">
-          {/* PRs */}
-          <div className="bg-white/10 backdrop-blur rounded-xl p-6 text-center">
+          {/* Total Contributions */}
+          {data.yearlyStats.totalContributions !== undefined && (
+            <div className="bg-white/10 backdrop-blur rounded-xl p-6 text-center col-span-2">
+              <Activity className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+              <p className="text-5xl font-bold text-white mb-1">
+                {formatNumber(data.yearlyStats.totalContributions)}
+              </p>
+              <p className="text-purple-200 text-sm">Total Contributions</p>
+            </div>
+          )}
+
+          {/* Longest Streak */}
+          {data.yearlyStats.longestStreak !== undefined && data.yearlyStats.longestStreak > 0 && (
+            <div className="bg-white/10 backdrop-blur rounded-xl p-6 text-center">
+              <Flame className="w-8 h-8 text-red-400 mx-auto mb-2" />
+              <p className="text-4xl font-bold text-white mb-1">
+                {data.yearlyStats.longestStreak}
+              </p>
+              <p className="text-purple-200 text-sm">
+                Day Streak
+              </p>
+            </div>
+          )}
+
+          {/* PRs - col-span調整 */}
+          <div className={`bg-white/10 backdrop-blur rounded-xl p-6 text-center ${
+            !data.yearlyStats.longestStreak || data.yearlyStats.longestStreak === 0 ? "" : ""
+          }`}>
             <GitPullRequest className="w-8 h-8 text-green-400 mx-auto mb-2" />
             <p className="text-4xl font-bold text-white mb-1">
               {formatNumber(data.yearlyStats.prs)}

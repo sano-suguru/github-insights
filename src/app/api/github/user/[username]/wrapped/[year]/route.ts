@@ -4,6 +4,7 @@ import {
   getUserProfile,
   getUserRepositories,
   getYearlyContributionStats,
+  getContributionCalendar,
   calculateUserStats,
   GitHubRateLimitError,
 } from "@/lib/github";
@@ -54,9 +55,10 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
 
     // 並列でデータ取得
-    const [repositories, yearlyStats] = await Promise.all([
+    const [repositories, yearlyStats, contributionCalendar] = await Promise.all([
       getUserRepositories(username, accessToken),
       getYearlyContributionStats(username, year, accessToken),
+      getContributionCalendar(username, year, accessToken),
     ]);
 
     const stats = calculateUserStats(repositories);
@@ -87,7 +89,12 @@ export async function GET(request: NextRequest, { params }: Params) {
       username: profile.login,
       name: profile.name || profile.login,
       avatarUrl: profile.avatarUrl,
-      yearlyStats,
+      yearlyStats: {
+        ...yearlyStats,
+        totalContributions: contributionCalendar.totalContributions,
+        longestStreak: contributionCalendar.longestStreak,
+        currentStreak: contributionCalendar.currentStreak,
+      },
       topLanguages,
       insightScore: {
         score: insightScore.score,

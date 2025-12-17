@@ -1303,7 +1303,10 @@ export interface YearlyStats {
   year: number;
   prs: number;
   issues: number;
-  // 将来拡張用: commits, reviews, etc.
+  // コントリビューションカレンダーから取得
+  totalContributions?: number;
+  longestStreak?: number;
+  currentStreak?: number;
 }
 
 /**
@@ -1367,3 +1370,147 @@ export async function getYearlyContributionStats(
   }
 }
 
+// ContributionCalendar GraphQL レスポンス型
+interface ContributionCalendarResponse {
+  user: {
+    contributionsCollection: {
+      contributionCalendar: {
+        totalContributions: number;
+        weeks: Array<{
+          contributionDays: Array<{
+            contributionCount: number;
+            date: string;
+          }>;
+        }>;
+      };
+    };
+  } | null;
+}
+
+/**
+ * ストリーク計算用ヘルパー関数
+ * contributionDays配列から最長ストリークと現在のストリークを計算
+ */
+function calculateStreaks(
+  contributionDays: Array<{ contributionCount: number; date: string }>,
+  year: number
+): { longestStreak: number; currentStreak: number } {
+  if (contributionDays.length === 0) {
+    return { longestStreak: 0, currentStreak: 0 };
+  }
+
+  let longestStreak = 0;
+  let currentStreak = 0;
+  let tempStreak = 0;
+
+  // 日付でソート（昇順）
+  const sorted = [...contributionDays].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  // 今日の日付（年末までの計算のため）
+  const today = new Date();
+  const isCurrentYear = year === today.getFullYear();
+  const todayStr = today.toISOString().split("T")[0];
+
+  for (let i = 0; i < sorted.length; i++) {
+    const day = sorted[i];
+    
+    if (day.contributionCount > 0) {
+      tempStreak++;
+      longestStreak = Math.max(longestStreak, tempStreak);
+    } else {
+      tempStreak = 0;
+    }
+  }
+
+  // 現在のストリーク計算（年末から逆順に数える）
+  if (isCurrentYear) {
+    // 今日までのデータで計算
+    const todayIndex = sorted.findIndex((d) => d.date === todayStr);
+    if (todayIndex >= 0) {
+      for (let i = todayIndex; i >= 0; i--) {
+        if (sorted[i].contributionCount > 0) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+  } else {
+    // 過去の年は年末から計算
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      if (sorted[i].contributionCount > 0) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+  }
+
+  return { longestStreak, currentStreak };
+}
+
+/**
+ * GitHub GraphQL API から指定年のコントリビューションカレンダーを取得
+ * ストリーク計算と総コントリビューション数を返す
+ */
+export async function getContributionCalendar(
+  username: string,
+  year: number,
+  accessToken?: string | null
+): Promise<{
+  totalContributions: number;
+  longestStreak: number;
+  currentStreak: number;
+}> {
+  try {
+    const client = accessToken
+      ? createGitHubClient(accessToken)
+      : createPublicGitHubClient();
+
+    // 年の範囲を設定（GitHub APIはISO 8601形式を期待）
+    const from = `${year}-01-01T00:00:00Z`;
+    const to = `${year}-12-31T23:59:59Z`;
+
+    const response = await client<ContributionCalendarResponse>(`
+      query($username: String!, $from: DateTime!, $to: DateTime!) {
+        user(login: $username) {
+          contributionsCollection(from: $from, to: $to) {
+            contributionCalendar {
+              totalContributions
+              weeks {
+                contributionDays {
+                  contributionCount
+                  date
+                }
+              }
+            }
+          }
+        }
+      }
+    `, { username, from, to });
+
+    if (!response.user) {
+      console.warn(`User ${username} not found for contribution calendar`);
+      return { totalContributions: 0, longestStreak: 0, currentStreak: 0 };
+    }
+
+    const calendar = response.user.contributionsCollection.contributionCalendar;
+    
+    // 全ての日を1次元配列にフラット化
+    const allDays = calendar.weeks.flatMap((week) => week.contributionDays);
+    
+    const { longestStreak, currentStreak } = calculateStreaks(allDays, year);
+
+    return {
+      totalContributions: calendar.totalContributions,
+      longestStreak,
+      currentStreak,
+    };
+  } catch (error) {
+    console.error("Get contribution calendar error:", error);
+    // エラー時はデフォルト値を返す（API呼び出しを中断しない）
+    return { totalContributions: 0, longestStreak: 0, currentStreak: 0 };
+  }
+}
