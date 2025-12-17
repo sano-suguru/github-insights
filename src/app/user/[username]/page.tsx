@@ -7,7 +7,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
   Users,
-  GitFork,
   Star,
   MapPin,
   Building2,
@@ -477,13 +476,22 @@ export default function UserProfilePage() {
             })()}
 
             {/* カード生成ボタン */}
-            <button
-              onClick={() => setShowCardModal(true)}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm font-medium"
-            >
-              <Camera className="w-4 h-4" />
-              Generate Card
-            </button>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => setShowCardModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm font-medium"
+              >
+                <Camera className="w-4 h-4" />
+                Generate Card
+              </button>
+              <Link
+                href={`/user/${profile.login}/wrapped/${new Date().getFullYear()}`}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors text-sm font-medium"
+              >
+                <Calendar className="w-4 h-4" />
+                Year in Review
+              </Link>
+            </div>
           </div>
 
           {/* フォロワー統計 */}

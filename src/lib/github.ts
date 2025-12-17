@@ -1,4 +1,5 @@
 import { graphql } from "@octokit/graphql";
+import { SERVER_CACHE } from "./cache-config";
 
 // カスタムエラークラス
 export class GitHubRateLimitError extends Error {
@@ -304,7 +305,7 @@ export async function getUserProfile(
       `https://api.github.com/users/${encodeURIComponent(username)}`,
       {
         headers,
-        next: { revalidate: 3600 },
+        next: { revalidate: SERVER_CACHE.USER_PROFILE_REVALIDATE },
       }
     );
 
@@ -493,7 +494,7 @@ export async function searchUsers(
       `https://api.github.com/search/users?q=${encodeURIComponent(query)}&per_page=${perPage}`,
       {
         headers,
-        next: { revalidate: 60 },
+        next: { revalidate: SERVER_CACHE.USER_SEARCH_REVALIDATE },
       }
     );
 
@@ -586,7 +587,7 @@ export async function getUserEvents(
         `https://api.github.com/users/${encodeURIComponent(username)}/events?per_page=100&page=${page}`,
         {
           headers,
-          next: { revalidate: 300 }, // 5分キャッシュ
+          next: { revalidate: SERVER_CACHE.USER_EVENTS_REVALIDATE },
         }
       );
 
@@ -1264,11 +1265,11 @@ export async function getUserContributionStats(
     const [prsRes, issuesRes] = await Promise.all([
       fetch(
         `https://api.github.com/search/issues?q=author:${encodeURIComponent(username)}+type:pr&per_page=1`,
-        { headers, next: { revalidate: 3600 } }
+        { headers, next: { revalidate: SERVER_CACHE.USER_CONTRIBUTION_REVALIDATE } }
       ),
       fetch(
         `https://api.github.com/search/issues?q=author:${encodeURIComponent(username)}+type:issue&per_page=1`,
-        { headers, next: { revalidate: 3600 } }
+        { headers, next: { revalidate: SERVER_CACHE.USER_CONTRIBUTION_REVALIDATE } }
       ),
     ]);
 
@@ -1294,6 +1295,75 @@ export async function getUserContributionStats(
     console.error("Get user contribution stats error:", error);
     // エラー時は0を返す（スコア計算は続行できる）
     return { totalPRs: 0, totalIssues: 0 };
+  }
+}
+
+// 年間統計の型
+export interface YearlyStats {
+  year: number;
+  prs: number;
+  issues: number;
+  // 将来拡張用: commits, reviews, etc.
+}
+
+/**
+ * 指定年のPR数とIssue数を取得（GitHub Search API使用）
+ * GitHub Wrapped用
+ */
+export async function getYearlyContributionStats(
+  username: string,
+  year: number,
+  accessToken?: string | null
+): Promise<YearlyStats> {
+  const headers: HeadersInit = {
+    Accept: "application/vnd.github.v3+json",
+    "User-Agent": "GitHub-Insights",
+  };
+
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  // 年の範囲を設定
+  const startDate = `${year}-01-01`;
+  const endDate = `${year}-12-31`;
+  const dateRange = `created:${startDate}..${endDate}`;
+
+  try {
+    // PR数とIssue数を並列取得
+    const [prsRes, issuesRes] = await Promise.all([
+      fetch(
+        `https://api.github.com/search/issues?q=author:${encodeURIComponent(username)}+type:pr+${dateRange}&per_page=1`,
+        { headers, next: { revalidate: SERVER_CACHE.USER_CONTRIBUTION_REVALIDATE } }
+      ),
+      fetch(
+        `https://api.github.com/search/issues?q=author:${encodeURIComponent(username)}+type:issue+${dateRange}&per_page=1`,
+        { headers, next: { revalidate: SERVER_CACHE.USER_CONTRIBUTION_REVALIDATE } }
+      ),
+    ]);
+
+    // レート制限チェック
+    if (prsRes.status === 403 || prsRes.status === 429 ||
+        issuesRes.status === 403 || issuesRes.status === 429) {
+      throw new GitHubRateLimitError();
+    }
+
+    const [prsData, issuesData] = await Promise.all([
+      prsRes.ok ? prsRes.json() : null,
+      issuesRes.ok ? issuesRes.json() : null,
+    ]);
+
+    return {
+      year,
+      prs: prsData?.total_count ?? 0,
+      issues: issuesData?.total_count ?? 0,
+    };
+  } catch (error) {
+    if (error instanceof GitHubRateLimitError) {
+      throw error;
+    }
+    console.error("Get yearly contribution stats error:", error);
+    return { year, prs: 0, issues: 0 };
   }
 }
 

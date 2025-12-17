@@ -14,6 +14,16 @@ export const SERVER_CACHE = {
   // 変更頻度が高いデータ（5分）
   COMMITS_REVALIDATE: 300,
   CONTRIBUTORS_REVALIDATE: 300,
+  
+  // ユーザー関連データ（1時間）- 変更頻度が低く、APIレート制限を考慮
+  USER_PROFILE_REVALIDATE: 3600,
+  USER_CONTRIBUTION_REVALIDATE: 3600,
+  
+  // ユーザー検索（1分）- 検索結果は短めにキャッシュ
+  USER_SEARCH_REVALIDATE: 60,
+  
+  // ユーザーイベント（5分）- アクティビティデータ
+  USER_EVENTS_REVALIDATE: 300,
 } as const;
 
 // stale-while-revalidate（revalidateの2倍を推奨）
