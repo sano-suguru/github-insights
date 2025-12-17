@@ -11,11 +11,13 @@ async function importRoute() {
 const mockGetUserProfile = vi.fn<() => Promise<UserProfile | null>>();
 const mockGetUserRepositories = vi.fn<() => Promise<UserRepository[]>>();
 const mockGetUserEvents = vi.fn<() => Promise<unknown[]>>();
+const mockGetUserContributionStats = vi.fn<() => Promise<{ totalPRs: number; totalIssues: number }>>();
 const mockCalculateUserStats = vi.fn<() => UserStats>();
 vi.mock("@/lib/github", () => ({
   getUserProfile: () => mockGetUserProfile(),
   getUserRepositories: () => mockGetUserRepositories(),
   getUserEvents: () => mockGetUserEvents(),
+  getUserContributionStats: () => mockGetUserContributionStats(),
   calculateUserStats: () => mockCalculateUserStats(),
   GitHubRateLimitError: class extends Error {
     constructor(message = "GitHub API rate limit exceeded") {
@@ -96,6 +98,7 @@ describe("GET /api/github/user/[username]", () => {
     mockGetUserProfile.mockResolvedValue(mockProfile);
     mockGetUserRepositories.mockResolvedValue(mockRepositories);
     mockGetUserEvents.mockResolvedValue([]);
+    mockGetUserContributionStats.mockResolvedValue({ totalPRs: 10, totalIssues: 5 });
     mockCalculateUserStats.mockReturnValue(mockStats);
 
     const request = createRequest();
@@ -107,6 +110,7 @@ describe("GET /api/github/user/[username]", () => {
     const data = await response.json();
     expect(data.profile).toEqual(mockProfile);
     expect(data.stats).toEqual(mockStats);
+    expect(data.contributionStats).toEqual({ totalPRs: 10, totalIssues: 5 });
   });
 
   it("ユーザーが見つからない場合は 404 を返す", async () => {

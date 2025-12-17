@@ -4,10 +4,12 @@ import {
   getUserProfile,
   getUserRepositories,
   getUserEvents,
+  getUserContributionStats,
   calculateUserStats,
   UserProfile,
   UserStats,
   UserEvent,
+  UserContributionStats,
   GitHubRateLimitError,
 } from "@/lib/github";
 
@@ -26,21 +28,23 @@ async function fetchUserData(
   profile: UserProfile | null;
   stats: UserStats | null;
   events: UserEvent[];
+  contributionStats: UserContributionStats;
 }> {
   const profile = await getUserProfile(username, accessToken);
 
   if (!profile) {
-    return { profile: null, stats: null, events: [] };
+    return { profile: null, stats: null, events: [], contributionStats: { totalPRs: 0, totalIssues: 0 } };
   }
 
-  // リポジトリとイベントを並列取得
-  const [repositories, events] = await Promise.all([
+  // リポジトリ、イベント、貢献統計を並列取得
+  const [repositories, events, contributionStats] = await Promise.all([
     getUserRepositories(username, accessToken),
     getUserEvents(username, accessToken),
+    getUserContributionStats(username, accessToken),
   ]);
   const stats = calculateUserStats(repositories);
 
-  return { profile, stats, events };
+  return { profile, stats, events, contributionStats };
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
@@ -58,7 +62,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     const session = await auth();
     const accessToken = session?.accessToken ?? null;
 
-    const { profile, stats, events } = await fetchUserData(username, accessToken);
+    const { profile, stats, events, contributionStats } = await fetchUserData(username, accessToken);
 
     if (!profile) {
       return NextResponse.json(
@@ -71,6 +75,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       profile,
       stats,
       events,
+      contributionStats,
     });
   } catch (error) {
     console.error("Error fetching user data:", error);

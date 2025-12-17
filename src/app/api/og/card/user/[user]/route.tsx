@@ -4,6 +4,12 @@ import {
   OgBadgeColorScheme,
   createOgBadgeColorGetter,
 } from "@/lib/badges";
+import {
+  calculateInsightScore,
+  getRankColorsForOg,
+  formatScore,
+  InsightRank,
+} from "@/lib/insight-score";
 
 export const runtime = "edge";
 
@@ -69,8 +75,11 @@ interface UserStats {
   following: number;
   publicRepos: number;
   createdAt: string;
+  accountYears: number;
   totalPRs: number;
   totalIssues: number;
+  totalStars: number;
+  totalForks: number;
   topRepos: { name: string; stars: number }[];
 }
 
@@ -143,8 +152,21 @@ async function getUserStats(user: string): Promise<UserStats | null> {
         stars: r.stargazers_count,
       }));
 
+    // スター・フォーク合計を計算
+    const allRepos = repos.filter((r: { fork: boolean }) => !r.fork);
+    const totalStars = allRepos.reduce(
+      (sum: number, r: { stargazers_count: number }) => sum + r.stargazers_count,
+      0
+    );
+    const totalForks = allRepos.reduce(
+      (sum: number, r: { forks_count: number }) => sum + r.forks_count,
+      0
+    );
+
     // アカウント作成年を計算
     const createdYear = new Date(userData.created_at).getFullYear();
+    const currentYear = new Date().getFullYear();
+    const accountYears = currentYear - createdYear;
 
     return {
       name: userData.name || user,
@@ -155,8 +177,11 @@ async function getUserStats(user: string): Promise<UserStats | null> {
       following: userData.following,
       publicRepos: userData.public_repos,
       createdAt: `${createdYear}`,
+      accountYears,
       totalPRs: prData?.total_count ?? 0,
       totalIssues: issueData?.total_count ?? 0,
+      totalStars,
+      totalForks,
       topRepos,
     };
   } catch (error) {
@@ -213,6 +238,18 @@ export async function GET(
   else if (stats.totalPRs >= 50) badges.push("Contributor");
   if (parseInt(stats.createdAt) <= 2015) badges.push("Veteran");
 
+  // Insight Score を計算
+  const insightResult = calculateInsightScore({
+    followers: stats.followers,
+    totalStars: stats.totalStars,
+    totalForks: stats.totalForks,
+    publicRepos: stats.publicRepos,
+    totalPRs: stats.totalPRs,
+    totalIssues: stats.totalIssues,
+    accountYears: stats.accountYears,
+  });
+  const rankColors = getRankColorsForOg(insightResult.rank);
+
   return new ImageResponse(
     (
       <div
@@ -259,9 +296,50 @@ export async function GET(
               @{stats.login}
             </span>
           </div>
-          <span style={{ color: COLORS.gray400, fontSize: 16 }}>
-            Member since {stats.createdAt}
-          </span>
+          {/* Insight Score バッジ */}
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 16px",
+                borderRadius: 24,
+                background: rankColors.bg,
+                border: `1px solid ${rankColors.border}`,
+              }}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill={rankColors.text}
+              >
+                <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.4 5.7 21l2.3-7L2 9.4h7.6L12 2z" />
+              </svg>
+              <span
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: rankColors.text,
+                }}
+              >
+                {formatScore(insightResult.score)}
+              </span>
+              <span
+                style={{
+                  fontSize: 14,
+                  color: rankColors.text,
+                  opacity: 0.8,
+                }}
+              >
+                {insightResult.rank}
+              </span>
+            </div>
+            <span style={{ color: COLORS.gray400, fontSize: 16 }}>
+              Member since {stats.createdAt}
+            </span>
+          </div>
         </div>
 
         {/* メインコンテンツ */}

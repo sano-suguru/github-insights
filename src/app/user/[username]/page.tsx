@@ -19,9 +19,11 @@ import {
   Camera,
   X,
 } from "lucide-react";
-import { UserProfile, UserStats, UserEvent } from "@/lib/github";
+import { UserProfile, UserStats, UserEvent, UserContributionStats } from "@/lib/github";
 import { calculateUserBadges, Badge } from "@/lib/badges";
-import DashboardLayout, { StatCard, SectionCard } from "@/components/DashboardLayout";
+import { calculateAccountYears } from "@/lib/insight-score";
+import DashboardLayout, { SectionCard } from "@/components/DashboardLayout";
+import { InsightScoreCard } from "@/components/InsightScoreCard";
 
 // チャートコンポーネント（SSR無効化）
 const LanguagesPieChart = dynamic(
@@ -194,6 +196,7 @@ async function fetchUserData(username: string): Promise<{
   profile: UserProfile;
   stats: UserStats;
   events: UserEvent[];
+  contributionStats: UserContributionStats;
 }> {
   const response = await fetch(`/api/github/user/${encodeURIComponent(username)}`);
   
@@ -290,11 +293,22 @@ export default function UserProfilePage() {
     return <DashboardLayout isLoading />;
   }
 
-  const { profile, stats, events } = data;
+  const { profile, stats, events, contributionStats } = data;
   const joinedDate = new Date(profile.createdAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
   });
+
+  // Insight Score 用の入力データ
+  const insightScoreInput = {
+    followers: profile.followers,
+    totalStars: stats.totalStars,
+    totalForks: stats.totalForks,
+    publicRepos: stats.totalRepos,
+    totalPRs: contributionStats.totalPRs,
+    totalIssues: contributionStats.totalIssues,
+    accountYears: calculateAccountYears(profile.createdAt),
+  };
 
   return (
     <DashboardLayout>
@@ -495,32 +509,9 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      {/* 統計カード */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          label="Repositories"
-          value={stats.totalRepos}
-          icon={<GitFork className="w-5 h-5 text-purple-500" />}
-          color="purple"
-        />
-        <StatCard
-          label="Stars"
-          value={stats.totalStars}
-          icon={<Star className="w-5 h-5 text-yellow-500" />}
-          color="yellow"
-        />
-        <StatCard
-          label="Forks"
-          value={stats.totalForks}
-          icon={<GitFork className="w-5 h-5 text-blue-500" />}
-          color="blue"
-        />
-        <StatCard
-          label="Languages"
-          value={stats.languageBreakdown.length}
-          icon={<Code2 className="w-5 h-5 text-green-500" />}
-          color="green"
-        />
+      {/* Insight Score */}
+      <div className="mb-6">
+        <InsightScoreCard input={insightScoreInput} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

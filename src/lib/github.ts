@@ -1235,3 +1235,65 @@ export async function getContributorDetails(
 
   return contributors;
 }
+
+// ユーザーの貢献統計（PR数、Issue数）
+export interface UserContributionStats {
+  totalPRs: number;
+  totalIssues: number;
+}
+
+/**
+ * ユーザーのPR数とIssue数を取得（GitHub Search API使用）
+ * OGカードと同じロジックを共通化
+ */
+export async function getUserContributionStats(
+  username: string,
+  accessToken?: string | null
+): Promise<UserContributionStats> {
+  const headers: HeadersInit = {
+    Accept: "application/vnd.github.v3+json",
+    "User-Agent": "GitHub-Insights",
+  };
+
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  try {
+    // PR数とIssue数を並列取得
+    const [prsRes, issuesRes] = await Promise.all([
+      fetch(
+        `https://api.github.com/search/issues?q=author:${encodeURIComponent(username)}+type:pr&per_page=1`,
+        { headers, next: { revalidate: 3600 } }
+      ),
+      fetch(
+        `https://api.github.com/search/issues?q=author:${encodeURIComponent(username)}+type:issue&per_page=1`,
+        { headers, next: { revalidate: 3600 } }
+      ),
+    ]);
+
+    // レート制限チェック
+    if (prsRes.status === 403 || prsRes.status === 429 ||
+        issuesRes.status === 403 || issuesRes.status === 429) {
+      throw new GitHubRateLimitError();
+    }
+
+    const [prsData, issuesData] = await Promise.all([
+      prsRes.ok ? prsRes.json() : null,
+      issuesRes.ok ? issuesRes.json() : null,
+    ]);
+
+    return {
+      totalPRs: prsData?.total_count ?? 0,
+      totalIssues: issuesData?.total_count ?? 0,
+    };
+  } catch (error) {
+    if (error instanceof GitHubRateLimitError) {
+      throw error;
+    }
+    console.error("Get user contribution stats error:", error);
+    // エラー時は0を返す（スコア計算は続行できる）
+    return { totalPRs: 0, totalIssues: 0 };
+  }
+}
+
