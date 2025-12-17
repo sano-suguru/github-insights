@@ -17,7 +17,8 @@ const HEIGHT = 630;
 // カラーパレット
 const COLORS = {
   bgDark: "#1e1b4b", // indigo-950
-  bgPurple: "#581c87", // purple-900
+  bgMid: "#581c87", // purple-900
+  bgPurple: "#6b21a8", // purple-800
   white: "#ffffff",
   purple200: "#e9d5ff",
   purple300: "#d8b4fe",
@@ -25,6 +26,7 @@ const COLORS = {
   green400: "#4ade80",
   orange400: "#fb923c",
   blue400: "#60a5fa",
+  yellow400: "#facc15",
   // メダル
   gold: "#fbbf24",
   silver: "#9ca3af",
@@ -38,6 +40,8 @@ const ICONS = {
   trophy: "M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z",
   code: "M16 18l6-6-6-6M8 6l-6 6 6 6",
   calendar: "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
+  flame: "M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z",
+  activity: "M22 12h-4l-3 9L9 3l-3 9H2",
 };
 
 // SVGアイコンコンポーネント
@@ -246,153 +250,217 @@ export async function GET(
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          background: `linear-gradient(135deg, ${COLORS.bgDark} 0%, ${COLORS.bgPurple} 50%, ${COLORS.bgDark} 100%)`,
+          background: `linear-gradient(135deg, ${COLORS.bgDark} 0%, ${COLORS.bgPurple} 50%, ${COLORS.bgMid} 100%)`,
           fontFamily: "system-ui, sans-serif",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
+        {/* 装飾的な背景エフェクト */}
+        <div
+          style={{
+            position: "absolute",
+            top: -100,
+            right: -100,
+            width: 400,
+            height: 400,
+            background: "rgba(168, 85, 247, 0.15)",
+            borderRadius: "50%",
+            filter: "blur(80px)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: -100,
+            left: -100,
+            width: 400,
+            height: 400,
+            background: "rgba(99, 102, 241, 0.15)",
+            borderRadius: "50%",
+            filter: "blur(80px)",
+          }}
+        />
+
         {/* ヘッダー */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            paddingTop: 40,
-            paddingBottom: 20,
+            paddingTop: 32,
+            paddingBottom: 16,
           }}
         >
-          <span style={{ color: COLORS.purple300, fontSize: 18, marginBottom: 8 }}>
+          <span style={{ color: COLORS.purple300, fontSize: 14, letterSpacing: 4, textTransform: "uppercase", fontWeight: 600 }}>
             GitHub Wrapped
           </span>
-          <span style={{ color: COLORS.white, fontSize: 72, fontWeight: 900 }}>
+          <span style={{ color: COLORS.white, fontSize: 64, fontWeight: 900, marginTop: 4 }}>
             {year}
           </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={stats.avatarUrl}
-              alt=""
-              width={32}
-              height={32}
-              style={{ borderRadius: 16, border: `2px solid ${COLORS.purple400}` }}
-            />
-            <span style={{ color: COLORS.purple200, fontSize: 22 }}>
-              @{stats.login}
-            </span>
-          </div>
+          <span style={{ color: COLORS.purple200, fontSize: 20, marginTop: 4 }}>
+            @{stats.login}
+          </span>
         </div>
 
-        {/* 統計 */}
+        {/* メイン統計グリッド */}
         <div
           style={{
             display: "flex",
-            justifyContent: "center",
-            gap: 24,
+            flexDirection: "column",
+            gap: 16,
             padding: "0 48px",
             flex: 1,
           }}
         >
-          {/* PRs */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(255,255,255,0.1)",
-              borderRadius: 16,
-              padding: "24px 40px",
-              minWidth: 160,
-            }}
-          >
-            <SvgIcon path={ICONS.gitPullRequest} size={32} color={COLORS.green400} />
-            <span style={{ color: COLORS.green400, fontSize: 48, fontWeight: 700, marginTop: 8 }}>
-              {formatNumber(stats.yearlyPRs)}
-            </span>
-            <span style={{ color: COLORS.purple200, fontSize: 16 }}>Pull Requests</span>
+          {/* 上段: Total Contributions + Streak */}
+          <div style={{ display: "flex", gap: 16 }}>
+            {/* Total Contributions */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.1)",
+                borderRadius: 16,
+                padding: "20px 32px",
+                flex: 2,
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
+              <SvgIcon path={ICONS.activity} size={36} color={COLORS.purple300} />
+              <span style={{ color: COLORS.white, fontSize: 44, fontWeight: 900, marginTop: 8 }}>
+                {formatNumber(stats.yearlyPRs + stats.yearlyIssues)}
+              </span>
+              <span style={{ color: COLORS.purple200, fontSize: 14 }}>Total Contributions</span>
+            </div>
+
+            {/* Streak placeholder - Edge APIでは取得困難なため代わりにスターを表示 */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.1)",
+                borderRadius: 16,
+                padding: "20px 32px",
+                flex: 1,
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
+              <SvgIcon path={ICONS.flame} size={36} color={COLORS.orange400} />
+              <span style={{ color: COLORS.white, fontSize: 36, fontWeight: 700, marginTop: 8 }}>
+                {formatNumber(stats.totalStars)}
+              </span>
+              <span style={{ color: COLORS.purple200, fontSize: 14 }}>Total Stars</span>
+            </div>
           </div>
 
-          {/* Issues */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(255,255,255,0.1)",
-              borderRadius: 16,
-              padding: "24px 40px",
-              minWidth: 160,
-            }}
-          >
-            <SvgIcon path={ICONS.circleDot} size={32} color={COLORS.orange400} />
-            <span style={{ color: COLORS.orange400, fontSize: 48, fontWeight: 700, marginTop: 8 }}>
-              {formatNumber(stats.yearlyIssues)}
-            </span>
-            <span style={{ color: COLORS.purple200, fontSize: 16 }}>Issues</span>
-          </div>
+          {/* 中段: PRs + Issues */}
+          <div style={{ display: "flex", gap: 16 }}>
+            {/* PRs */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.1)",
+                borderRadius: 16,
+                padding: "16px 24px",
+                flex: 1,
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
+              <SvgIcon path={ICONS.gitPullRequest} size={28} color={COLORS.green400} />
+              <span style={{ color: COLORS.white, fontSize: 32, fontWeight: 700, marginTop: 6 }}>
+                {formatNumber(stats.yearlyPRs)}
+              </span>
+              <span style={{ color: COLORS.purple200, fontSize: 13 }}>Pull Requests</span>
+            </div>
 
-          {/* Insight Score */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              background: rankColors.bg,
-              border: `2px solid ${rankColors.border}`,
-              borderRadius: 16,
-              padding: "24px 40px",
-              minWidth: 200,
-            }}
-          >
-            <SvgIcon path={ICONS.trophy} size={32} color={rankColors.text} />
-            <span style={{ color: rankColors.text, fontSize: 48, fontWeight: 700, marginTop: 8 }}>
-              {formatScore(insightResult.score)}
-            </span>
-            <span style={{ color: rankColors.text, fontSize: 16, opacity: 0.9 }}>
-              {insightResult.rank} Rank
-            </span>
+            {/* Issues */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.1)",
+                borderRadius: 16,
+                padding: "16px 24px",
+                flex: 1,
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
+              <SvgIcon path={ICONS.circleDot} size={28} color={COLORS.orange400} />
+              <span style={{ color: COLORS.white, fontSize: 32, fontWeight: 700, marginTop: 6 }}>
+                {formatNumber(stats.yearlyIssues)}
+              </span>
+              <span style={{ color: COLORS.purple200, fontSize: 13 }}>Issues</span>
+            </div>
+
+            {/* Languages */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.1)",
+                borderRadius: 16,
+                padding: "16px 24px",
+                flex: 1,
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
+              <SvgIcon path={ICONS.code} size={28} color={COLORS.blue400} />
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                {stats.topLanguages.slice(0, 3).map((lang, i) => (
+                  <span
+                    key={lang}
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: i === 0 ? COLORS.gold : i === 1 ? COLORS.silver : COLORS.bronze,
+                      background: "rgba(0,0,0,0.3)",
+                      padding: "4px 8px",
+                      borderRadius: 8,
+                    }}
+                  >
+                    {lang}
+                  </span>
+                ))}
+              </div>
+              <span style={{ color: COLORS.purple200, fontSize: 13, marginTop: 6 }}>Top Languages</span>
+            </div>
+
+            {/* Insight Score */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: rankColors.bg,
+                border: `1px solid ${rankColors.border}`,
+                borderRadius: 16,
+                padding: "16px 24px",
+                flex: 1,
+              }}
+            >
+              <SvgIcon path={ICONS.trophy} size={28} color={rankColors.text} />
+              <span style={{ color: rankColors.text, fontSize: 32, fontWeight: 900, marginTop: 6 }}>
+                {formatScore(insightResult.score)}
+              </span>
+              <span style={{ color: rankColors.text, fontSize: 13, opacity: 0.9 }}>
+                {insightResult.rank} Rank
+              </span>
+            </div>
           </div>
         </div>
-
-        {/* 言語 */}
-        {stats.topLanguages.length > 0 && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: 32,
-              paddingBottom: 24,
-            }}
-          >
-            {stats.topLanguages.map((lang, i) => (
-              <div
-                key={lang}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: i === 0 ? COLORS.gold : i === 1 ? COLORS.silver : COLORS.bronze,
-                    background: "rgba(0,0,0,0.3)",
-                    padding: "4px 8px",
-                    borderRadius: 4,
-                  }}
-                >
-                  #{i + 1}
-                </span>
-                <span style={{ color: COLORS.white, fontSize: 18, fontWeight: 600 }}>
-                  {lang}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* フッター */}
         <div
@@ -401,13 +469,17 @@ export async function GET(
             justifyContent: "space-between",
             alignItems: "center",
             padding: "16px 48px",
-            background: "rgba(0,0,0,0.2)",
+            background: "rgba(0,0,0,0.25)",
+            borderTop: "1px solid rgba(255,255,255,0.1)",
           }}
         >
-          <span style={{ color: COLORS.purple300, fontSize: 14 }}>
-            Member since {new Date(stats.createdAt).getFullYear()}
-          </span>
-          <span style={{ color: COLORS.purple400, fontSize: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <SvgIcon path={ICONS.calendar} size={16} color={COLORS.purple300} />
+            <span style={{ color: COLORS.purple300, fontSize: 14, fontWeight: 500 }}>
+              Member since {new Date(stats.createdAt).getFullYear()}
+            </span>
+          </div>
+          <span style={{ color: COLORS.purple400, fontSize: 14, fontWeight: 500 }}>
             github-insights.vercel.app
           </span>
         </div>

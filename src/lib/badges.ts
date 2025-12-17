@@ -376,6 +376,14 @@ export function calculateUserBadges(stats: UserProfileStats): Badge[] {
 // Wrapped バッジの希少度
 export type WrappedBadgeRarity = "common" | "rare" | "epic" | "legendary";
 
+// 希少度に応じたTailwind色クラス
+const WRAPPED_BADGE_COLORS: Record<WrappedBadgeRarity, string> = {
+  legendary: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 backdrop-blur-sm",
+  epic: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 backdrop-blur-sm",
+  rare: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 backdrop-blur-sm",
+  common: "bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30 backdrop-blur-sm",
+};
+
 // Wrapped バッジ定義
 export interface WrappedBadge {
   id: string;
@@ -383,6 +391,7 @@ export interface WrappedBadge {
   description: string;
   icon: LucideIcon;
   rarity: WrappedBadgeRarity;
+  color: string; // Tailwind色クラス
 }
 
 // Wrapped用バッジ定義
@@ -394,6 +403,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "7 day streak",
     icon: Flame,
     rarity: "common",
+    color: WRAPPED_BADGE_COLORS.common,
   },
   "streak-30": {
     id: "streak-30",
@@ -401,6 +411,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "30 day streak",
     icon: Flame,
     rarity: "rare",
+    color: WRAPPED_BADGE_COLORS.rare,
   },
   "streak-100": {
     id: "streak-100",
@@ -408,6 +419,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "100 day streak",
     icon: Flame,
     rarity: "legendary",
+    color: WRAPPED_BADGE_COLORS.legendary,
   },
 
   // 活動量系
@@ -417,6 +429,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "100+ contributions",
     icon: Activity,
     rarity: "common",
+    color: WRAPPED_BADGE_COLORS.common,
   },
   "contributions-500": {
     id: "contributions-500",
@@ -424,6 +437,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "500+ contributions",
     icon: Zap,
     rarity: "rare",
+    color: WRAPPED_BADGE_COLORS.rare,
   },
   "contributions-1000": {
     id: "contributions-1000",
@@ -431,6 +445,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "1000+ contributions",
     icon: Rocket,
     rarity: "epic",
+    color: WRAPPED_BADGE_COLORS.epic,
   },
   "contributions-2000": {
     id: "contributions-2000",
@@ -438,6 +453,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "2000+ contributions",
     icon: Crown,
     rarity: "legendary",
+    color: WRAPPED_BADGE_COLORS.legendary,
   },
 
   // PR系
@@ -447,6 +463,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "10+ PRs",
     icon: GitPullRequest,
     rarity: "common",
+    color: WRAPPED_BADGE_COLORS.common,
   },
   "prs-50": {
     id: "prs-50",
@@ -454,6 +471,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "50+ PRs",
     icon: GitPullRequest,
     rarity: "rare",
+    color: WRAPPED_BADGE_COLORS.rare,
   },
   "prs-100": {
     id: "prs-100",
@@ -461,6 +479,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "100+ PRs",
     icon: GitPullRequest,
     rarity: "epic",
+    color: WRAPPED_BADGE_COLORS.epic,
   },
 
   // 言語系
@@ -470,6 +489,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "3+ languages",
     icon: Languages,
     rarity: "common",
+    color: WRAPPED_BADGE_COLORS.common,
   },
   "polyglot-5": {
     id: "polyglot-5",
@@ -477,6 +497,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "5+ languages",
     icon: Languages,
     rarity: "rare",
+    color: WRAPPED_BADGE_COLORS.rare,
   },
   "polyglot-10": {
     id: "polyglot-10",
@@ -484,6 +505,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "10+ languages",
     icon: Languages,
     rarity: "epic",
+    color: WRAPPED_BADGE_COLORS.epic,
   },
 
   // 時間帯系
@@ -493,6 +515,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "Active at night",
     icon: Moon,
     rarity: "rare",
+    color: WRAPPED_BADGE_COLORS.rare,
   },
   "early-bird": {
     id: "early-bird",
@@ -500,6 +523,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "Active in morning",
     icon: Sunrise,
     rarity: "rare",
+    color: WRAPPED_BADGE_COLORS.rare,
   },
 
   // 成長系
@@ -509,6 +533,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "50%+ growth",
     icon: TrendingUp,
     rarity: "rare",
+    color: WRAPPED_BADGE_COLORS.rare,
   },
   "growth-100": {
     id: "growth-100",
@@ -516,6 +541,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "100%+ growth",
     icon: TrendingUp,
     rarity: "epic",
+    color: WRAPPED_BADGE_COLORS.epic,
   },
 
   // 特別系
@@ -525,6 +551,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "First year",
     icon: Sparkles,
     rarity: "common",
+    color: WRAPPED_BADGE_COLORS.common,
   },
   "veteran-5": {
     id: "veteran-5",
@@ -532,6 +559,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "5+ years",
     icon: Shield,
     rarity: "rare",
+    color: WRAPPED_BADGE_COLORS.rare,
   },
   "veteran-10": {
     id: "veteran-10",
@@ -539,6 +567,7 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     description: "10+ years",
     icon: Shield,
     rarity: "epic",
+    color: WRAPPED_BADGE_COLORS.epic,
   },
 };
 
@@ -635,18 +664,3 @@ export function calculateWrappedBadges(input: WrappedBadgeInput): WrappedBadge[]
   return badges.sort((a, b) => rarityOrder[b.rarity] - rarityOrder[a.rarity]);
 }
 
-/**
- * Wrapped バッジの希少度に応じた色を取得
- */
-export function getWrappedBadgeColors(rarity: WrappedBadgeRarity): { bg: string; text: string; border: string } {
-  switch (rarity) {
-    case "legendary":
-      return { bg: "#fef3c7", text: "#92400e", border: "#fbbf24" }; // 金
-    case "epic":
-      return { bg: "#ede9fe", text: "#5b21b6", border: "#8b5cf6" }; // 紫
-    case "rare":
-      return { bg: "#dbeafe", text: "#1e40af", border: "#3b82f6" }; // 青
-    default:
-      return { bg: "#f3f4f6", text: "#374151", border: "#9ca3af" }; // グレー
-  }
-}

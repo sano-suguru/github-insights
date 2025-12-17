@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { toPng } from "html-to-image";
 import {
   Calendar,
   GitPullRequest,
@@ -29,8 +30,7 @@ import {
 import { getRankColors } from "@/lib/insight-score";
 import type { InsightRank } from "@/lib/insight-score";
 import type { ActivityTimeType } from "@/lib/github";
-import type { WrappedBadgeRarity } from "@/lib/badges";
-import { getWrappedBadgeColors, WRAPPED_BADGES } from "@/lib/badges";
+import { WRAPPED_BADGES } from "@/lib/badges";
 import DashboardLayout from "@/components/DashboardLayout";
 
 // バッジデータ型
@@ -38,7 +38,6 @@ interface WrappedBadgeData {
   id: string;
   name: string;
   description: string;
-  rarity: WrappedBadgeRarity;
 }
 
 interface WrappedData {
@@ -108,10 +107,12 @@ function GrowthBadge({ value }: { value: number | null }) {
   
   const isPositive = value >= 0;
   const Icon = isPositive ? TrendingUp : TrendingDown;
-  const colorClass = isPositive ? "text-green-400" : "text-red-400";
+  const bgClass = isPositive 
+    ? "bg-green-500/20 text-green-300 border-green-500/30" 
+    : "bg-red-500/20 text-red-300 border-red-500/30";
   
   return (
-    <span className={`inline-flex items-center gap-1 text-xs ${colorClass}`}>
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border ${bgClass}`}>
       <Icon className="w-3 h-3" />
       {isPositive ? "+" : ""}{value}%
     </span>
@@ -143,7 +144,8 @@ export default function WrappedPage() {
   const params = useParams();
   const username = params.username as string;
   const year = parseInt(params.year as string, 10);
-  const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["wrapped", username, year],
@@ -156,9 +158,6 @@ export default function WrappedPage() {
     if (!data) return null;
     return getRankColors(data.insightScore.rank);
   }, [data]);
-
-  // OGカードURL
-  const ogCardUrl = `/api/og/card/user/${username}/wrapped/${year}`;
 
   // エラー状態
   if (error || (!isLoading && !data)) {
@@ -220,31 +219,42 @@ export default function WrappedPage() {
       </div>
 
       {/* メインカード */}
-      <div className="bg-linear-to-br from-purple-900 via-purple-800 to-indigo-900 rounded-2xl shadow-2xl overflow-hidden">
+      <div 
+        ref={cardRef}
+        className="relative bg-linear-to-br from-purple-900 via-purple-800 to-indigo-900 rounded-2xl shadow-2xl overflow-hidden"
+      >
+        {/* 装飾的な背景エフェクト */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-linear-to-t from-black/20 to-transparent" />
+        </div>
+
         {/* ヘッダー */}
-        <div className="px-8 pt-8 pb-4 text-center">
-          <p className="text-purple-300 text-sm font-medium mb-2">
+        <div className="relative px-8 pt-10 pb-6 text-center">
+          <p className="text-purple-300 text-sm font-semibold tracking-widest uppercase mb-3">
             GitHub Wrapped
           </p>
-          <h1 className="text-5xl font-black text-white mb-2">
+          <h1 className="text-7xl font-black text-white mb-3 drop-shadow-lg">
             {year}
           </h1>
-          <p className="text-purple-200">
+          <p className="text-purple-200 text-xl font-medium">
             @{data.username}
           </p>
         </div>
 
         {/* 統計グリッド */}
-        <div className="grid grid-cols-2 gap-4 p-8">
-          {/* Total Contributions */}
+        <div className="relative grid grid-cols-2 gap-4 p-8">
+          {/* Total Contributions - メインの成果 */}
           {data.yearlyStats.totalContributions !== undefined && (
-            <div className="bg-white/10 backdrop-blur rounded-xl p-6 text-center col-span-2">
-              <Activity className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-              <p className="text-5xl font-bold text-white mb-1">
+            <div className="relative bg-linear-to-br from-white/15 to-white/5 backdrop-blur-sm rounded-xl p-6 text-center col-span-2 border border-white/10 transition-transform hover:scale-[1.01]">
+              <div className="absolute inset-0 bg-linear-to-r from-purple-500/10 via-transparent to-pink-500/10 rounded-xl" />
+              <Activity className="w-10 h-10 text-purple-300 mx-auto mb-3 drop-shadow-lg" />
+              <p className="relative text-5xl font-black text-white mb-2 drop-shadow-lg">
                 {formatNumber(data.yearlyStats.totalContributions)}
               </p>
               <div className="flex items-center justify-center gap-2">
-                <p className="text-purple-200 text-sm">Total Contributions</p>
+                <p className="text-purple-200 font-medium">Total Contributions</p>
                 {data.growth?.contributions !== null && (
                   <GrowthBadge value={data.growth?.contributions ?? null} />
                 )}
@@ -254,21 +264,21 @@ export default function WrappedPage() {
 
           {/* Longest Streak */}
           {data.yearlyStats.longestStreak !== undefined && data.yearlyStats.longestStreak > 0 && (
-            <div className="bg-white/10 backdrop-blur rounded-xl p-6 text-center">
-              <Flame className="w-8 h-8 text-red-400 mx-auto mb-2" />
-              <p className="text-4xl font-bold text-white mb-1">
+            <div className="bg-linear-to-br from-white/15 to-white/5 backdrop-blur-sm rounded-xl p-5 text-center col-span-2 border border-white/10 transition-transform hover:scale-[1.01]">
+              <Flame className="w-10 h-10 text-orange-400 mx-auto mb-2 drop-shadow-lg" />
+              <p className="text-4xl font-black text-white mb-1">
                 {data.yearlyStats.longestStreak}
               </p>
-              <p className="text-purple-200 text-sm">
+              <p className="text-purple-200 font-medium">
                 Day Streak
               </p>
             </div>
           )}
 
           {/* PRs */}
-          <div className="bg-white/10 backdrop-blur rounded-xl p-6 text-center">
-            <GitPullRequest className="w-8 h-8 text-green-400 mx-auto mb-2" />
-            <p className="text-4xl font-bold text-white mb-1">
+          <div className="bg-linear-to-br from-white/15 to-white/5 backdrop-blur-sm rounded-xl p-5 text-center border border-white/10 transition-transform hover:scale-[1.01]">
+            <GitPullRequest className="w-8 h-8 text-green-400 mx-auto mb-2 drop-shadow-lg" />
+            <p className="text-3xl font-bold text-white mb-1">
               {formatNumber(data.yearlyStats.prs)}
             </p>
             <div className="flex items-center justify-center gap-2">
@@ -280,9 +290,9 @@ export default function WrappedPage() {
           </div>
 
           {/* Issues */}
-          <div className="bg-white/10 backdrop-blur rounded-xl p-6 text-center">
-            <CircleDot className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-            <p className="text-4xl font-bold text-white mb-1">
+          <div className="bg-linear-to-br from-white/15 to-white/5 backdrop-blur-sm rounded-xl p-5 text-center border border-white/10 transition-transform hover:scale-[1.01]">
+            <CircleDot className="w-8 h-8 text-orange-400 mx-auto mb-2 drop-shadow-lg" />
+            <p className="text-3xl font-bold text-white mb-1">
               {formatNumber(data.yearlyStats.issues)}
             </p>
             <div className="flex items-center justify-center gap-2">
@@ -294,14 +304,14 @@ export default function WrappedPage() {
           </div>
 
           {/* Languages */}
-          <div className="bg-white/10 backdrop-blur rounded-xl p-6 col-span-2">
-            <Code2 className="w-8 h-8 text-blue-400 mx-auto mb-3" />
-            <p className="text-purple-200 text-sm mb-3">Top Languages</p>
+          <div className="bg-linear-to-br from-white/15 to-white/5 backdrop-blur-sm rounded-xl p-5 col-span-2 border border-white/10 transition-transform hover:scale-[1.01]">
+            <Code2 className="w-8 h-8 text-blue-400 mx-auto mb-2 drop-shadow-lg" />
+            <p className="text-purple-200 text-sm mb-3 font-medium">Top Languages</p>
             <div className="flex justify-center gap-4 flex-wrap">
               {data.topLanguages.map((lang, index) => (
-                <div key={lang.name} className="flex items-center gap-2">
+                <div key={lang.name} className="flex items-center gap-2 bg-white/10 rounded-full px-3 py-1">
                   <Medal
-                    className="w-5 h-5"
+                    className="w-5 h-5 drop-shadow"
                     style={{
                       color:
                         index === 0
@@ -312,7 +322,7 @@ export default function WrappedPage() {
                     }}
                   />
                   <span
-                    className="w-3 h-3 rounded-full"
+                    className="w-3 h-3 rounded-full shadow-lg"
                     style={{ backgroundColor: lang.color }}
                   />
                   <span className="text-white font-medium">{lang.name}</span>
@@ -326,10 +336,10 @@ export default function WrappedPage() {
 
           {/* Activity Time */}
           {data.activityTime && (
-            <div className="bg-white/10 backdrop-blur rounded-xl p-6 text-center col-span-2">
+            <div className="bg-linear-to-br from-white/15 to-white/5 backdrop-blur-sm rounded-xl p-5 text-center col-span-2 border border-white/10 transition-transform hover:scale-[1.01]">
               {(() => {
                 const ActivityIcon = getActivityIcon(data.activityTime.type);
-                return <ActivityIcon className="w-8 h-8 text-yellow-400 mx-auto mb-2" />;
+                return <ActivityIcon className="w-10 h-10 text-yellow-400 mx-auto mb-2 drop-shadow-lg" />;
               })()}
               <p className="text-2xl font-bold text-white mb-1">
                 {data.activityTime.label}
@@ -342,27 +352,23 @@ export default function WrappedPage() {
 
           {/* Badges */}
           {data.badges && data.badges.length > 0 && (
-            <div className="bg-white/10 backdrop-blur rounded-xl p-6 col-span-2">
-              <Award className="w-8 h-8 text-purple-400 mx-auto mb-3" />
-              <p className="text-purple-200 text-sm mb-4 text-center">Achievements</p>
-              <div className="flex flex-wrap justify-center gap-2">
+            <div className="bg-linear-to-br from-white/15 to-white/5 backdrop-blur-sm rounded-xl p-6 col-span-2 border border-white/10 transition-transform hover:scale-[1.01]">
+              <Award className="w-10 h-10 text-purple-300 mx-auto mb-3 drop-shadow-lg" />
+              <p className="text-purple-200 font-semibold text-base mb-4 text-center">Achievements</p>
+              <div className="flex flex-wrap justify-center gap-3">
                 {data.badges.slice(0, 6).map((badge) => {
-                  const colors = getWrappedBadgeColors(badge.rarity);
-                  const BadgeIcon = WRAPPED_BADGES[badge.id]?.icon || Award;
+                  const badgeDef = WRAPPED_BADGES[badge.id];
+                  if (!badgeDef) return null;
+                  const BadgeIcon = badgeDef.icon;
                   return (
-                    <div
+                    <span
                       key={badge.id}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg"
-                      style={{
-                        backgroundColor: colors.bg,
-                        border: `1px solid ${colors.border}`,
-                      }}
+                      className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold ${badgeDef.color} shadow-lg`}
+                      title={badge.description}
                     >
-                      <BadgeIcon className="w-4 h-4" style={{ color: colors.text }} />
-                      <span className="text-sm font-medium" style={{ color: colors.text }}>
-                        {badge.name}
-                      </span>
-                    </div>
+                      <BadgeIcon className="w-4 h-4" />
+                      <span>{badge.name}</span>
+                    </span>
                   );
                 })}
               </div>
@@ -371,71 +377,97 @@ export default function WrappedPage() {
         </div>
 
         {/* Insight Score */}
-        <div className="px-8 pb-8">
+        <div className="px-8 pb-6">
           <div
-            className="rounded-xl p-6 text-center"
+            className="relative rounded-xl p-6 text-center overflow-hidden shadow-xl"
             style={{ backgroundColor: rankColors.bg }}
           >
-            <Trophy className="w-10 h-10 mx-auto mb-2" style={{ color: rankColors.text }} />
-            <p className="text-sm mb-1" style={{ color: rankColors.text, opacity: 0.8 }}>
+            <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent" />
+            <Trophy className="relative w-12 h-12 mx-auto mb-3 drop-shadow-lg" style={{ color: rankColors.text }} />
+            <p className="relative text-sm font-medium mb-2" style={{ color: rankColors.text, opacity: 0.9 }}>
               Insight Score
             </p>
-            <p className="text-4xl font-bold mb-1" style={{ color: rankColors.text }}>
+            <p className="relative text-5xl font-black mb-2 drop-shadow-lg" style={{ color: rankColors.text }}>
               {formatNumber(data.insightScore.score)}
             </p>
-            <p className="text-lg font-semibold" style={{ color: rankColors.text }}>
+            <p className="relative text-xl font-bold tracking-wide" style={{ color: rankColors.text }}>
               {data.insightScore.rank} Rank
             </p>
           </div>
         </div>
 
         {/* フッター */}
-        <div className="bg-black/20 px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-purple-300 text-sm">
+        <div className="bg-black/30 backdrop-blur-sm px-8 py-4 flex items-center justify-between border-t border-white/10">
+          <div className="flex items-center gap-2 text-purple-300 text-sm font-medium">
             <Calendar className="w-4 h-4" />
             Member since {data.memberSince}
           </div>
-          <p className="text-purple-400 text-xs">
+          <p className="text-purple-400 text-sm font-medium">
             github-insights.vercel.app
           </p>
         </div>
       </div>
 
       {/* シェアボタン */}
-      <div className="mt-6 flex justify-center gap-4">
+      <div className="mt-8 flex justify-center gap-4">
         <button
           onClick={async () => {
+            if (!cardRef.current || isDownloading) return;
+            
+            setIsDownloading(true);
             try {
-              const response = await fetch(ogCardUrl);
-              const blob = await response.blob();
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `${username}-wrapped-${year}.png`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
+              const dataUrl = await toPng(cardRef.current, {
+                quality: 1.0,
+                pixelRatio: 2, // 高解像度
+                cacheBust: true,
+              });
+              
+              const link = document.createElement("a");
+              link.download = `${username}-wrapped-${year}.png`;
+              link.href = dataUrl;
+              link.click();
             } catch (err) {
               console.error("Download failed:", err);
+            } finally {
+              setIsDownloading(false);
             }
           }}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors font-medium"
+          disabled={isDownloading}
+          className="inline-flex items-center gap-2 px-8 py-3.5 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl transition-all font-semibold shadow-lg hover:shadow-purple-500/25 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           <Download className="w-5 h-5" />
-          Download Card
+          {isDownloading ? "Generating..." : "Download Card"}
         </button>
         <button
           onClick={async () => {
             const url = `${window.location.origin}/user/${username}/wrapped/${year}`;
-            await navigator.clipboard.writeText(url);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            const shareText = `🎉 My GitHub Wrapped ${year} is here!\nCheck out my coding journey this year.\n\n`;
+            const hashtags = "GitHubWrapped,GitHub";
+            
+            // Web Share API対応チェック
+            if (navigator.share) {
+              try {
+                await navigator.share({
+                  title: `GitHub Wrapped ${year} - @${username}`,
+                  text: shareText,
+                  url: url,
+                });
+              } catch (err) {
+                // ユーザーがキャンセルした場合は無視
+                if ((err as Error).name !== "AbortError") {
+                  console.error("Share failed:", err);
+                }
+              }
+            } else {
+              // フォールバック: Twitter/X で共有
+              const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}&hashtags=${hashtags}`;
+              window.open(twitterUrl, "_blank", "noopener,noreferrer");
+            }
           }}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors font-medium"
+          className="inline-flex items-center gap-2 px-8 py-3.5 bg-white/10 hover:bg-white/20 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-white rounded-xl transition-all font-semibold border border-gray-200 dark:border-white/20 hover:scale-105"
         >
           <Share2 className="w-5 h-5" />
-          {copied ? "Copied!" : "Share"}
+          Share
         </button>
       </div>
     </DashboardLayout>
