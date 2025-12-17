@@ -19,9 +19,15 @@ import {
   Activity,
   TrendingUp,
   TrendingDown,
+  Clock,
+  Moon,
+  Sun,
+  Sunrise,
+  Sunset,
 } from "lucide-react";
 import { getRankColors } from "@/lib/insight-score";
 import type { InsightRank } from "@/lib/insight-score";
+import type { ActivityTimeType } from "@/lib/github";
 import DashboardLayout from "@/components/DashboardLayout";
 
 interface WrappedData {
@@ -43,6 +49,12 @@ interface WrappedData {
     prs: number | null;
     issues: number | null;
   } | null;
+  // アクティビティ時間分析
+  activityTime: {
+    type: ActivityTimeType;
+    label: string;
+    peakHour: number;
+  };
   topLanguages: {
     name: string;
     color: string;
@@ -91,6 +103,27 @@ function GrowthBadge({ value }: { value: number | null }) {
       {isPositive ? "+" : ""}{value}%
     </span>
   );
+}
+
+// アクティビティタイプに対応するアイコンを返す
+function getActivityIcon(type: ActivityTimeType) {
+  switch (type) {
+    case "night-owl":
+      return Moon;
+    case "early-bird":
+      return Sunrise;
+    case "business-hours":
+      return Sun;
+    case "evening-coder":
+      return Sunset;
+    default:
+      return Clock;
+  }
+}
+
+// 時間をフォーマット（0-23 -> "14:00 UTC"）
+function formatPeakHour(hour: number): string {
+  return `${hour.toString().padStart(2, "0")}:00 UTC`;
 }
 
 export default function WrappedPage() {
@@ -277,6 +310,22 @@ export default function WrappedPage() {
               ))}
             </div>
           </div>
+
+          {/* Activity Time */}
+          {data.activityTime && (
+            <div className="bg-white/10 backdrop-blur rounded-xl p-6 text-center col-span-2">
+              {(() => {
+                const ActivityIcon = getActivityIcon(data.activityTime.type);
+                return <ActivityIcon className="w-8 h-8 text-yellow-400 mx-auto mb-2" />;
+              })()}
+              <p className="text-2xl font-bold text-white mb-1">
+                {data.activityTime.label}
+              </p>
+              <p className="text-purple-200 text-sm">
+                Peak activity at {formatPeakHour(data.activityTime.peakHour)}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Insight Score */}

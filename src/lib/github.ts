@@ -1514,3 +1514,88 @@ export async function getContributionCalendar(
     return { totalContributions: 0, longestStreak: 0, currentStreak: 0 };
   }
 }
+
+// アクティビティ時間帯タイプ
+export type ActivityTimeType =
+  | "night-owl"      // 22:00 - 03:59 が多い
+  | "early-bird"     // 04:00 - 08:59 が多い
+  | "business-hours" // 09:00 - 17:59 が多い
+  | "evening-coder"  // 18:00 - 21:59 が多い
+  | "balanced";      // 均等に分散
+
+export interface ActivityTimeAnalysis {
+  type: ActivityTimeType;
+  peakHour: number;           // 最も活動が多い時間（0-23）
+  distribution: number[];      // 24時間の分布（%）
+  label: string;               // 表示用ラベル
+}
+
+/**
+ * ユーザーのイベントから活動時間帯を分析
+ * NOTE: Events APIは直近90日間（最大300件）のみ取得可能
+ */
+export function analyzeActivityTime(events: UserEvent[]): ActivityTimeAnalysis {
+  // 時間帯ごとのカウント（0-23時）
+  const hourCounts = new Array(24).fill(0);
+  
+  for (const event of events) {
+    const date = new Date(event.createdAt);
+    const hour = date.getUTCHours(); // UTCで一貫性を保つ
+    hourCounts[hour]++;
+  }
+  
+  const totalEvents = events.length;
+  
+  if (totalEvents === 0) {
+    return {
+      type: "balanced",
+      peakHour: 12,
+      distribution: new Array(24).fill(100 / 24),
+      label: "Balanced",
+    };
+  }
+  
+  // 分布を%に変換
+  const distribution = hourCounts.map((count) =>
+    Math.round((count / totalEvents) * 100)
+  );
+  
+  // ピーク時間
+  const peakHour = hourCounts.indexOf(Math.max(...hourCounts));
+  
+  // 時間帯ごとの合計を計算
+  const nightOwlHours = [22, 23, 0, 1, 2, 3].reduce((sum, h) => sum + hourCounts[h], 0);
+  const earlyBirdHours = [4, 5, 6, 7, 8].reduce((sum, h) => sum + hourCounts[h], 0);
+  const businessHours = [9, 10, 11, 12, 13, 14, 15, 16, 17].reduce((sum, h) => sum + hourCounts[h], 0);
+  const eveningHours = [18, 19, 20, 21].reduce((sum, h) => sum + hourCounts[h], 0);
+  
+  // 最も多い時間帯を判定（30%以上で判定）
+  const threshold = totalEvents * 0.3;
+  
+  let type: ActivityTimeType;
+  let label: string;
+  
+  if (nightOwlHours > threshold && nightOwlHours >= Math.max(earlyBirdHours, businessHours, eveningHours)) {
+    type = "night-owl";
+    label = "Night Owl";
+  } else if (earlyBirdHours > threshold && earlyBirdHours >= Math.max(nightOwlHours, businessHours, eveningHours)) {
+    type = "early-bird";
+    label = "Early Bird";
+  } else if (businessHours > threshold && businessHours >= Math.max(nightOwlHours, earlyBirdHours, eveningHours)) {
+    type = "business-hours";
+    label = "9-to-5 Coder";
+  } else if (eveningHours > threshold && eveningHours >= Math.max(nightOwlHours, earlyBirdHours, businessHours)) {
+    type = "evening-coder";
+    label = "Evening Coder";
+  } else {
+    type = "balanced";
+    label = "All-Day Coder";
+  }
+  
+  return {
+    type,
+    peakHour,
+    distribution,
+    label,
+  };
+}

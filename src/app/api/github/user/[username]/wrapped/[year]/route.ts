@@ -5,6 +5,8 @@ import {
   getUserRepositories,
   getYearlyContributionStats,
   getContributionCalendar,
+  getUserEvents,
+  analyzeActivityTime,
   calculateUserStats,
   GitHubRateLimitError,
 } from "@/lib/github";
@@ -55,11 +57,15 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
 
     // 並列でデータ取得
-    const [repositories, yearlyStats, contributionCalendar] = await Promise.all([
+    const [repositories, yearlyStats, contributionCalendar, events] = await Promise.all([
       getUserRepositories(username, accessToken),
       getYearlyContributionStats(username, year, accessToken),
       getContributionCalendar(username, year, accessToken),
+      getUserEvents(username, accessToken),
     ]);
+
+    // アクティビティ時間分析（直近90日間のイベントから）
+    const activityTime = analyzeActivityTime(events);
 
     // 前年データを取得（成長率計算用）
     // アカウント作成年より前の場合はスキップ
@@ -136,6 +142,12 @@ export async function GET(request: NextRequest, { params }: Params) {
       },
       // 前年比成長率（%）- nullは比較データなし
       growth,
+      // アクティビティ時間分析（直近90日間のイベントベース）
+      activityTime: {
+        type: activityTime.type,
+        label: activityTime.label,
+        peakHour: activityTime.peakHour,
+      },
       topLanguages,
       insightScore: {
         score: insightScore.score,
