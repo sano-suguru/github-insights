@@ -40,7 +40,7 @@ export function getChartColor(_githubColor: string | null, index: number): strin
  * @returns Tailwind CSSクラス文字列
  */
 export function getHeatmapColorClass(value: number, maxValue: number): string {
-  if (value === 0) return "bg-gray-100 dark:bg-gray-700";
+  if (value === 0 || maxValue === 0) return "bg-gray-100 dark:bg-gray-700";
   const intensity = value / maxValue;
   if (intensity < 0.25) return "bg-purple-200 dark:bg-purple-900";
   if (intensity < 0.5) return "bg-purple-400 dark:bg-purple-700";

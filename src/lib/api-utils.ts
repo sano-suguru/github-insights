@@ -58,9 +58,10 @@ export async function createCachedFetch<T>({
   additionalKeyParts = [],
   debugLabel,
 }: CachedFetchOptions<T>): Promise<T> {
-  const additionalKey = additionalKeyParts
-    .map((part) => (part === null ? "null" : String(part)))
-    .join(":");
+  const additionalKey =
+    additionalKeyParts.length > 0
+      ? additionalKeyParts.map((part) => (part === null ? "null" : String(part))).join(":")
+      : "";
   
   const cacheKey = [
     cacheKeyPrefix,
@@ -70,7 +71,7 @@ export async function createCachedFetch<T>({
     isAuthenticated ? "auth" : "public",
   ].join(":");
 
-  const cachedFetch = unstable_cache(
+  const cachedFetcher = unstable_cache(
     async () => {
       if (process.env.NODE_ENV === "development") {
         const label = debugLabel || cacheKeyPrefix;
@@ -81,9 +82,12 @@ export async function createCachedFetch<T>({
     [cacheKey],
     {
       revalidate,
+      // タグはリポジトリ単位で設定（additionalKeyPartsは含めない）
+      // これにより revalidateTag() でそのリポジトリの該当データ種別を一括無効化できる
+      // 例: revalidateTag("commits:owner:repo") で全期間（7日/30日/90日）のコミットキャッシュを無効化
       tags: [`${cacheKeyPrefix}:${owner}:${repo}`],
     }
   );
 
-  return cachedFetch();
+  return cachedFetcher();
 }

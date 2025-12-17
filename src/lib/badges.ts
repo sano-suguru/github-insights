@@ -19,6 +19,39 @@ import {
 } from "lucide-react";
 import { ContributorDetailStat } from "./github";
 
+// ========== OG カード用バッジ色スキーム ==========
+
+/**
+ * OG画像用のバッジ色スキーム
+ */
+export interface OgBadgeColorScheme {
+  bg: string;
+  text: string;
+  border: string;
+}
+
+/**
+ * OG画像用のデフォルトバッジ色
+ */
+export const OG_BADGE_DEFAULT_COLORS: OgBadgeColorScheme = {
+  bg: "rgba(139, 92, 246, 0.3)",
+  text: "#ddd6fe",
+  border: "rgba(139, 92, 246, 0.6)",
+};
+
+/**
+ * OG画像用のバッジ色取得関数を作成するファクトリ
+ * @param colorMap バッジ名と色のマッピング
+ * @returns バッジ名から色スキームを返す関数
+ */
+export function createOgBadgeColorGetter(
+  colorMap: Record<string, OgBadgeColorScheme>
+): (badge: string) => OgBadgeColorScheme {
+  return (badge: string) => colorMap[badge] || OG_BADGE_DEFAULT_COLORS;
+}
+
+// ========== バッジのカテゴリ ==========
+
 // バッジのカテゴリ
 export type BadgeCategory = "contributor" | "user";
 

@@ -1,5 +1,9 @@
 import { ImageResponse } from "@vercel/og";
 import { NextRequest } from "next/server";
+import {
+  OgBadgeColorScheme,
+  createOgBadgeColorGetter,
+} from "@/lib/badges";
 
 export const runtime = "edge";
 
@@ -38,7 +42,7 @@ const ICONS = {
 };
 
 // バッジの色マップ（ダッシュボードと統一）
-const BADGE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+const BADGE_COLORS: Record<string, OgBadgeColorScheme> = {
   // 人気/影響力ベース（紫〜ピンク系）
   "Influencer": { bg: "rgba(168, 85, 247, 0.3)", text: "#e9d5ff", border: "rgba(168, 85, 247, 0.6)" },
   "Popular": { bg: "rgba(236, 72, 153, 0.3)", text: "#fbcfe8", border: "rgba(236, 72, 153, 0.6)" },
@@ -53,9 +57,7 @@ const BADGE_COLORS: Record<string, { bg: string; text: string; border: string }>
 };
 
 // バッジの色を取得
-function getBadgeColors(badge: string): { bg: string; text: string; border: string } {
-  return BADGE_COLORS[badge] || { bg: "rgba(139, 92, 246, 0.3)", text: "#ddd6fe", border: "rgba(139, 92, 246, 0.6)" };
-}
+const getBadgeColors = createOgBadgeColorGetter(BADGE_COLORS);
 
 // ユーザー統計の型
 interface UserStats {

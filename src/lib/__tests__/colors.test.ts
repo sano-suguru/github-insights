@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getChartColor } from "../colors";
+import { getChartColor, getHeatmapColorClass } from "../colors";
 
 describe("getChartColor", () => {
   it("インデックス0でviolet-400を返す", () => {
@@ -39,5 +39,31 @@ describe("getChartColor", () => {
     expectedColors.forEach((color, index) => {
       expect(getChartColor(null, index)).toBe(color);
     });
+  });
+});
+
+describe("getHeatmapColorClass", () => {
+  it("value が 0 の場合はグレーを返す", () => {
+    expect(getHeatmapColorClass(0, 100)).toBe("bg-gray-100 dark:bg-gray-700");
+  });
+
+  it("maxValue が 0 の場合はグレーを返す（ゼロ除算防止）", () => {
+    expect(getHeatmapColorClass(5, 0)).toBe("bg-gray-100 dark:bg-gray-700");
+    expect(getHeatmapColorClass(0, 0)).toBe("bg-gray-100 dark:bg-gray-700");
+  });
+
+  it("強度に応じた色クラスを返す", () => {
+    // intensity < 0.25
+    expect(getHeatmapColorClass(10, 100)).toBe("bg-purple-200 dark:bg-purple-900");
+    // intensity < 0.5
+    expect(getHeatmapColorClass(30, 100)).toBe("bg-purple-400 dark:bg-purple-700");
+    // intensity < 0.75
+    expect(getHeatmapColorClass(60, 100)).toBe("bg-purple-500 dark:bg-purple-600");
+    // intensity >= 0.75
+    expect(getHeatmapColorClass(80, 100)).toBe("bg-purple-600 dark:bg-purple-500");
+  });
+
+  it("maxValue と同じ値の場合は最高強度を返す", () => {
+    expect(getHeatmapColorClass(100, 100)).toBe("bg-purple-600 dark:bg-purple-500");
   });
 });
