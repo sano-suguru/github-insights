@@ -277,13 +277,6 @@ function RepoPageContent() {
               )}
             </div>
           </div>
-          {/* 認証状態バッジ */}
-          {isAuthenticated && (
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/30 rounded-lg">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-sm text-green-700 dark:text-green-300">認証済み</span>
-            </div>
-          )}
         </div>
       </div>
 
