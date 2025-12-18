@@ -1,31 +1,30 @@
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 
-// スコープの定義
+// GitHub Appでは権限はアプリ設定で管理されるため、スコープは最小限に
 export const SCOPES = {
-  PUBLIC: "read:user user:email",
-  PRIVATE: "read:user user:email repo",
+  USER: "read:user user:email",
 } as const;
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     GitHub({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
-      // デフォルトはPublicスコープ
+      clientId: process.env.GITHUB_APP_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_APP_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: SCOPES.PUBLIC,
+          scope: SCOPES.USER,
         },
       },
     }),
   ],
   callbacks: {
     async jwt({ token, account, profile }) {
-      // 初回ログイン時にアクセストークン、スコープ、ユーザー名を保存
+      // 初回ログイン時にアクセストークン、ユーザー名を保存
       if (account) {
         token.accessToken = account.access_token;
-        token.scope = account.scope;
+        token.refreshToken = account.refresh_token;
+        token.expiresAt = account.expires_at;
       }
       if (profile) {
         token.login = (profile as { login?: string }).login;
@@ -33,9 +32,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      // セッションにアクセストークン、スコープ、ユーザー名を追加
+      // セッションにアクセストークン、ユーザー名を追加
       session.accessToken = token.accessToken as string;
-      session.scope = token.scope as string;
       session.login = token.login as string;
       return session;
     },

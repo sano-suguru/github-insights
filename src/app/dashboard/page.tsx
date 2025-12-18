@@ -160,8 +160,8 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-purple-50/30 to-gray-50 dark:from-gray-800 dark:via-purple-900/30 dark:to-gray-800">
-      {/* ヘッダー（Privateスコープへのアップグレード促進バナー含む） */}
-      <AppHeader showUpgradeBanner={session?.scope ? !session.scope.includes("repo") : false} />
+      {/* ヘッダー */}
+      <AppHeader />
 
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
