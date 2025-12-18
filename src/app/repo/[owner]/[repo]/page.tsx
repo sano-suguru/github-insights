@@ -400,10 +400,13 @@ function RepoPageContent() {
 
         {/* Contributors */}
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
-            <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
-            Contributors
-          </h2>
+          {/* 認証済みの場合はトグル付きチャート内でタイトル表示、未認証は外側で表示 */}
+          {!isAuthenticated && (
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
+              Contributors
+            </h2>
+          )}
           <ChartSkeletonWrapper
             isLoading={allDataLoading}
             skeleton={<BarChartSkeleton />}
