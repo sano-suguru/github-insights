@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import {
+  getRepository,
   getLanguageStats,
   getContributorStats,
   getContributorDetails,
   getRepositoryStats,
+  Repository,
   LanguageStat,
   ContributorStat,
   ContributorDetailStat,
@@ -15,6 +17,7 @@ import { createCachedFetch, sequentialFetch } from "@/lib/api-utils";
 
 // リポジトリデータの統合レスポンス型
 export interface RepoAllDataResponse {
+  repository: Repository;
   languages: LanguageStat[];
   contributorStats: ContributorStat[];
   contributorDetails: ContributorDetailStat[];
@@ -45,47 +48,62 @@ export async function GET(request: NextRequest, { params }: Params) {
 
     // 順次データ取得（セカンダリレート制限対策）
     // 各データはサーバーサイドでキャッシュされる
-    const [languages, contributorStats, contributorDetails, repositoryStats] =
-      await sequentialFetch([
-        () =>
-          createCachedFetch({
-            fetcher: () => getLanguageStats(accessToken, owner, repo),
-            cacheKeyPrefix: "languages",
-            owner,
-            repo,
-            isAuthenticated,
-            revalidate: SERVER_CACHE.LANGUAGES_REVALIDATE,
-          }),
-        () =>
-          createCachedFetch({
-            fetcher: () => getContributorStats(accessToken, owner, repo),
-            cacheKeyPrefix: "contributors",
-            owner,
-            repo,
-            isAuthenticated,
-            revalidate: SERVER_CACHE.CONTRIBUTORS_REVALIDATE,
-          }),
-        () =>
-          createCachedFetch({
-            fetcher: () => getContributorDetails(accessToken, owner, repo),
-            cacheKeyPrefix: "contributor-details",
-            owner,
-            repo,
-            isAuthenticated,
-            revalidate: SERVER_CACHE.CONTRIBUTORS_REVALIDATE,
-          }),
-        () =>
-          createCachedFetch({
-            fetcher: () => getRepositoryStats(accessToken, owner, repo),
-            cacheKeyPrefix: "stats",
-            owner,
-            repo,
-            isAuthenticated,
-            revalidate: SERVER_CACHE.STATS_REVALIDATE,
-          }),
-      ] as const);
+    const [
+      repository,
+      languages,
+      contributorStats,
+      contributorDetails,
+      repositoryStats,
+    ] = await sequentialFetch([
+      () =>
+        createCachedFetch({
+          fetcher: () => getRepository(accessToken, owner, repo),
+          cacheKeyPrefix: "repository",
+          owner,
+          repo,
+          isAuthenticated,
+          revalidate: SERVER_CACHE.STATS_REVALIDATE,
+        }),
+      () =>
+        createCachedFetch({
+          fetcher: () => getLanguageStats(accessToken, owner, repo),
+          cacheKeyPrefix: "languages",
+          owner,
+          repo,
+          isAuthenticated,
+          revalidate: SERVER_CACHE.LANGUAGES_REVALIDATE,
+        }),
+      () =>
+        createCachedFetch({
+          fetcher: () => getContributorStats(accessToken, owner, repo),
+          cacheKeyPrefix: "contributors",
+          owner,
+          repo,
+          isAuthenticated,
+          revalidate: SERVER_CACHE.CONTRIBUTORS_REVALIDATE,
+        }),
+      () =>
+        createCachedFetch({
+          fetcher: () => getContributorDetails(accessToken, owner, repo),
+          cacheKeyPrefix: "contributor-details",
+          owner,
+          repo,
+          isAuthenticated,
+          revalidate: SERVER_CACHE.CONTRIBUTORS_REVALIDATE,
+        }),
+      () =>
+        createCachedFetch({
+          fetcher: () => getRepositoryStats(accessToken, owner, repo),
+          cacheKeyPrefix: "stats",
+          owner,
+          repo,
+          isAuthenticated,
+          revalidate: SERVER_CACHE.STATS_REVALIDATE,
+        }),
+    ] as const);
 
     const response: RepoAllDataResponse = {
+      repository,
       languages,
       contributorStats,
       contributorDetails,

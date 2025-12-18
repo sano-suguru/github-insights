@@ -67,6 +67,19 @@ const mockContributorDetails = [
   },
 ];
 
+const mockRepository = {
+  id: "repo-id-123",
+  name: "test-repo",
+  nameWithOwner: "owner/test-repo",
+  description: "A test repository",
+  url: "https://github.com/owner/test-repo",
+  isPrivate: false,
+  primaryLanguage: { name: "TypeScript", color: "#3178c6" },
+  updatedAt: "2024-01-01T00:00:00Z",
+  stargazerCount: 100,
+  forkCount: 25,
+};
+
 // fetchモックヘルパー
 function mockFetchResponse(data: unknown, ok = true, status = 200) {
   return Promise.resolve({
@@ -94,6 +107,7 @@ function setupFetchMock(responses: Record<string, unknown>) {
     // 統合API（/api/github/repo/owner/repo）
     if (url.includes("/api/github/repo/")) {
       return mockFetchResponse(responses.allData ?? {
+        repository: mockRepository,
         languages: mockLanguageStats,
         contributorStats: mockContributorStats,
         contributorDetails: mockContributorDetails,
@@ -287,6 +301,7 @@ describe("useRepoAllData", () => {
     });
 
     // 新しい戻り値の形式を確認
+    expect(result.current.repository).toEqual(mockRepository);
     expect(result.current.languages).toEqual(mockLanguageStats);
     expect(result.current.contributorStats).toEqual(mockContributorStats);
     expect(result.current.contributorDetails).toEqual(mockContributorDetails);

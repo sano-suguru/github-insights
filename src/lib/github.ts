@@ -136,24 +136,33 @@ async function updateRateLimit(client: typeof graphql, isUnauthenticated: boolea
   }
 }
 
-// 特定のPublicリポジトリ情報を取得
-export async function getPublicRepository(owner: string, repo: string) {
-  const client = createPublicGitHubClient();
-  
-  const { repository } = await withRetry(() => client<{
-    repository: {
-      id: string;
-      name: string;
-      nameWithOwner: string;
-      description: string | null;
-      url: string;
-      isPrivate: boolean;
-      primaryLanguage: { name: string; color: string } | null;
-      updatedAt: string;
-      stargazerCount: number;
-      forkCount: number;
-    } | null;
-  }>(`
+// リポジトリ情報を取得（認証/未認証両対応）
+export async function getRepository(
+  accessToken: string | null,
+  owner: string,
+  repo: string
+): Promise<Repository> {
+  const client = accessToken
+    ? createGitHubClient(accessToken)
+    : createPublicGitHubClient();
+  const isPublic = !accessToken;
+
+  const { repository } = await withRetry(() =>
+    client<{
+      repository: {
+        id: string;
+        name: string;
+        nameWithOwner: string;
+        description: string | null;
+        url: string;
+        isPrivate: boolean;
+        primaryLanguage: { name: string; color: string } | null;
+        updatedAt: string;
+        stargazerCount: number;
+        forkCount: number;
+      } | null;
+    }>(
+      `
     query($owner: String!, $repo: String!) {
       repository(owner: $owner, name: $repo) {
         id
@@ -171,20 +180,31 @@ export async function getPublicRepository(owner: string, repo: string) {
         forkCount
       }
     }
-  `, { owner, repo }));
-  
-  // レート制限を更新
-  await updateRateLimit(client, true);
-  
+  `,
+      { owner, repo }
+    )
+  );
+
+  // レート制限を更新（未認証の場合のみ追跡）
+  if (isPublic) {
+    await updateRateLimit(client, true);
+  }
+
   if (!repository) {
     throw new Error("Repository not found");
   }
-  
-  if (repository.isPrivate) {
+
+  // 未認証でプライベートリポジトリにアクセスしようとした場合
+  if (repository.isPrivate && isPublic) {
     throw new Error("This is a private repository. Please login to access.");
   }
-  
+
   return repository as Repository;
+}
+
+// 特定のPublicリポジトリ情報を取得（後方互換性のため維持）
+export async function getPublicRepository(owner: string, repo: string) {
+  return getRepository(null, owner, repo);
 }
 
 // 公開リポジトリを検索（未認証対応）

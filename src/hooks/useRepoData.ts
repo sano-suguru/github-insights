@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type {
+  Repository,
   LanguageStat,
   ContributorStat,
   ContributorDetailStat,
@@ -12,6 +13,7 @@ import { getErrorMessage } from "@/lib/api-utils";
 
 // 統合API レスポンス型
 interface RepoAllDataResponse {
+  repository: Repository;
   languages: LanguageStat[];
   contributorStats: ContributorStat[];
   contributorDetails: ContributorDetailStat[];
@@ -128,6 +130,8 @@ export function useRepoAllData({ owner, repo, enabled = true }: UseRepoDataParam
   });
 
   return {
+    // リポジトリ情報
+    repository: query.data?.repository ?? null,
     // 個別データへのアクセス
     languages: query.data?.languages ?? [],
     contributorStats: query.data?.contributorStats ?? [],

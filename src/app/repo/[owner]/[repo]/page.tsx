@@ -6,8 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { AlertTriangle, AlertCircle, Lightbulb, GitCommit, GitPullRequest, CircleDot, Star, Frown, ExternalLink, Github } from "lucide-react";
-import { getPublicRepository, getPublicRateLimitInfo } from "@/lib/github";
-import { useQuery } from "@tanstack/react-query";
+import { getPublicRateLimitInfo } from "@/lib/github";
 import { useRepoAllData } from "@/hooks/useRepoData";
 import { useCommitHistory, usePrefetchCommitHistory } from "@/hooks/useCommitHistory";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -143,20 +142,9 @@ function RepoPageContent() {
   );
   const prefetchCommits = usePrefetchCommitHistory();
 
-  // リポジトリ情報取得
+  // 統合API経由で全データを一括取得（セカンダリレート制限対策）
   const {
-    data: repository,
-    isLoading: repoLoading,
-    error: repoError,
-  } = useQuery({
-    queryKey: ["publicRepository", owner, repo],
-    queryFn: () => getPublicRepository(owner, repo),
-    enabled: !!owner && !!repo,
-    retry: 1,
-  });
-
-  // 各データ取得（React Query）- 統合APIで1リクエストに集約
-  const {
+    repository,
     languages,
     contributorStats: contributors,
     contributorDetails,
@@ -168,7 +156,7 @@ function RepoPageContent() {
   } = useRepoAllData({
     owner,
     repo,
-    enabled: !!repository,
+    enabled: !!owner && !!repo,
   });
 
   const {
@@ -201,15 +189,15 @@ function RepoPageContent() {
   const isRateLimitWarning = rateLimit && rateLimit.remaining < 20;
   const isRateLimitCritical = rateLimit && rateLimit.remaining < 5;
 
-  const error = repoError instanceof Error ? repoError.message : repoError ? String(repoError) : null;
+  const error = allDataErrorData instanceof Error ? allDataErrorData.message : allDataErrorData ? String(allDataErrorData) : null;
 
   // ローディング状態
-  if (repoLoading || authStatus === "loading") {
+  if (allDataLoading || authStatus === "loading") {
     return <DashboardLayout isLoading />;
   }
 
-  if (error) {
-    const isRateLimitError = error.includes("rate limit");
+  if (allDataError || error) {
+    const isRateLimitError = error?.includes("rate limit") ?? false;
     
     return (
       <DashboardLayout>
