@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import ContributorRanking from "@/components/ContributorRanking";
-import { ContributorDetailStat } from "@/lib/github";
+import type { ContributorDetailStat } from "@/lib/github/types";
 
 // モックデータ
 const createContributor = (

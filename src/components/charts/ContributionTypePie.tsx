@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { UserEvent } from "@/lib/github";
+import type { UserEvent } from "@/lib/github/types";
 import { useMemo } from "react";
 
 interface Props {

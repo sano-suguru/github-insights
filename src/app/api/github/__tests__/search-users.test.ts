@@ -4,16 +4,17 @@ import { GET } from "../search-users/route";
 
 // モック設定
 const mockSearchUsers = vi.fn();
-const mockGetPublicRateLimitInfo = vi.fn();
-vi.mock("@/lib/github", () => ({
+vi.mock("@/lib/github/user", () => ({
   searchUsers: () => mockSearchUsers(),
-  getPublicRateLimitInfo: () => mockGetPublicRateLimitInfo(),
+}));
+vi.mock("@/lib/github/errors", () => ({
   GitHubRateLimitError: class extends Error {
     constructor(message = "GitHub API rate limit exceeded") {
       super(message);
       this.name = "GitHubRateLimitError";
     }
   },
+  isRateLimitError: (e: unknown) => e instanceof Error && e.name === "GitHubRateLimitError",
 }));
 
 vi.mock("next/cache", () => ({
@@ -58,7 +59,6 @@ describe("GET /api/github/search-users", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => {});
-    mockGetPublicRateLimitInfo.mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -117,7 +117,7 @@ describe("GET /api/github/search-users", () => {
   });
 
   it("レート制限エラーの場合は 429 を返す", async () => {
-    const { GitHubRateLimitError } = await import("@/lib/github");
+    const { GitHubRateLimitError } = await import("@/lib/github/errors");
     mockSearchUsers.mockRejectedValue(new GitHubRateLimitError());
 
     const request = createRequest({ q: "test" });

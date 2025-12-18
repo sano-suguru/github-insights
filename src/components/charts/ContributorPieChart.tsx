@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { ContributorDetailStat } from "@/lib/github";
+import type { ContributorDetailStat } from "@/lib/github/types";
 
 const COLORS = [
   "#8b5cf6", // purple

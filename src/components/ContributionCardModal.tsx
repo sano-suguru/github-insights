@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X, Download, Link, Code, User, FolderGit2, Lightbulb, Loader2, Maximize2, Minimize2 } from "lucide-react";
-import { ContributorDetailStat } from "@/lib/github";
+import type { ContributorDetailStat } from "@/lib/github/types";
 
 type CardType = "repo" | "user";
 

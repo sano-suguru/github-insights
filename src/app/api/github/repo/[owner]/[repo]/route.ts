@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import {
-  getRepository,
-  getLanguageStats,
-  getContributorStats,
-  getContributorDetails,
-  getRepositoryStats,
+import type {
   Repository,
   LanguageStat,
   ContributorStat,
   ContributorDetailStat,
   RepositoryStat,
-} from "@/lib/github";
+} from "@/lib/github/types";
+import { getRepository } from "@/lib/github/repository";
+import {
+  getLanguageStats,
+  getContributorStats,
+  getContributorDetails,
+  getRepositoryStats,
+} from "@/lib/github/stats";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
 import { createCachedFetch, sequentialFetch } from "@/lib/api-utils";
 

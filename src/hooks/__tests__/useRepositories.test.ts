@@ -4,12 +4,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
 
 // GitHub API関数のモック
-vi.mock("@/lib/github", () => ({
+vi.mock("@/lib/github/repository", () => ({
   getRepositories: vi.fn(),
 }));
 
 // モック後にインポート
-import { getRepositories } from "@/lib/github";
+import { getRepositories } from "@/lib/github/repository";
 import { useRepositories } from "@/hooks/useRepositories";
 
 // テスト用のQueryClient wrapper

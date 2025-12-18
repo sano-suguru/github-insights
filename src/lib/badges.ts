@@ -25,7 +25,7 @@ import {
   TrendingUp,
   Activity,
 } from "lucide-react";
-import type { ContributorDetailStat, ActivityTimeType } from "./github";
+import type { ContributorDetailStat, ActivityTimeType } from "./github/types";
 
 // ========== OG カード用バッジ色スキーム ==========
 

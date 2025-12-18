@@ -1,6 +1,6 @@
 "use client";
 
-import { CommitInfo } from "@/lib/github";
+import type { CommitInfo } from "@/lib/github/types";
 import { getHeatmapColorClass } from "@/lib/colors";
 import { useMemo } from "react";
 

@@ -7,7 +7,7 @@ import type {
   ContributorStat,
   ContributorDetailStat,
   RepositoryStat,
-} from "@/lib/github";
+} from "@/lib/github/types";
 import { CLIENT_CACHE } from "@/lib/cache-config";
 import { getErrorMessage } from "@/lib/api-utils";
 

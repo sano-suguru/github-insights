@@ -10,11 +10,9 @@ vi.mock("@octokit/graphql", () => ({
 }));
 
 // テスト対象を動的にインポート（モック適用後）
-const {
-  getLanguageStats,
-  getContributorStats,
-  getRepositoryStats,
-} = await import("@/lib/github");
+const { getLanguageStats, getContributorStats, getRepositoryStats } = await import(
+  "@/lib/github/stats"
+);
 
 describe("GitHub API関数", () => {
   beforeEach(() => {

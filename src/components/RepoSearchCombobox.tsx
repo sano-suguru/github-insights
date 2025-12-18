@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Clock, ChevronDown, X, Globe, Star, Loader2, User, Users, Building2 } from "lucide-react";
-import { Repository } from "@/lib/github";
+import type { Repository } from "@/lib/github/types";
 import { useSearchRepositories, SearchResult, UserSearchResult, MIN_USER_SEARCH_QUERY_LENGTH, MIN_REPO_SEARCH_QUERY_LENGTH } from "@/hooks/useSearchRepositories";
 
 export type RepoSearchVariant = "default" | "compact" | "hero";

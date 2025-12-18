@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { LanguageStat } from "@/lib/github";
+import type { LanguageStat } from "@/lib/github/types";
 import { getChartColor } from "@/lib/colors";
 
 interface Props {

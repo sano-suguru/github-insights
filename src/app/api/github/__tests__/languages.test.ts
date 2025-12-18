@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 import type { Session } from "next-auth";
 import { GET } from "../languages/route";
-import type { LanguageStat } from "@/lib/github";
+import type { LanguageStat } from "@/lib/github/types";
 
 // モック設定
 const mockAuth = vi.fn<() => Promise<Session | null>>();
@@ -11,7 +11,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 const mockGetLanguageStats = vi.fn<() => Promise<LanguageStat[]>>();
-vi.mock("@/lib/github", () => ({
+vi.mock("@/lib/github/stats", () => ({
   getLanguageStats: () => mockGetLanguageStats(),
 }));
 
