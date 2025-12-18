@@ -5,6 +5,31 @@ import { unstable_cache } from "next/cache";
  */
 
 /**
+ * セカンダリレート制限対策: リクエスト間に遅延を入れて順次実行
+ * Promise.allの代わりに使用することで、短時間での大量リクエストを回避
+ * 
+ * @param tasks - 実行する非同期関数の配列
+ * @param delayMs - 各リクエスト間の遅延（ミリ秒）、デフォルト100ms
+ * @returns 各タスクの結果の配列（Promise.allと同じ順序）
+ */
+export async function sequentialFetch<T extends readonly (() => Promise<unknown>)[]>(
+  tasks: T,
+  delayMs = 100
+): Promise<{ [K in keyof T]: Awaited<ReturnType<T[K]>> }> {
+  const results: unknown[] = [];
+  
+  for (let i = 0; i < tasks.length; i++) {
+    // 2番目以降のリクエストの前に遅延を入れる
+    if (i > 0 && delayMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+    results.push(await tasks[i]());
+  }
+  
+  return results as { [K in keyof T]: Awaited<ReturnType<T[K]>> };
+}
+
+/**
  * エラーレスポンスから安全にエラーメッセージを取得
  * 
  * Content-TypeがJSONの場合はパースしてerrorフィールドを取得、

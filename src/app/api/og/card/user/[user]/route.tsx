@@ -8,7 +8,6 @@ import {
   calculateInsightScore,
   getRankColorsForOg,
   formatScore,
-  InsightRank,
 } from "@/lib/insight-score";
 
 export const runtime = "edge";

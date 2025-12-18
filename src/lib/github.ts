@@ -60,6 +60,42 @@ export function createPublicGitHubClient() {
   return graphql.defaults({});
 }
 
+// セカンダリレート制限対策: 指数バックオフ付きリトライラッパー
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: { maxRetries?: number; baseDelay?: number } = {}
+): Promise<T> {
+  const { maxRetries = 3, baseDelay = 1000 } = options;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: unknown) {
+      lastError = error;
+      
+      // セカンダリレート制限エラーを検出
+      const isSecondaryLimit = error instanceof Error && (
+        error.message.includes("secondary rate limit") ||
+        error.message.includes("abuse detection") ||
+        (error.message.includes("403") && error.message.toLowerCase().includes("limit"))
+      );
+      
+      // 通常のレート制限またはセカンダリレート制限の場合はリトライ
+      if ((isRateLimitError(error) || isSecondaryLimit) && attempt < maxRetries - 1) {
+        const delay = Math.pow(2, attempt) * baseDelay;
+        console.warn(`Rate limited (attempt ${attempt + 1}/${maxRetries}), retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      throw error;
+    }
+  }
+
+  throw lastError;
+}
+
 // レート制限を取得・更新
 async function updateRateLimit(client: typeof graphql, isUnauthenticated: boolean) {
   try {
@@ -103,7 +139,7 @@ async function updateRateLimit(client: typeof graphql, isUnauthenticated: boolea
 export async function getPublicRepository(owner: string, repo: string) {
   const client = createPublicGitHubClient();
   
-  const { repository } = await client<{
+  const { repository } = await withRetry(() => client<{
     repository: {
       id: string;
       name: string;
@@ -134,7 +170,7 @@ export async function getPublicRepository(owner: string, repo: string) {
         forkCount
       }
     }
-  `, { owner, repo });
+  `, { owner, repo }));
   
   // レート制限を更新
   await updateRateLimit(client, true);
@@ -178,7 +214,7 @@ export async function searchRepositories(
   const isUnauthenticated = !accessToken;
 
   try {
-    const { search } = await client<{
+    const { search } = await withRetry(() => client<{
       search: {
         repositoryCount: number;
         nodes: Array<{
@@ -207,7 +243,7 @@ export async function searchRepositories(
           }
         }
       }
-    `, { query: `${query} in:name`, first });
+    `, { query: `${query} in:name`, first }));
 
     // レート制限を更新
     const rateLimit = await updateRateLimit(client, isUnauthenticated);
@@ -353,7 +389,7 @@ export async function getUserRepositories(
     : createPublicGitHubClient();
 
   try {
-    const { user } = await client<{
+    const { user } = await withRetry(() => client<{
       user: {
         repositories: {
           nodes: {
@@ -395,7 +431,7 @@ export async function getUserRepositories(
           }
         }
       }
-    `, { username });
+    `, { username }));
 
     if (!user) {
       return [];
@@ -635,7 +671,7 @@ export async function getUserEvents(
 export async function getRepositories(accessToken: string) {
   const client = createGitHubClient(accessToken);
 
-  const { viewer } = await client<{
+  const { viewer } = await withRetry(() => client<{
     viewer: {
       repositories: {
         nodes: Repository[];
@@ -668,7 +704,7 @@ export async function getRepositories(accessToken: string) {
         }
       }
     }
-  `);
+  `));
 
   return viewer.repositories.nodes;
 }
@@ -681,7 +717,7 @@ export async function getLanguageStats(
 ) {
   const client = accessToken ? createGitHubClient(accessToken) : createPublicGitHubClient();
 
-  const { repository } = await client<{
+  const { repository } = await withRetry(() => client<{
     repository: {
       languages: {
         edges: Array<{
@@ -706,7 +742,7 @@ export async function getLanguageStats(
         }
       }
     }
-  `, { owner, repo });
+  `, { owner, repo }));
 
   const totalSize = repository.languages.totalSize;
   return repository.languages.edges.map((edge) => ({
@@ -867,7 +903,7 @@ export async function getContributorStats(
 ) {
   const client = accessToken ? createGitHubClient(accessToken) : createPublicGitHubClient();
 
-  const { repository } = await client<{
+  const { repository } = await withRetry(() => client<{
     repository: {
       mentionableUsers: {
         nodes: Array<{
@@ -915,7 +951,7 @@ export async function getContributorStats(
         }
       }
     }
-  `, { owner, repo });
+  `, { owner, repo }));
 
   // コミット数でコントリビューターを集計
   const commits = repository.defaultBranchRef?.target?.history?.nodes || [];
@@ -1077,7 +1113,7 @@ export async function getContributorDetails(
   const client = accessToken ? createGitHubClient(accessToken) : createPublicGitHubClient();
 
   // コミット履歴を取得（全期間、最大100件 - GitHub API制限）
-  const { repository } = await client<{
+  const { repository } = await withRetry(() => client<{
     repository: {
       mentionableUsers: {
         nodes: Array<{
@@ -1157,7 +1193,7 @@ export async function getContributorDetails(
         }
       }
     }
-  `, { owner, repo });
+  `, { owner, repo }));
 
   // コミット統計を集計
   const commits = repository.defaultBranchRef?.target?.history?.nodes || [];
@@ -1473,7 +1509,7 @@ export async function getContributionCalendar(
     const from = `${year}-01-01T00:00:00Z`;
     const to = `${year}-12-31T23:59:59Z`;
 
-    const response = await client<ContributionCalendarResponse>(`
+    const response = await withRetry(() => client<ContributionCalendarResponse>(`
       query($username: String!, $from: DateTime!, $to: DateTime!) {
         user(login: $username) {
           contributionsCollection(from: $from, to: $to) {
@@ -1489,7 +1525,7 @@ export async function getContributionCalendar(
           }
         }
       }
-    `, { username, from, to });
+    `, { username, from, to }));
 
     if (!response.user) {
       console.warn(`User ${username} not found for contribution calendar`);

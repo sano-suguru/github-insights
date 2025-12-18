@@ -15,6 +15,7 @@ import {
   calculateAccountYears,
 } from "@/lib/insight-score";
 import { calculateWrappedBadges } from "@/lib/badges";
+import { sequentialFetch } from "@/lib/api-utils";
 
 interface Params {
   params: Promise<{
@@ -57,13 +58,13 @@ export async function GET(request: NextRequest, { params }: Params) {
       );
     }
 
-    // 並列でデータ取得
-    const [repositories, yearlyStats, contributionCalendar, events] = await Promise.all([
-      getUserRepositories(username, accessToken),
-      getYearlyContributionStats(username, year, accessToken),
-      getContributionCalendar(username, year, accessToken),
-      getUserEvents(username, accessToken),
-    ]);
+    // 順次でデータ取得（セカンダリレート制限対策）
+    const [repositories, yearlyStats, contributionCalendar, events] = await sequentialFetch([
+      () => getUserRepositories(username, accessToken),
+      () => getYearlyContributionStats(username, year, accessToken),
+      () => getContributionCalendar(username, year, accessToken),
+      () => getUserEvents(username, accessToken),
+    ] as const);
 
     // アクティビティ時間分析（直近90日間のイベントから）
     const activityTime = analyzeActivityTime(events);
@@ -79,10 +80,10 @@ export async function GET(request: NextRequest, { params }: Params) {
     } | null = null;
 
     if (previousYear >= memberSinceYear) {
-      const [prevStats, prevCalendar] = await Promise.all([
-        getYearlyContributionStats(username, previousYear, accessToken),
-        getContributionCalendar(username, previousYear, accessToken),
-      ]);
+      const [prevStats, prevCalendar] = await sequentialFetch([
+        () => getYearlyContributionStats(username, previousYear, accessToken),
+        () => getContributionCalendar(username, previousYear, accessToken),
+      ] as const);
       previousYearData = {
         prs: prevStats.prs,
         issues: prevStats.issues,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { sequentialFetch } from "@/lib/api-utils";
 import {
   getUserProfile,
   getUserRepositories,
@@ -21,6 +22,7 @@ interface Params {
 
 // ユーザーデータを取得
 // 注: クライアント側で React Query がキャッシュするため、サーバー側キャッシュは使用しない
+// セカンダリレート制限対策: Promise.allから順次実行に変更
 async function fetchUserData(
   username: string,
   accessToken: string | null
@@ -36,12 +38,13 @@ async function fetchUserData(
     return { profile: null, stats: null, events: [], contributionStats: { totalPRs: 0, totalIssues: 0 } };
   }
 
-  // リポジトリ、イベント、貢献統計を並列取得
-  const [repositories, events, contributionStats] = await Promise.all([
-    getUserRepositories(username, accessToken),
-    getUserEvents(username, accessToken),
-    getUserContributionStats(username, accessToken),
-  ]);
+  // セカンダリレート制限対策: 順次実行（各リクエスト間に100msの遅延）
+  const [repositories, events, contributionStats] = await sequentialFetch([
+    () => getUserRepositories(username, accessToken),
+    () => getUserEvents(username, accessToken),
+    () => getUserContributionStats(username, accessToken),
+  ] as const);
+  
   const stats = calculateUserStats(repositories);
 
   return { profile, stats, events, contributionStats };
