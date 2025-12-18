@@ -91,6 +91,15 @@ function setupFetchMock(responses: Record<string, unknown>) {
     if (url.includes("/api/github/stats")) {
       return mockFetchResponse(responses.stats ?? mockRepositoryStats);
     }
+    // 統合API（/api/github/repo/owner/repo）
+    if (url.includes("/api/github/repo/")) {
+      return mockFetchResponse(responses.allData ?? {
+        languages: mockLanguageStats,
+        contributorStats: mockContributorStats,
+        contributorDetails: mockContributorDetails,
+        repositoryStats: mockRepositoryStats,
+      });
+    }
     return mockFetchResponse({ error: "Not found" }, false, 404);
   });
 }
@@ -260,7 +269,7 @@ describe("useRepoAllData", () => {
     setupFetchMock({});
   });
 
-  it("全データを一括取得する", async () => {
+  it("統合APIで全データを一括取得する", async () => {
     const { result } = renderHook(
       () =>
         useRepoAllData({
@@ -277,26 +286,18 @@ describe("useRepoAllData", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.languageStats.data).toEqual(mockLanguageStats);
-    expect(result.current.contributorStats.data).toEqual(mockContributorStats);
-    expect(result.current.contributorDetails.data).toEqual(mockContributorDetails);
-    expect(result.current.repositoryStats.data).toEqual(mockRepositoryStats);
+    // 新しい戻り値の形式を確認
+    expect(result.current.languages).toEqual(mockLanguageStats);
+    expect(result.current.contributorStats).toEqual(mockContributorStats);
+    expect(result.current.contributorDetails).toEqual(mockContributorDetails);
+    expect(result.current.repositoryStats).toEqual(mockRepositoryStats);
     expect(result.current.isError).toBe(false);
   });
 
-  it("一部のクエリがエラーの場合isErrorがtrueになる", async () => {
+  it("APIエラーの場合isErrorがtrueになる", async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes("/api/github/contributors") && url.includes("type=stats")) {
+      if (url.includes("/api/github/repo/")) {
         return mockFetchResponse({ error: "API Error" }, false, 500);
-      }
-      if (url.includes("/api/github/languages")) {
-        return mockFetchResponse(mockLanguageStats);
-      }
-      if (url.includes("/api/github/contributors") && url.includes("type=details")) {
-        return mockFetchResponse(mockContributorDetails);
-      }
-      if (url.includes("/api/github/stats")) {
-        return mockFetchResponse(mockRepositoryStats);
       }
       return mockFetchResponse({ error: "Not found" }, false, 404);
     });
@@ -315,10 +316,9 @@ describe("useRepoAllData", () => {
     });
 
     expect(result.current.isError).toBe(true);
-    expect(result.current.contributorStats.isError).toBe(true);
   });
 
-  it("enabled=falseの場合は全クエリが実行されない", () => {
+  it("enabled=falseの場合はクエリが実行されない", () => {
     const { result } = renderHook(
       () =>
         useRepoAllData({
@@ -329,8 +329,8 @@ describe("useRepoAllData", () => {
       { wrapper: createWrapper() }
     );
 
-    expect(result.current.languageStats.fetchStatus).toBe("idle");
-    expect(result.current.contributorStats.fetchStatus).toBe("idle");
+    // ローディングにならない（クエリが実行されない）
+    expect(result.current.isLoading).toBe(false);
     expect(mockFetch).not.toHaveBeenCalled();
   });
 });

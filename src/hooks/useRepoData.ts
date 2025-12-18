@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type {
   LanguageStat,
   ContributorStat,
@@ -9,6 +9,14 @@ import type {
 } from "@/lib/github";
 import { CLIENT_CACHE } from "@/lib/cache-config";
 import { getErrorMessage } from "@/lib/api-utils";
+
+// 統合API レスポンス型
+interface RepoAllDataResponse {
+  languages: LanguageStat[];
+  contributorStats: ContributorStat[];
+  contributorDetails: ContributorDetailStat[];
+  repositoryStats: RepositoryStat;
+}
 
 interface UseRepoDataParams {
   owner: string;
@@ -96,45 +104,39 @@ export function useRepositoryStats({ owner, repo, enabled = true }: UseRepoDataP
   });
 }
 
-// 全データを一括取得するフック
+// 統合API経由で全データを取得
+async function fetchAllRepoDataFromAPI(
+  owner: string,
+  repo: string
+): Promise<RepoAllDataResponse> {
+  const url = `/api/github/repo/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res, "Failed to fetch repository data"));
+  }
+  return res.json();
+}
+
+// 全データを一括取得するフック（統合APIを使用）
+// クライアントから1リクエストで全データ取得 → セカンダリレート制限対策
 export function useRepoAllData({ owner, repo, enabled = true }: UseRepoDataParams) {
-  const results = useQueries({
-    queries: [
-      {
-        queryKey: ["languageStats", owner, repo],
-        queryFn: () => fetchLanguagesFromAPI(owner, repo),
-        enabled: enabled && !!owner && !!repo,
-        staleTime: CLIENT_CACHE.LANGUAGES_STALE_TIME,
-      },
-      {
-        queryKey: ["contributorStats", owner, repo],
-        queryFn: () => fetchContributorStatsFromAPI(owner, repo),
-        enabled: enabled && !!owner && !!repo,
-        staleTime: CLIENT_CACHE.CONTRIBUTORS_STALE_TIME,
-      },
-      {
-        queryKey: ["contributorDetails", owner, repo],
-        queryFn: () => fetchContributorDetailsFromAPI(owner, repo),
-        enabled: enabled && !!owner && !!repo,
-        staleTime: CLIENT_CACHE.CONTRIBUTORS_STALE_TIME,
-      },
-      {
-        queryKey: ["repositoryStats", owner, repo],
-        queryFn: () => fetchStatsFromAPI(owner, repo),
-        enabled: enabled && !!owner && !!repo,
-        staleTime: CLIENT_CACHE.STATS_STALE_TIME,
-      },
-    ],
+  const query = useQuery({
+    queryKey: ["repoAllData", owner, repo],
+    queryFn: () => fetchAllRepoDataFromAPI(owner, repo),
+    enabled: enabled && !!owner && !!repo,
+    staleTime: CLIENT_CACHE.STATS_STALE_TIME, // 最短のキャッシュ時間を使用
   });
 
-  const [languageStats, contributorStats, contributorDetails, repositoryStats] = results;
-
   return {
-    languageStats,
-    contributorStats,
-    contributorDetails,
-    repositoryStats,
-    isLoading: results.some((r) => r.isLoading),
-    isError: results.some((r) => r.isError),
+    // 個別データへのアクセス
+    languages: query.data?.languages ?? [],
+    contributorStats: query.data?.contributorStats ?? [],
+    contributorDetails: query.data?.contributorDetails ?? [],
+    repositoryStats: query.data?.repositoryStats ?? null,
+    // クエリ状態
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
   };
 }

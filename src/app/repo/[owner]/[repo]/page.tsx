@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 import { AlertTriangle, AlertCircle, Lightbulb, GitCommit, GitPullRequest, CircleDot, Star, Frown, ExternalLink, Github } from "lucide-react";
 import { getPublicRepository, getPublicRateLimitInfo } from "@/lib/github";
 import { useQuery } from "@tanstack/react-query";
-import { useLanguageStats, useContributorStats, useContributorDetails, useRepositoryStats } from "@/hooks/useRepoData";
+import { useRepoAllData } from "@/hooks/useRepoData";
 import { useCommitHistory, usePrefetchCommitHistory } from "@/hooks/useCommitHistory";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PeriodSelector } from "@/components/PeriodSelector";
@@ -155,14 +155,17 @@ function RepoPageContent() {
     retry: 1,
   });
 
-  // 各データ取得（React Query）
+  // 各データ取得（React Query）- 統合APIで1リクエストに集約
   const {
-    data: languages = [],
-    isLoading: langLoading,
-    isError: langError,
-    error: langErrorData,
-    refetch: refetchLanguages,
-  } = useLanguageStats({
+    languages,
+    contributorStats: contributors,
+    contributorDetails,
+    repositoryStats: stats,
+    isLoading: allDataLoading,
+    isError: allDataError,
+    error: allDataErrorData,
+    refetch: refetchAllData,
+  } = useRepoAllData({
     owner,
     repo,
     enabled: !!repository,
@@ -180,42 +183,6 @@ function RepoPageContent() {
     owner,
     repo,
     days: isAuthenticated ? selectedDays : 30, // 未認証は30日固定
-    enabled: !!repository,
-  });
-
-  const {
-    data: contributors = [],
-    isLoading: contributorsLoading,
-    isError: contributorsError,
-    error: contributorsErrorData,
-    refetch: refetchContributors,
-  } = useContributorStats({
-    owner,
-    repo,
-    enabled: !!repository,
-  });
-
-  const {
-    data: contributorDetails = [],
-    isLoading: detailsLoading,
-    isError: detailsError,
-    error: detailsErrorData,
-    refetch: refetchDetails,
-  } = useContributorDetails({
-    owner,
-    repo,
-    enabled: !!repository,
-  });
-
-  const {
-    data: stats,
-    isLoading: statsLoading,
-    isError: statsError,
-    error: statsErrorData,
-    refetch: refetchStats,
-  } = useRepositoryStats({
-    owner,
-    repo,
     enabled: !!repository,
   });
 
@@ -382,14 +349,14 @@ function RepoPageContent() {
       )}
 
       {/* 統計カード */}
-      {statsLoading ? (
+      {allDataLoading ? (
         <StatsGridSkeleton />
-      ) : statsError ? (
+      ) : allDataError && !stats ? (
         <div className="mb-6">
           <ChartErrorWrapper
             isError={true}
-            error={statsErrorData}
-            onRetry={() => refetchStats()}
+            error={allDataErrorData}
+            onRetry={() => refetchAllData()}
             errorHeight="h-24"
           />
         </div>
@@ -410,11 +377,11 @@ function RepoPageContent() {
             <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
             Languages
           </h2>
-          <ChartSkeletonWrapper isLoading={langLoading} skeleton={<PieChartSkeleton />}>
+          <ChartSkeletonWrapper isLoading={allDataLoading} skeleton={<PieChartSkeleton />}>
             <ChartErrorWrapper
-              isError={langError}
-              error={langErrorData}
-              onRetry={() => refetchLanguages()}
+              isError={allDataError && languages.length === 0}
+              error={allDataErrorData}
+              onRetry={() => refetchAllData()}
             >
               <LanguagesPieChart data={languages} />
             </ChartErrorWrapper>
@@ -457,16 +424,13 @@ function RepoPageContent() {
             Contributors
           </h2>
           <ChartSkeletonWrapper
-            isLoading={contributorsLoading || detailsLoading}
+            isLoading={allDataLoading}
             skeleton={<BarChartSkeleton />}
           >
             <ChartErrorWrapper
-              isError={contributorsError || detailsError}
-              error={contributorsErrorData || detailsErrorData}
-              onRetry={() => {
-                refetchContributors();
-                refetchDetails();
-              }}
+              isError={allDataError && contributors.length === 0}
+              error={allDataErrorData}
+              onRetry={() => refetchAllData()}
             >
               {/* 認証済みの場合はトグル付きチャート、未認証は基本チャート */}
               {isAuthenticated ? (
@@ -502,7 +466,7 @@ function RepoPageContent() {
       {/* Your Contribution（認証済みの場合のみ） */}
       {isAuthenticated &&
         session?.login &&
-        (detailsLoading ? (
+        (allDataLoading ? (
           <div className="mt-8">
             <MyContributionSkeleton />
           </div>
@@ -516,7 +480,7 @@ function RepoPageContent() {
         ))}
 
       {/* Ranking */}
-      {detailsLoading ? (
+      {allDataLoading ? (
         <div className="mt-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
             <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
