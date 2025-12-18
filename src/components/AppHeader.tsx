@@ -3,54 +3,19 @@
 import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, Lock, LogOut } from "lucide-react";
-import { signInWithPrivateScope } from "@/lib/actions";
-
-interface AppHeaderProps {
-  /** Private スコープへのアップグレードバナーを表示するか */
-  showUpgradeBanner?: boolean;
-}
+import { LogOut } from "lucide-react";
 
 /**
  * 共通ヘッダーコンポーネント
  * - ロゴ + 認証状態 + ログアウトボタン
  * - 認証済み/未認証の両方に対応
- * - オプションで Private スコープへのアップグレードバナーを表示
  */
-export default function AppHeader({ showUpgradeBanner = false }: AppHeaderProps) {
+export default function AppHeader() {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated" && session?.user;
 
-  // Private スコープへのアップグレードが必要かどうか
-  const needsUpgrade =
-    showUpgradeBanner &&
-    isAuthenticated &&
-    session?.scope &&
-    !session.scope.includes("repo");
-
   return (
     <>
-      {/* Private スコープへのアップグレード促進バナー */}
-      {needsUpgrade && (
-        <div className="bg-linear-to-r from-purple-600 to-pink-600 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-              <p className="text-sm flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                現在Publicリポジトリのみ表示しています。Privateリポジトリも分析しますか？
-              </p>
-              <form action={signInWithPrivateScope}>
-                <button
-                  type="submit"
-                  className="shrink-0 px-4 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Privateも含めて再認証
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ヘッダー */}
       <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur shadow-sm border-b border-gray-200/50 dark:border-gray-700/50">
@@ -77,28 +42,6 @@ export default function AppHeader({ showUpgradeBanner = false }: AppHeaderProps)
               {isAuthenticated ? (
                 <>
                   <div className="flex items-center gap-2 sm:gap-3">
-                    {/* スコープバッジ */}
-                    {session.scope && (
-                      <span
-                        className={`inline-flex items-center gap-1 text-xs px-1.5 sm:px-2 py-1 rounded-full ${
-                          session.scope.includes("repo")
-                            ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-                            : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
-                        }`}
-                      >
-                        {session.scope.includes("repo") ? (
-                          <>
-                            <Lock className="w-3 h-3" />
-                            <span className="hidden sm:inline"> Private</span>
-                          </>
-                        ) : (
-                          <>
-                            <Globe className="w-3 h-3" />
-                            <span className="hidden sm:inline"> Public</span>
-                          </>
-                        )}
-                      </span>
-                    )}
                     {/* ユーザーアバター */}
                     {session.user?.image && (
                       <Image

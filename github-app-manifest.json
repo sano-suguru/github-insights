@@ -1,0 +1,21 @@
+{
+  "name": "GitHub Insights (Development)",
+  "url": "http://localhost:3001",
+  "hook_attributes": {
+    "url": "http://localhost:3001/api/webhooks/github",
+    "active": false
+  },
+  "redirect_url": "http://localhost:3001/api/auth/callback/github",
+  "callback_urls": [
+    "http://localhost:3001/api/auth/callback/github"
+  ],
+  "setup_url": "http://localhost:3001/setup",
+  "description": "GitHub repository and user contribution visualization tool with badges and OG cards",
+  "public": false,
+  "default_permissions": {
+    "contents": "read",
+    "metadata": "read",
+    "email_addresses": "read"
+  },
+  "default_events": []
+}
