@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useCallback } from "react";
-import type { CommitInfo as CommitInfoType } from "@/lib/github";
+import type { CommitInfo as CommitInfoType } from "@/lib/github/types";
 import { getErrorMessage } from "@/lib/api-utils";
 import { CLIENT_CACHE } from "@/lib/cache-config";
 

@@ -10,7 +10,7 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { ContributorStat } from "@/lib/github";
+import type { ContributorStat } from "@/lib/github/types";
 
 interface Props {
   data: ContributorStat[];

@@ -6,10 +6,10 @@ import {
   getYearlyContributionStats,
   getContributionCalendar,
   getUserEvents,
-  analyzeActivityTime,
   calculateUserStats,
-  GitHubRateLimitError,
-} from "@/lib/github";
+} from "@/lib/github/user";
+import { analyzeActivityTime } from "@/lib/github/transforms";
+import { GitHubRateLimitError } from "@/lib/github/errors";
 import {
   calculateInsightScore,
   calculateAccountYears,

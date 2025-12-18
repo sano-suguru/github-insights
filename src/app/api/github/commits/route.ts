@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getCommitHistory } from "@/lib/github";
+import { getCommitHistory } from "@/lib/github/commits";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
 import { createCachedFetch } from "@/lib/api-utils";
 

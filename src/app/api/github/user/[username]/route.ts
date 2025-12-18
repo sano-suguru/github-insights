@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { sequentialFetch } from "@/lib/api-utils";
+import type {
+  UserProfile,
+  UserStats,
+  UserEvent,
+  UserContributionStats,
+} from "@/lib/github/types";
 import {
   getUserProfile,
   getUserRepositories,
   getUserEvents,
   getUserContributionStats,
   calculateUserStats,
-  UserProfile,
-  UserStats,
-  UserEvent,
-  UserContributionStats,
-  GitHubRateLimitError,
-} from "@/lib/github";
+} from "@/lib/github/user";
+import { GitHubRateLimitError } from "@/lib/github/errors";
 
 interface Params {
   params: Promise<{

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
-import type { UserProfile, UserRepository, UserStats } from "@/lib/github";
+import type { UserProfile, UserRepository, UserStats } from "@/lib/github/types";
 
 // 動的インポートを使用（[username] フォルダ名の問題を回避）
 async function importRoute() {
@@ -13,18 +13,21 @@ const mockGetUserRepositories = vi.fn<() => Promise<UserRepository[]>>();
 const mockGetUserEvents = vi.fn<() => Promise<unknown[]>>();
 const mockGetUserContributionStats = vi.fn<() => Promise<{ totalPRs: number; totalIssues: number }>>();
 const mockCalculateUserStats = vi.fn<() => UserStats>();
-vi.mock("@/lib/github", () => ({
+vi.mock("@/lib/github/user", () => ({
   getUserProfile: () => mockGetUserProfile(),
   getUserRepositories: () => mockGetUserRepositories(),
   getUserEvents: () => mockGetUserEvents(),
   getUserContributionStats: () => mockGetUserContributionStats(),
   calculateUserStats: () => mockCalculateUserStats(),
+}));
+vi.mock("@/lib/github/errors", () => ({
   GitHubRateLimitError: class extends Error {
     constructor(message = "GitHub API rate limit exceeded") {
       super(message);
       this.name = "GitHubRateLimitError";
     }
   },
+  isRateLimitError: (e: unknown) => e instanceof Error && e.name === "GitHubRateLimitError",
 }));
 
 vi.mock("next/cache", () => ({
@@ -129,7 +132,7 @@ describe("GET /api/github/user/[username]", () => {
 
   it("レート制限エラーの場合は 429 を返す", async () => {
     const { GET } = await importRoute();
-    const { GitHubRateLimitError } = await import("@/lib/github");
+    const { GitHubRateLimitError } = await import("@/lib/github/errors");
     mockGetUserProfile.mockRejectedValue(new GitHubRateLimitError());
 
     const request = createRequest();

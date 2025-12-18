@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 import type { Session } from "next-auth";
 import { GET } from "../commits/route";
-import type { CommitInfo } from "@/lib/github";
+import type { CommitInfo } from "@/lib/github/types";
 
 // モック設定
 const mockAuth = vi.fn<() => Promise<Session | null>>();
@@ -11,7 +11,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 const mockGetCommitHistory = vi.fn<() => Promise<CommitInfo[]>>();
-vi.mock("@/lib/github", () => ({
+vi.mock("@/lib/github/commits", () => ({
   getCommitHistory: () => mockGetCommitHistory(),
 }));
 

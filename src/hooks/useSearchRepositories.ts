@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "./useDebounce";
-import { SearchRepositoryResult, SearchUserResult } from "@/lib/github";
-import { Repository } from "@/lib/github";
+import type { SearchRepositoryResult, SearchUserResult, Repository } from "@/lib/github/types";
 
 // 検索最小文字数の定数
 export const MIN_USER_SEARCH_QUERY_LENGTH = 1;

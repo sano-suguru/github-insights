@@ -9,7 +9,7 @@ import {
   UserProfileStats,
   WrappedBadgeInput,
 } from "@/lib/badges";
-import { ContributorDetailStat } from "@/lib/github";
+import type { ContributorDetailStat } from "@/lib/github/types";
 
 // テスト用のコントリビューターデータを生成するヘルパー
 function createMockContributor(

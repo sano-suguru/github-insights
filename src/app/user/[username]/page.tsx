@@ -18,7 +18,7 @@ import {
   Camera,
   X,
 } from "lucide-react";
-import { UserProfile, UserStats, UserEvent, UserContributionStats } from "@/lib/github";
+import type { UserProfile, UserStats, UserEvent, UserContributionStats } from "@/lib/github/types";
 import { calculateUserBadges, Badge } from "@/lib/badges";
 import { calculateAccountYears } from "@/lib/insight-score";
 import DashboardLayout, { SectionCard } from "@/components/DashboardLayout";

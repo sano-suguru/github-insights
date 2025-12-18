@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { AlertTriangle, AlertCircle, Lightbulb, GitCommit, GitPullRequest, CircleDot, Star, Frown, ExternalLink, Github } from "lucide-react";
-import { getPublicRateLimitInfo } from "@/lib/github";
+import { getPublicRateLimitInfo } from "@/lib/github/client";
 import { useRepoAllData } from "@/hooks/useRepoData";
 import { useCommitHistory, usePrefetchCommitHistory } from "@/hooks/useCommitHistory";
 import DashboardLayout from "@/components/DashboardLayout";

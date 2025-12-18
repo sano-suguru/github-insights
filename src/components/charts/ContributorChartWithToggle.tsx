@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BarChart3, PieChart as PieChartIcon, GitCommit, Plus, Minus } from "lucide-react";
-import { ContributorStat, ContributorDetailStat } from "@/lib/github";
+import type { ContributorStat, ContributorDetailStat } from "@/lib/github/types";
 import ContributorsChart from "./ContributorsChart";
 import ContributorPieChart, { MetricType } from "./ContributorPieChart";
 

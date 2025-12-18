@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { getRankColors } from "@/lib/insight-score";
 import type { InsightRank } from "@/lib/insight-score";
-import type { ActivityTimeType } from "@/lib/github";
+import type { ActivityTimeType } from "@/lib/github/types";
 import { WRAPPED_BADGES } from "@/lib/badges";
 import DashboardLayout from "@/components/DashboardLayout";
 

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
 import AppHeader from "@/components/AppHeader";
 import RepoSearchCombobox from "@/components/RepoSearchCombobox";
-import { Repository } from "@/lib/github";
+import type { Repository } from "@/lib/github/types";
 
 interface DashboardLayoutProps {
   /** 子要素（ページコンテンツ） */

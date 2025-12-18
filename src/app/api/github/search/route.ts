@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
-import { searchRepositories, GitHubRateLimitError } from "@/lib/github";
+import { searchRepositories } from "@/lib/github/repository";
+import { GitHubRateLimitError } from "@/lib/github/errors";
 
 // 検索結果をキャッシュ（60秒）
 const createCachedSearch = (accessToken: string | null, query: string) => {

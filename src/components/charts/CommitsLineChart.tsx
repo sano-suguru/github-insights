@@ -9,7 +9,7 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { CommitInfo } from "@/lib/github";
+import type { CommitInfo } from "@/lib/github/types";
 import { useMemo } from "react";
 
 interface Props {

@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { GitCommit, GitPullRequest, CircleDot, Star, Plus, Minus, Trophy, ExternalLink, Share2, Github } from "lucide-react";
-import { ContributorDetailStat } from "@/lib/github";
+import type { ContributorDetailStat } from "@/lib/github/types";
 import { calculateBadges, sortBadgesByImportance } from "@/lib/badges";
 import dynamic from "next/dynamic";
 import RepoSearchCombobox from "@/components/RepoSearchCombobox";

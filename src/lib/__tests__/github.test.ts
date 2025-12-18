@@ -3,11 +3,10 @@ import {
   createGitHubClient,
   createPublicGitHubClient,
   getPublicRateLimitInfo,
-  isRateLimitError,
-  parseAccountType,
-  getUserEvents,
-  GitHubRateLimitError,
-} from "@/lib/github";
+} from "@/lib/github/client";
+import { isRateLimitError, GitHubRateLimitError } from "@/lib/github/errors";
+import { parseAccountType } from "@/lib/github/transforms";
+import { getUserEvents } from "@/lib/github/user";
 
 // @octokit/graphql のモック
 vi.mock("@octokit/graphql", () => ({
