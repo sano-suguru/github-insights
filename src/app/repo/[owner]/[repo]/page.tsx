@@ -252,30 +252,28 @@ function RepoPageContent() {
   return (
     <DashboardLayout hideSearchBar={true}>
       {/* リポジトリヘッダー */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-linear-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-              <Github className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <a
-                href={`https://github.com/${owner}/${repo}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 group"
-              >
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                  {owner}/{repo}
-                </h1>
-                <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-purple-500 transition-colors" />
-              </a>
-              {repository?.description && (
-                <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  {repository.description}
-                </p>
-              )}
-            </div>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 mb-6 overflow-hidden">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-full bg-linear-to-r from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+            <Github className="w-6 h-6 text-white" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <a
+              href={`https://github.com/${owner}/${repo}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 group max-w-full"
+            >
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors break-all">
+                {owner}/{repo}
+              </h1>
+              <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-purple-500 transition-colors shrink-0" />
+            </a>
+            {repository?.description && (
+              <p className="text-gray-600 dark:text-gray-400 mt-1 wrap-break-word">
+                {repository.description}
+              </p>
+            )}
           </div>
         </div>
       </div>
