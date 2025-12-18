@@ -50,7 +50,8 @@ function filterCommitsByDays(commits: CommitInfo[], days: number | null): Commit
 async function fetchCommitsFromAPI(
   owner: string,
   repo: string,
-  days: number | null
+  days: number | null,
+  signal?: AbortSignal
 ): Promise<CommitInfo[]> {
   const params = new URLSearchParams({
     owner,
@@ -58,7 +59,7 @@ async function fetchCommitsFromAPI(
     days: days === null ? "null" : String(days),
   });
   
-  const response = await fetch(`/api/github/commits?${params}`);
+  const response = await fetch(`/api/github/commits?${params}`, { signal });
   
   if (!response.ok) {
     throw new Error(await getErrorMessage(response, "Failed to fetch commits"));
@@ -88,7 +89,7 @@ export function useCommitHistory({
   // Route Handler経由でデータを取得（サーバーサイドキャッシュ活用）
   const query = useQuery({
     queryKey: ["commitHistory", owner, repo, baseDays],
-    queryFn: () => fetchCommitsFromAPI(owner, repo, baseDays),
+    queryFn: ({ signal }) => fetchCommitsFromAPI(owner, repo, baseDays, signal),
     enabled: enabled && !!owner && !!repo,
     // クライアント側もキャッシュ（サーバーキャッシュと二重化）
     staleTime: 10 * 60 * 1000,
@@ -127,7 +128,7 @@ export function usePrefetchCommitHistory() {
       
       queryClient.prefetchQuery({
         queryKey: ["commitHistory", owner, repo, baseDays],
-        queryFn: () => fetchCommitsFromAPI(owner, repo, baseDays),
+        queryFn: ({ signal }) => fetchCommitsFromAPI(owner, repo, baseDays, signal),
         staleTime: 10 * 60 * 1000,
       });
     },

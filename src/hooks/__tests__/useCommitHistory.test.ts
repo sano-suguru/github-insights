@@ -8,6 +8,14 @@ import { useCommitHistory, usePrefetchCommitHistory } from "@/hooks/useCommitHis
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+// signal オプション付きの fetch 呼び出しをマッチ
+const expectFetchWithSignal = (urlPattern: string) => {
+  expect(mockFetch).toHaveBeenCalledWith(
+    expect.stringContaining(urlPattern),
+    expect.objectContaining({ signal: expect.anything() })
+  );
+};
+
 // テスト用のQueryClient wrapper
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -94,9 +102,7 @@ describe("useCommitHistory", () => {
 
     expect(result.current.data).toEqual(recentCommits);
     // ベース期間キャッシュにより、デフォルト30日リクエストは30日でフェッチ
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=30")
-    );
+    expectFetchWithSignal("/api/github/commits?owner=owner&repo=repo&days=30");
   });
 
   it("認証済みで90日以上リクエストは365日でフェッチされる", async () => {
@@ -117,9 +123,7 @@ describe("useCommitHistory", () => {
     });
 
     // 認証済みで90日以上は365日でフェッチ
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=365")
-    );
+    expectFetchWithSignal("/api/github/commits?owner=owner&repo=repo&days=365");
   });
 
   it("認証済みで90日未満リクエストは30日でフェッチされる", async () => {
@@ -140,9 +144,7 @@ describe("useCommitHistory", () => {
     });
 
     // 認証済みでも90日未満は30日でフェッチ
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=30")
-    );
+    expectFetchWithSignal("/api/github/commits?owner=owner&repo=repo&days=30");
   });
 
   it("未認証で90日リクエストは30日でフェッチされる", async () => {
@@ -163,9 +165,7 @@ describe("useCommitHistory", () => {
     });
 
     // 未認証時は常に30日でフェッチ
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=30")
-    );
+    expectFetchWithSignal("/api/github/commits?owner=owner&repo=repo&days=30");
   });
 
   it("認証済みでdays=nullは全期間（null）でフェッチされる", async () => {
@@ -185,9 +185,7 @@ describe("useCommitHistory", () => {
     });
 
     // 認証済みでdays=nullは全期間（null）でフェッチ
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("days=null")
-    );
+    expectFetchWithSignal("days=null");
   });
 
   it("未認証でdays=nullでも30日でフェッチされる", async () => {
@@ -207,9 +205,7 @@ describe("useCommitHistory", () => {
     });
 
     // 未認証時は常に30日でフェッチ
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("days=30")
-    );
+    expectFetchWithSignal("days=30");
   });
 
   it("enabled=false の場合はクエリを実行しない", () => {
@@ -334,9 +330,7 @@ describe("useCommitHistory", () => {
     });
 
     // 認証済みで365日超過は全期間（null）でフェッチ
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("days=null")
-    );
+    expectFetchWithSignal("days=null");
   });
 });
 
@@ -368,9 +362,7 @@ describe("usePrefetchCommitHistory", () => {
 
     // フェッチが呼ばれる
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=30")
-      );
+      expectFetchWithSignal("/api/github/commits?owner=owner&repo=repo&days=30");
     });
   });
 
@@ -382,9 +374,7 @@ describe("usePrefetchCommitHistory", () => {
     result.current("test-token", "owner", "repo", 180);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("days=365")
-      );
+      expectFetchWithSignal("days=365");
     });
   });
 
@@ -396,9 +386,7 @@ describe("usePrefetchCommitHistory", () => {
     result.current("test-token", "owner", "repo", null);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("days=null")
-      );
+      expectFetchWithSignal("days=null");
     });
   });
 
