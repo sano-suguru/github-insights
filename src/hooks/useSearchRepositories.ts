@@ -33,53 +33,38 @@ async function searchLocalRepos(query: string): Promise<string[]> {
   }
 }
 
-// GitHub Search API から検索
-async function searchRemoteRepos(
-  query: string
-): Promise<SearchRepositoryResult[]> {
-  if (!query || query.length < 2) {
+// 共通のリモート検索関数
+async function fetchFromApi<T>(
+  endpoint: string,
+  query: string,
+  minLength: number,
+  resultKey: string
+): Promise<T[]> {
+  if (!query || query.length < minLength) {
     return [];
   }
 
-  const response = await fetch(
-    `/api/github/search?q=${encodeURIComponent(query)}`
-  );
+  const response = await fetch(`${endpoint}?q=${encodeURIComponent(query)}`);
 
   if (!response.ok) {
     if (response.status === 429) {
-      console.warn("Rate limit exceeded for search API");
+      console.warn(`Rate limit exceeded: ${endpoint}`);
       return [];
     }
-    throw new Error("Search failed");
+    throw new Error(`API request failed: ${endpoint}`);
   }
 
   const data = await response.json();
-  return data.repositories || [];
+  return data[resultKey] || [];
 }
+
+// GitHub Search API から検索
+const searchRemoteRepos = (query: string) =>
+  fetchFromApi<SearchRepositoryResult>("/api/github/search", query, MIN_REPO_SEARCH_QUERY_LENGTH, "repositories");
 
 // GitHub Users Search API からユーザー検索
-async function searchRemoteUsers(
-  query: string
-): Promise<SearchUserResult[]> {
-  if (!query || query.length < 1) {
-    return [];
-  }
-
-  const response = await fetch(
-    `/api/github/search-users?q=${encodeURIComponent(query)}`
-  );
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      console.warn("Rate limit exceeded for user search API");
-      return [];
-    }
-    throw new Error("User search failed");
-  }
-
-  const data = await response.json();
-  return data.users || [];
-}
+const searchRemoteUsers = (query: string) =>
+  fetchFromApi<SearchUserResult>("/api/github/search-users", query, MIN_USER_SEARCH_QUERY_LENGTH, "users");
 
 // Featured リポジトリを取得
 async function getFeaturedRepos(): Promise<string[]> {
