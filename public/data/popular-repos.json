@@ -116,8 +116,8 @@
       "dapr/dapr",
       "TanStack/router",
       "felangel/bloc",
-      "jonataslaw/getx",
       "MemoriLabs/Memori",
+      "jonataslaw/getx",
       "47ng/nuqs"
     ],
     "ai": [
@@ -412,5 +412,5 @@
     "wenzhixin/bootstrap-table",
     "xtermjs/xterm.js"
   ],
-  "lastUpdated": "2025-12-17"
+  "lastUpdated": "2025-12-18"
 }
