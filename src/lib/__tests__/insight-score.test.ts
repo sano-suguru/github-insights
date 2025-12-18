@@ -4,6 +4,8 @@ import {
   getRankFromScore,
   formatScore,
   calculateAccountYears,
+  getRankColors,
+  getRankColorsForOg,
   InsightScoreInput,
 } from "../insight-score";
 
@@ -132,5 +134,68 @@ describe("calculateAccountYears", () => {
     
     const years = calculateAccountYears(sixMonthsAgo.toISOString());
     expect(years).toBe(0);
+  });
+});
+
+describe("getRankColors", () => {
+  it("Diamond ランクの色情報を返す", () => {
+    const colors = getRankColors("Diamond");
+    expect(colors.bg).toContain("cyan");
+    expect(colors.text).toContain("cyan");
+    expect(colors.border).toContain("cyan");
+    expect(colors.gradient).toContain("cyan");
+  });
+
+  it("Platinum ランクの色情報を返す", () => {
+    const colors = getRankColors("Platinum");
+    expect(colors.bg).toContain("purple");
+    expect(colors.text).toContain("purple");
+  });
+
+  it("Gold ランクの色情報を返す", () => {
+    const colors = getRankColors("Gold");
+    expect(colors.bg).toContain("yellow");
+    expect(colors.text).toContain("yellow");
+  });
+
+  it("Silver ランクの色情報を返す", () => {
+    const colors = getRankColors("Silver");
+    expect(colors.bg).toContain("gray");
+    expect(colors.text).toContain("gray");
+  });
+
+  it("Bronze ランクの色情報を返す", () => {
+    const colors = getRankColors("Bronze");
+    expect(colors.bg).toContain("orange");
+    expect(colors.text).toContain("orange");
+  });
+});
+
+describe("getRankColorsForOg", () => {
+  it("Diamond ランクのOG用色情報を返す", () => {
+    const colors = getRankColorsForOg("Diamond");
+    expect(colors.bg).toContain("rgba");
+    expect(colors.text).toBe("#22d3ee");
+    expect(colors.border).toContain("rgba");
+  });
+
+  it("Platinum ランクのOG用色情報を返す", () => {
+    const colors = getRankColorsForOg("Platinum");
+    expect(colors.text).toBe("#c084fc");
+  });
+
+  it("Gold ランクのOG用色情報を返す", () => {
+    const colors = getRankColorsForOg("Gold");
+    expect(colors.text).toBe("#facc15");
+  });
+
+  it("Silver ランクのOG用色情報を返す", () => {
+    const colors = getRankColorsForOg("Silver");
+    expect(colors.text).toBe("#d1d5db");
+  });
+
+  it("Bronze ランクのOG用色情報を返す", () => {
+    const colors = getRankColorsForOg("Bronze");
+    expect(colors.text).toBe("#fb923c");
   });
 });
