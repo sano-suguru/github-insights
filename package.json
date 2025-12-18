@@ -10,6 +10,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "similarity": "similarity-ts src --threshold 0.85",
+    "similarity:strict": "similarity-ts src --threshold 0.80",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "update-repos": "npx tsx scripts/fetch-popular-repos.ts"

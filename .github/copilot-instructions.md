@@ -1,5 +1,19 @@
 # GitHub Insights - Copilot Instructions
 
+## 作業開始前のチェックリスト
+
+**すべての作業を開始する前に、以下を確認すること：**
+
+1. **package.json の確認** - 利用可能なスクリプトと依存関係を把握
+
+   - `npm run dev` - 開発サーバー
+   - `npm run lint` - ESLint
+   - `npm run test:run` - テスト実行
+   - `npm run similarity` - 類似コード検出（閾値 85%）
+   - `npm run similarity:strict` - 厳格な類似コード検出（閾値 80%）
+
+2. **現在のブランチ・変更状態** - 必要に応じて `git status` で確認
+
 ## プロジェクト概要
 
 GitHub リポジトリの貢献度・統計を可視化する日本語向け Web サービス。認証/未認証の両モードに対応し、GitHub GraphQL API からデータ取得・可視化を行う。

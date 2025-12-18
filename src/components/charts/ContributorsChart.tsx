@@ -46,7 +46,7 @@ export default function ContributorsChart({ data }: Props) {
 
   return (
     <div className="h-[280px] min-h-[280px] w-full">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+      <ResponsiveContainer width="100%" height={280} minWidth={0} minHeight={0}>
         <BarChart data={chartData} layout="vertical">
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
           <XAxis type="number" stroke="#9ca3af" fontSize={12} />
