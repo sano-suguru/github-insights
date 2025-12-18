@@ -253,21 +253,32 @@ function RepoPageContent() {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 APIレート制限に達しました
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                未認証のリクエストは1時間あたり60回までです。
-              </p>
-              <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>ログインすると5,000回/時間</strong>に大幅アップ！<br />
-                  プライベートリポジトリも分析できます。
+              {isAuthenticated ? (
+                // 認証済みユーザー向けメッセージ
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  GitHub APIのレート制限に達しました。<br />
+                  しばらく時間をおいてから再度お試しください。
                 </p>
-              </div>
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                GitHubでログイン
-              </Link>
+              ) : (
+                // 未認証ユーザー向けメッセージ
+                <>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    未認証のリクエストは1時間あたり60回までです。
+                  </p>
+                  <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      <strong>ログインすると5,000回/時間</strong>に大幅アップ！<br />
+                      プライベートリポジトリも分析できます。
+                    </p>
+                  </div>
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    GitHubでログイン
+                  </Link>
+                </>
+              )}
             </>
           ) : (
             <>
