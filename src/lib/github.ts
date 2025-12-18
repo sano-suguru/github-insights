@@ -1,5 +1,6 @@
 import { graphql } from "@octokit/graphql";
 import { SERVER_CACHE } from "./cache-config";
+import { sequentialFetch } from "./api-utils";
 
 // カスタムエラークラス
 export class GitHubRateLimitError extends Error {
@@ -1297,17 +1298,17 @@ export async function getUserContributionStats(
   }
 
   try {
-    // PR数とIssue数を並列取得
-    const [prsRes, issuesRes] = await Promise.all([
-      fetch(
+    // PR数とIssue数を順次取得（セカンダリレート制限対策）
+    const [prsRes, issuesRes] = await sequentialFetch([
+      () => fetch(
         `https://api.github.com/search/issues?q=author:${encodeURIComponent(username)}+type:pr&per_page=1`,
         { headers, next: { revalidate: SERVER_CACHE.USER_CONTRIBUTION_REVALIDATE } }
       ),
-      fetch(
+      () => fetch(
         `https://api.github.com/search/issues?q=author:${encodeURIComponent(username)}+type:issue&per_page=1`,
         { headers, next: { revalidate: SERVER_CACHE.USER_CONTRIBUTION_REVALIDATE } }
       ),
-    ]);
+    ] as const);
 
     // レート制限チェック
     if (prsRes.status === 403 || prsRes.status === 429 ||
@@ -1315,10 +1316,10 @@ export async function getUserContributionStats(
       throw new GitHubRateLimitError();
     }
 
-    const [prsData, issuesData] = await Promise.all([
-      prsRes.ok ? prsRes.json() : null,
-      issuesRes.ok ? issuesRes.json() : null,
-    ]);
+    const [prsData, issuesData] = await sequentialFetch([
+      () => prsRes.ok ? prsRes.json() : Promise.resolve(null),
+      () => issuesRes.ok ? issuesRes.json() : Promise.resolve(null),
+    ] as const);
 
     return {
       totalPRs: prsData?.total_count ?? 0,
@@ -1369,17 +1370,17 @@ export async function getYearlyContributionStats(
   const dateRange = `created:${startDate}..${endDate}`;
 
   try {
-    // PR数とIssue数を並列取得
-    const [prsRes, issuesRes] = await Promise.all([
-      fetch(
+    // PR数とIssue数を順次取得（セカンダリレート制限対策）
+    const [prsRes, issuesRes] = await sequentialFetch([
+      () => fetch(
         `https://api.github.com/search/issues?q=author:${encodeURIComponent(username)}+type:pr+${dateRange}&per_page=1`,
         { headers, next: { revalidate: SERVER_CACHE.USER_CONTRIBUTION_REVALIDATE } }
       ),
-      fetch(
+      () => fetch(
         `https://api.github.com/search/issues?q=author:${encodeURIComponent(username)}+type:issue+${dateRange}&per_page=1`,
         { headers, next: { revalidate: SERVER_CACHE.USER_CONTRIBUTION_REVALIDATE } }
       ),
-    ]);
+    ] as const);
 
     // レート制限チェック
     if (prsRes.status === 403 || prsRes.status === 429 ||
@@ -1387,10 +1388,10 @@ export async function getYearlyContributionStats(
       throw new GitHubRateLimitError();
     }
 
-    const [prsData, issuesData] = await Promise.all([
-      prsRes.ok ? prsRes.json() : null,
-      issuesRes.ok ? issuesRes.json() : null,
-    ]);
+    const [prsData, issuesData] = await sequentialFetch([
+      () => prsRes.ok ? prsRes.json() : Promise.resolve(null),
+      () => issuesRes.ok ? issuesRes.json() : Promise.resolve(null),
+    ] as const);
 
     return {
       year,

@@ -7,6 +7,19 @@ import {
 
 export const runtime = "edge";
 
+// セカンダリレート制限対策: 順次実行ヘルパー（Edge Runtime用）
+async function sequentialFetchEdge<T>(
+  tasks: (() => Promise<T>)[],
+  delayMs = 100
+): Promise<T[]> {
+  const results: T[] = [];
+  for (let i = 0; i < tasks.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, delayMs));
+    results.push(await tasks[i]());
+  }
+  return results;
+}
+
 // OG画像サイズ
 const WIDTH = 1200;
 const HEIGHT = 630;
@@ -129,8 +142,8 @@ async function getContributorStats(
 ): Promise<ContributorStats | null> {
   try {
     const [contributorsRes, repoRes, userPRsRes, userIssuesRes] =
-      await Promise.all([
-        fetch(
+      await sequentialFetchEdge([
+        () => fetch(
           `https://api.github.com/repos/${owner}/${repo}/contributors?per_page=100`,
           {
             headers: {
@@ -140,14 +153,14 @@ async function getContributorStats(
             next: { revalidate: 3600 },
           }
         ),
-        fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+        () => fetch(`https://api.github.com/repos/${owner}/${repo}`, {
           headers: {
             Accept: "application/vnd.github.v3+json",
             "User-Agent": "GitHub-Insights",
           },
           next: { revalidate: 3600 },
         }),
-        fetch(
+        () => fetch(
           `https://api.github.com/search/issues?q=repo:${owner}/${repo}+author:${user}+type:pr&per_page=1`,
           {
             headers: {
@@ -157,7 +170,7 @@ async function getContributorStats(
             next: { revalidate: 3600 },
           }
         ),
-        fetch(
+        () => fetch(
           `https://api.github.com/search/issues?q=repo:${owner}/${repo}+author:${user}+type:issue&per_page=1`,
           {
             headers: {
@@ -173,11 +186,11 @@ async function getContributorStats(
       return null;
     }
 
-    const [contributors, repoData, prData, issueData] = await Promise.all([
-      contributorsRes.json(),
-      repoRes.ok ? repoRes.json() : null,
-      userPRsRes.ok ? userPRsRes.json() : null,
-      userIssuesRes.ok ? userIssuesRes.json() : null,
+    const [contributors, repoData, prData, issueData] = await sequentialFetchEdge([
+      () => contributorsRes.json(),
+      () => repoRes.ok ? repoRes.json() : Promise.resolve(null),
+      () => userPRsRes.ok ? userPRsRes.json() : Promise.resolve(null),
+      () => userIssuesRes.ok ? userIssuesRes.json() : Promise.resolve(null),
     ]);
 
     const userIndex = contributors.findIndex(

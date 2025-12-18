@@ -10,6 +10,19 @@ import { SERVER_CACHE } from "@/lib/cache-config";
 
 export const runtime = "edge";
 
+// セカンダリレート制限対策: 順次実行ヘルパー（Edge Runtime用）
+async function sequentialFetchEdge<T>(
+  tasks: (() => Promise<T>)[],
+  delayMs = 100
+): Promise<T[]> {
+  const results: T[] = [];
+  for (let i = 0; i < tasks.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, delayMs));
+    results.push(await tasks[i]());
+  }
+  return results;
+}
+
 // OG画像サイズ
 const WIDTH = 1200;
 const HEIGHT = 630;
@@ -97,26 +110,26 @@ async function getUserStats(user: string, year: number): Promise<UserStats | nul
     const endDate = `${year}-12-31`;
     const dateRange = `created:${startDate}..${endDate}`;
 
-    const [userRes, reposRes, prsRes, issuesRes] = await Promise.all([
-      fetch(`https://api.github.com/users/${user}`, {
+    const [userRes, reposRes, prsRes, issuesRes] = await sequentialFetchEdge([
+      () => fetch(`https://api.github.com/users/${user}`, {
         headers: GITHUB_HEADERS,
         next: { revalidate: SERVER_CACHE.USER_PROFILE_REVALIDATE },
       }),
-      fetch(
+      () => fetch(
         `https://api.github.com/users/${user}/repos?sort=stars&per_page=10&type=owner`,
         {
           headers: GITHUB_HEADERS,
           next: { revalidate: SERVER_CACHE.USER_PROFILE_REVALIDATE },
         }
       ),
-      fetch(
+      () => fetch(
         `https://api.github.com/search/issues?q=author:${user}+type:pr+${dateRange}&per_page=1`,
         {
           headers: GITHUB_HEADERS,
           next: { revalidate: SERVER_CACHE.USER_CONTRIBUTION_REVALIDATE },
         }
       ),
-      fetch(
+      () => fetch(
         `https://api.github.com/search/issues?q=author:${user}+type:issue+${dateRange}&per_page=1`,
         {
           headers: GITHUB_HEADERS,
@@ -127,11 +140,11 @@ async function getUserStats(user: string, year: number): Promise<UserStats | nul
 
     if (!userRes.ok) return null;
 
-    const [userData, repos, prsData, issuesData] = await Promise.all([
-      userRes.json(),
-      reposRes.ok ? reposRes.json() : [],
-      prsRes.ok ? prsRes.json() : null,
-      issuesRes.ok ? issuesRes.json() : null,
+    const [userData, repos, prsData, issuesData] = await sequentialFetchEdge([
+      () => userRes.json(),
+      () => reposRes.ok ? reposRes.json() : Promise.resolve([]),
+      () => prsRes.ok ? prsRes.json() : Promise.resolve(null),
+      () => issuesRes.ok ? issuesRes.json() : Promise.resolve(null),
     ]);
 
     // 言語とスター/フォーク集計

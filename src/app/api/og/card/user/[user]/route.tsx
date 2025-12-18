@@ -12,6 +12,19 @@ import {
 
 export const runtime = "edge";
 
+// セカンダリレート制限対策: 順次実行ヘルパー（Edge Runtime用）
+async function sequentialFetchEdge<T>(
+  tasks: (() => Promise<T>)[],
+  delayMs = 100
+): Promise<T[]> {
+  const results: T[] = [];
+  for (let i = 0; i < tasks.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, delayMs));
+    results.push(await tasks[i]());
+  }
+  return results;
+}
+
 // OG画像サイズ
 const WIDTH = 1200;
 const HEIGHT = 630;
@@ -85,10 +98,10 @@ interface UserStats {
 // GitHub APIからユーザー統計を取得
 async function getUserStats(user: string): Promise<UserStats | null> {
   try {
-    // 並列でAPI呼び出し
-    const [userRes, reposRes, prsRes, issuesRes] = await Promise.all([
+    // 順次でAPI呼び出し（セカンダリレート制限対策）
+    const [userRes, reposRes, prsRes, issuesRes] = await sequentialFetchEdge([
       // ユーザー情報
-      fetch(`https://api.github.com/users/${user}`, {
+      () => fetch(`https://api.github.com/users/${user}`, {
         headers: {
           Accept: "application/vnd.github.v3+json",
           "User-Agent": "GitHub-Insights",
@@ -96,7 +109,7 @@ async function getUserStats(user: string): Promise<UserStats | null> {
         next: { revalidate: 3600 },
       }),
       // 公開リポジトリ（スター順）
-      fetch(
+      () => fetch(
         `https://api.github.com/users/${user}/repos?sort=stars&per_page=5&type=owner`,
         {
           headers: {
@@ -107,7 +120,7 @@ async function getUserStats(user: string): Promise<UserStats | null> {
         }
       ),
       // PR数（Search API）
-      fetch(
+      () => fetch(
         `https://api.github.com/search/issues?q=author:${user}+type:pr&per_page=1`,
         {
           headers: {
@@ -118,7 +131,7 @@ async function getUserStats(user: string): Promise<UserStats | null> {
         }
       ),
       // Issue数（Search API）
-      fetch(
+      () => fetch(
         `https://api.github.com/search/issues?q=author:${user}+type:issue&per_page=1`,
         {
           headers: {
@@ -135,11 +148,11 @@ async function getUserStats(user: string): Promise<UserStats | null> {
       return null;
     }
 
-    const [userData, repos, prData, issueData] = await Promise.all([
-      userRes.json(),
-      reposRes.ok ? reposRes.json() : [],
-      prsRes.ok ? prsRes.json() : null,
-      issuesRes.ok ? issuesRes.json() : null,
+    const [userData, repos, prData, issueData] = await sequentialFetchEdge([
+      () => userRes.json(),
+      () => reposRes.ok ? reposRes.json() : Promise.resolve([]),
+      () => prsRes.ok ? prsRes.json() : Promise.resolve(null),
+      () => issuesRes.ok ? issuesRes.json() : Promise.resolve(null),
     ]);
 
     // トップリポジトリを整形
