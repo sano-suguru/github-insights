@@ -66,6 +66,8 @@ jobs:
       - name: Run E2E tests
         run: npm run test:e2e
         env:
+          # NextAuth用シークレット（E2Eテスト用ダミー値）
+          AUTH_SECRET: dummy-secret-for-e2e-tests
           # GitHub API レート制限対策（オプション）
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
