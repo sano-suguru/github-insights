@@ -28,7 +28,7 @@ function getBaseDays(requestedDays: number | null, isAuthenticated: boolean): nu
     return null;
   }
   // 認証済みでEXTENDED_PERIOD_THRESHOLD以上リクエストならEXTENDED_PERIOD_DAYS
-  if (requestedDays > EXTENDED_PERIOD_THRESHOLD) {
+  if (requestedDays >= EXTENDED_PERIOD_THRESHOLD) {
     return EXTENDED_PERIOD_DAYS;
   }
   // それ以外はBASE_PERIOD_DAYSをベースに

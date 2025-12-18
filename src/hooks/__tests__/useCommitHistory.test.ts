@@ -99,15 +99,15 @@ describe("useCommitHistory", () => {
     );
   });
 
-  it("認証済みで91日以上リクエストは365日でフェッチされる", async () => {
-    // 認証済み（accessToken あり）で90日超過リクエストすると、ベース期間として365日でフェッチ
+  it("認証済みで90日以上リクエストは365日でフェッチされる", async () => {
+    // 認証済み（accessToken あり）で90日以上リクエストすると、ベース期間として365日でフェッチ
     const { result } = renderHook(
       () =>
         useCommitHistory({
           accessToken: "test-token", // 認証済み
           owner: "owner",
           repo: "repo",
-          days: 180, // 90日超過
+          days: 90, // 90日以上
         }),
       { wrapper: createWrapper() }
     );
@@ -116,21 +116,21 @@ describe("useCommitHistory", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    // 認証済みで90日超過は365日でフェッチ
+    // 認証済みで90日以上は365日でフェッチ
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=365")
     );
   });
 
-  it("認証済みで90日以下リクエストは30日でフェッチされる", async () => {
-    // 認証済みでも90日以下は30日でフェッチ（キャッシュ効率化のため）
+  it("認証済みで90日未満リクエストは30日でフェッチされる", async () => {
+    // 認証済みでも90日未満は30日でフェッチ（キャッシュ効率化のため）
     const { result } = renderHook(
       () =>
         useCommitHistory({
           accessToken: "test-token", // 認証済み
           owner: "owner",
           repo: "repo",
-          days: 90,
+          days: 89,
         }),
       { wrapper: createWrapper() }
     );
@@ -139,7 +139,7 @@ describe("useCommitHistory", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    // 認証済みでも90日以下は30日でフェッチ
+    // 認証済みでも90日未満は30日でフェッチ
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/github/commits?owner=owner&repo=repo&days=30")
     );
