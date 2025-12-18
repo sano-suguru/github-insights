@@ -10,6 +10,10 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:all": "npm run test:run && npm run test:e2e",
     "similarity": "similarity-ts src --threshold 0.85",
     "similarity:strict": "similarity-ts src --threshold 0.80",
     "storybook": "storybook dev -p 6006",
@@ -33,6 +37,7 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.1.3",
+    "@playwright/test": "^1.57.0",
     "@storybook/addon-a11y": "^10.1.8",
     "@storybook/addon-docs": "^10.1.8",
     "@storybook/addon-onboarding": "^10.1.8",
