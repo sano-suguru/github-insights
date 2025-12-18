@@ -195,13 +195,14 @@ export default function ContributionCardModal({
 
         {/* 全画面プレビュー（モバイル用・90度回転で大きく表示） */}
         {isFullscreen && (
-          <div 
+          <div
             className="fixed inset-0 z-60 bg-black flex items-center justify-center"
             onClick={() => setIsFullscreen(false)}
           >
             <button
               onClick={() => setIsFullscreen(false)}
-              className="absolute top-4 right-4 p-3 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors z-10"
+              className="absolute top-1/2 left-4 -translate-y-1/2 p-3 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors z-10"
+              aria-label="元のサイズに戻す"
             >
               <Minimize2 className="w-6 h-6" />
             </button>
