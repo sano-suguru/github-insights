@@ -121,8 +121,8 @@ export async function searchRepositories(
         };
       }>(
         `
-      query($query: String!, $first: Int!) {
-        search(query: $query, type: REPOSITORY, first: $first) {
+      query($searchQuery: String!, $first: Int!) {
+        search(query: $searchQuery, type: REPOSITORY, first: $first) {
           repositoryCount
           nodes {
             ... on Repository {
@@ -142,7 +142,7 @@ export async function searchRepositories(
         }
       }
     `,
-        { query: `${query} in:name`, first }
+        { searchQuery: `${query} in:name`, first }
       )
     );
 
