@@ -62,7 +62,7 @@ OSS 貢献を SNS でアピールするためのカード。`@vercel/og` を使�
 |------|------|----------|
 | フレームワーク | Next.js 16 (App Router) | RSC + Route Handler でフルスタック開発 |
 | 言語 | TypeScript | 型安全性による開発効率向上 |
-| 認証 | NextAuth v5 + GitHub OAuth | GitHub 連携に最適化された認証ライブラリ |
+| 認証 | NextAuth v5 + GitHub App | 読み取り専用権限で安全な GitHub 連携 |
 | データ取得 | TanStack Query + Octokit GraphQL | キャッシュ管理の自動化 + 型安全な API クライアント |
 | チャート | Recharts | React 向け、カスタマイズ性が高い |
 | スタイル | Tailwind CSS v4 | ユーティリティファーストで高速開発 |
@@ -108,22 +108,33 @@ graph TB
 sequenceDiagram
     participant User as ユーザー
     participant App as Next.js
-    participant GitHub as GitHub OAuth
+    participant GitHub as GitHub App
 
     User->>App: ログインボタン
     App->>GitHub: OAuth 認可リクエスト
-    GitHub-->>User: 認可画面
+    GitHub-->>User: 認可画面（読み取り専用）
     User->>GitHub: 許可
     GitHub-->>App: アクセストークン
     App-->>User: ダッシュボード
 ```
 
-| スコープ | 説明 |
-|---------|------|
-| `read:user user:email` | Public リポジトリのみ |
-| `read:user user:email repo` | Private リポジトリ含む |
+### GitHub App 認証
 
-`repo` スコープは Private リポジトリへのアクセス権限を含むため、ユーザーによっては抵抗がある。Public リポジトリのみ分析したいユーザー向けに、最小権限のスコープも選択可能にした。
+本アプリケーションは **GitHub App** を使用して認証を行います。従来の OAuth App と比較して、以下の利点があります：
+
+| 項目 | GitHub App | 旧 OAuth App |
+|------|-----------|-------------|
+| 権限 | `Contents: Read-only`（読み取り専用） | `repo`（読み取り+書き込み） |
+| セキュリティ | ✅ 書き込み権限なし | ⚠️ 書き込み権限を含む |
+| ユーザー信頼性 | ✅ 高い（明示的な読み取り専用） | ⚠️ 低い（権限範囲が広い） |
+| レート制限 | 5,000+ リクエスト/時間 | 5,000 リクエスト/時間 |
+
+**取得する権限:**
+- `Contents: Read-only` - リポジトリのコード、コミット履歴の読み取り
+- `Email addresses: Read-only` - ユーザーのメールアドレス取得
+- `read:user` - ユーザープロファイル情報の読み取り
+
+**リポジトリへの書き込みは一切行いません。** 安全に利用できます。
 
 未認証ユーザーも Public リポジトリの分析が可能。OSS リポジトリの分析に認証は本質的に不要で、ログインなしで試せることでユーザー獲得のハードルを下げる。ただし GitHub API のレート制限（60 リクエスト/時間）があるため、キャッシュ戦略で対応している（詳細は [IMPLEMENTATION.md](docs/IMPLEMENTATION.md)）。
 
@@ -148,9 +159,13 @@ npm run dev
 
 | 変数 | 説明 |
 |------|------|
-| `GITHUB_ID` | GitHub OAuth App Client ID |
-| `GITHUB_SECRET` | GitHub OAuth App Client Secret |
-| `AUTH_SECRET` | NextAuth 用シークレット |
+| `GITHUB_APP_CLIENT_ID` | GitHub App Client ID |
+| `GITHUB_APP_CLIENT_SECRET` | GitHub App Client Secret |
+| `GITHUB_APP_ID` | GitHub App ID |
+| `NEXTAUTH_SECRET` | NextAuth 用シークレット（`openssl rand -base64 32` で生成） |
+| `NEXTAUTH_URL` | アプリケーションURL（開発環境: `http://localhost:3001`） |
+
+**GitHub App の作成方法は [docs/GITHUB_APP_MIGRATION.md](docs/GITHUB_APP_MIGRATION.md) を参照してください。**
 
 ---
 
