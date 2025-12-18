@@ -119,8 +119,21 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-similarity-ts-0.4.1
+
       - name: Install similarity-ts
-        run: cargo install similarity-ts
+        run: |
+          if ! command -v similarity-ts &> /dev/null; then
+            cargo install similarity-ts
+          fi
 
       - name: Check code similarity
         run: similarity-ts src --threshold 0.85
