@@ -12,7 +12,18 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      include: ["src/lib/**", "src/hooks/**"]
+      include: ["src/lib/**", "src/hooks/**"],
+      exclude: [
+        // Server Actions - "use server" ディレクティブがあるためユニットテスト不可
+        "src/lib/actions.ts",
+        // NextAuth 設定 - 外部依存が強くモック困難
+        "src/lib/auth.ts",
+        // テストファイル自体
+        "**/__tests__/**",
+        "**/*.test.{ts,tsx}",
+        // 型定義のみ
+        "**/*.d.ts",
+      ],
     },
   },
   resolve: {
