@@ -173,9 +173,9 @@ API 呼び出し関数。薄いラッパーとして、transforms.ts の関数�
 
 - [x] `npm run lint` でエラーなし
 - [x] `npx tsc --noEmit` で型エラーなし
-- [x] `npm run test:run` で全テスト通過（256件）
-- [ ] `npm run build` でビルド成功（未確認）
-- [ ] E2E テスト通過（未確認）
+- [x] `npm run test:run` で全テスト通過（362件）
+- [x] `npm run build` でビルド成功
+- [x] E2E テスト通過（16件）
 - [x] 旧 `github.ts` を削除
 - [x] 移行用 `index.ts` を削除（不要のため）
 
@@ -217,8 +217,8 @@ import { isRateLimitError } from '@/lib/github/errors';
 
 - [x] 全ファイルが300行以下（user.ts: 527行を除く ※user.ts はさらなる分割を検討）
 - [x] `transforms.ts` のカバレッジ 100%近く達成（98.75%）
-- [x] 全体カバレッジ 70% 近く達成（69.97%）
-- [x] ビルド・テスト・E2E すべてパス（テスト 297件通過）
+- [x] 全体カバレッジ 90% 以上達成（94.15%）
+- [x] ビルド・テスト・E2E すべてパス（テスト 362件通過、E2E 16件通過）
 - [x] `@/lib/github` からの import が0件（コードからの参照なし）
 
 ---
@@ -235,14 +235,19 @@ import { isRateLimitError } from '@/lib/github/errors';
 
 1. 1658行の `github.ts` を8ファイルに分割
 2. 30箇所以上の import を更新
-3. 297件のテストが全て通過（新規41件追加）
-4. 旧ファイル（`github.ts`, `index.ts`）を削除
-5. transforms.ts と errors.ts のテストを追加
+3. 362件のテストが全て通過（新規106件追加）
+4. E2E テスト16件通過
+5. 旧ファイル（`github.ts`, `index.ts`）を削除
+6. 全モジュールのテストを追加
    - transforms.ts: 28テスト（カバレッジ98.75%）
    - errors.ts: 13テスト（カバレッジ100%）
+   - client.ts: 15テスト（カバレッジ100%）
+   - repository.ts: 11テスト（カバレッジ97.59%）
+   - user.ts: 21テスト（カバレッジ79.36%）
+   - stats.ts: 10テスト（カバレッジ93.56%）
+   - commits.ts: 8テスト（カバレッジ93.42%）
+7. PR #1 作成・マージ完了
 
 ### 今後の検討事項
 
 1. `user.ts`（527行）のさらなる分割
-2. ビルド確認（`npm run build`）
-3. E2E テスト確認
