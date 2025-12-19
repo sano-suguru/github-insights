@@ -127,7 +127,10 @@ describe("GET /api/github/user/[username]", () => {
 
     expect(response.status).toBe(404);
     const data = await response.json();
-    expect(data.error).toBe("User not found");
+    expect(data.error).toEqual({
+      code: "NOT_FOUND",
+      message: "User not found",
+    });
   });
 
   it("レート制限エラーの場合は 429 を返す", async () => {
@@ -142,7 +145,8 @@ describe("GET /api/github/user/[username]", () => {
 
     expect(response.status).toBe(429);
     const data = await response.json();
-    expect(data.error).toContain("Rate limit exceeded");
+    expect(data.error.code).toBe("RATE_LIMIT");
+    expect(data.error.message).toContain("Rate limit exceeded");
   });
 
   it("その他のエラーの場合は 500 を返す", async () => {
@@ -156,6 +160,9 @@ describe("GET /api/github/user/[username]", () => {
 
     expect(response.status).toBe(500);
     const data = await response.json();
-    expect(data.error).toBe("Failed to fetch user data");
+    expect(data.error).toEqual({
+      code: "INTERNAL",
+      message: "Failed to fetch user data",
+    });
   });
 });

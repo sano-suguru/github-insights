@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, Clock, ChevronDown, X, Globe, Star, Loader2, User, Users, Building2 } from "lucide-react";
 import type { Repository } from "@/lib/github/types";
 import { useSearchRepositories, SearchResult, UserSearchResult, MIN_USER_SEARCH_QUERY_LENGTH, MIN_REPO_SEARCH_QUERY_LENGTH } from "@/hooks/useSearchRepositories";
+import { isRateLimitText } from "@/lib/api-utils";
 
 export type RepoSearchVariant = "default" | "compact" | "hero";
 
@@ -75,11 +76,23 @@ export default function RepoSearchCombobox({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // useSearchRepositories フックを使用
-  const { results, userResults, isUserSearch, isLoading, isDebouncing } = useSearchRepositories(inputValue, {
+  const { results, userResults, isUserSearch, isLoading, isDebouncing, error: searchError } = useSearchRepositories(inputValue, {
     userRepositories: repositories,
     recentRepos,
     enabled: isOpen,
   });
+
+  const searchErrorMessage = (() => {
+    if (!isOpen) return "";
+    if (!searchError) return "";
+
+    const message = searchError instanceof Error ? searchError.message : String(searchError);
+    return isRateLimitText(message)
+      ? "GitHub APIのレート制限に達しました。しばらく待ってからお試しください"
+      : "検索に失敗しました。しばらく待ってからお試しください";
+  })();
+
+  const displayError = error || searchErrorMessage;
 
   // 外側クリックでドロップダウンを閉じる
   useEffect(() => {
@@ -95,18 +108,25 @@ export default function RepoSearchCombobox({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // リポジトリの存在確認
-  const validateRepository = useCallback(async (repo: string): Promise<boolean> => {
+  type RepoValidationResult = "exists" | "missing" | "rateLimit" | "error";
+
+  // リポジトリの存在確認（Route Handler 経由でキャッシュ/認証を活用）
+  const validateRepository = useCallback(async (repo: string): Promise<RepoValidationResult> => {
     try {
-      const response = await fetch(`https://api.github.com/repos/${repo}`, {
-        headers: {
-          Accept: "application/vnd.github.v3+json",
-          "User-Agent": "GitHub-Insights",
-        },
-      });
-      return response.ok;
+      const response = await fetch(`/api/github/repo-exists?repo=${encodeURIComponent(repo)}`);
+
+      if (response.status === 429) {
+        return "rateLimit";
+      }
+
+      if (!response.ok) {
+        return "error";
+      }
+
+      const data = (await response.json()) as { exists?: boolean };
+      return data.exists ? "exists" : "missing";
     } catch {
-      return false;
+      return "error";
     }
   }, []);
 
@@ -140,10 +160,20 @@ export default function RepoSearchCombobox({
       setIsValidating(true);
       setError("");
       
-      const exists = await validateRepository(repo);
+      const result = await validateRepository(repo);
       setIsValidating(false);
       
-      if (!exists) {
+      if (result === "rateLimit") {
+        setError("レート制限のため確認できません。しばらく待ってからお試しください");
+        return;
+      }
+
+      if (result === "error") {
+        setError("リポジトリの確認に失敗しました。しばらく待ってからお試しください");
+        return;
+      }
+
+      if (result === "missing") {
         // 存在しないリポジトリは履歴から削除
         removeRecentRepo(repo);
         setRecentRepos(getRecentRepos());
@@ -180,10 +210,20 @@ export default function RepoSearchCombobox({
       if (!isKnownRepo) {
         // 外部リポジトリの場合は存在確認
         setIsValidating(true);
-        const exists = await validateRepository(trimmed);
+        const result = await validateRepository(trimmed);
         setIsValidating(false);
 
-        if (!exists) {
+        if (result === "rateLimit") {
+          setError("レート制限のため確認できません。しばらく待ってからお試しください");
+          return;
+        }
+
+        if (result === "error") {
+          setError("リポジトリの確認に失敗しました。しばらく待ってからお試しください");
+          return;
+        }
+
+        if (result === "missing") {
           setError("リポジトリが見つかりません");
           return;
         }
@@ -269,7 +309,7 @@ export default function RepoSearchCombobox({
           </div>
         </div>
 
-        {error && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{error}</p>}
+        {displayError && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{displayError}</p>}
       </form>
 
       {/* ドロップダウン */}

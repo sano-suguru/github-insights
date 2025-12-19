@@ -199,6 +199,39 @@ describe("getUserRepositories", () => {
       "GitHub API rate limit exceeded"
     );
   });
+
+  it("BotなどUserとして解決できない場合は空配列を返す", async () => {
+    const mockClient = vi
+      .fn()
+      .mockRejectedValue(
+        new Error(
+          'Could not resolve to a User with the login of "some-bot[bot]".'
+        )
+      );
+    vi.mocked(createPublicGitHubClient).mockReturnValue(mockClient as never);
+
+    const result = await getUserRepositories("some-bot[bot]");
+
+    expect(result).toEqual([]);
+  });
+
+  it("Userとして解決できない（短いメッセージ表現）場合も空配列を返す", async () => {
+    const mockClient = vi
+      .fn()
+      .mockRejectedValue(new Error("Could not resolve to a User."));
+    vi.mocked(createPublicGitHubClient).mockReturnValue(mockClient as never);
+
+    const result = await getUserRepositories("some-bot[bot]");
+
+    expect(result).toEqual([]);
+  });
+
+  it("未知のGraphQLエラーは握りつぶさずにスローする", async () => {
+    const mockClient = vi.fn().mockRejectedValue(new Error("GraphQL: boom"));
+    vi.mocked(createPublicGitHubClient).mockReturnValue(mockClient as never);
+
+    await expect(getUserRepositories("testuser")).rejects.toThrow("GraphQL: boom");
+  });
 });
 
 describe("calculateUserStats", () => {

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
-import { sequentialFetch } from "@/lib/api-utils";
+import { createApiErrorResponse, sequentialFetch } from "@/lib/api-server-utils";
+import { SERVER_CACHE } from "@/lib/cache-config";
 import type {
   UserProfile,
   UserStats,
@@ -15,6 +17,8 @@ import {
   calculateUserStats,
 } from "@/lib/github/user";
 import { GitHubRateLimitError } from "@/lib/github/errors";
+import { safeDecodePathSegment } from "@/lib/path-utils";
+import { buildPublicCacheControl } from "@/lib/cache-utils";
 
 interface Params {
   params: Promise<{
@@ -54,47 +58,62 @@ async function fetchUserData(
 
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const { username } = await params;
+    const { username: rawUsername } = await params;
+    const username = safeDecodePathSegment(rawUsername);
 
     if (!username) {
-      return NextResponse.json(
-        { error: "Username is required" },
-        { status: 400 }
-      );
+      return createApiErrorResponse(400, "BAD_REQUEST", "Username is required");
     }
 
     // セッションからアクセストークンを取得（あれば認証済み、なければ未認証）
     const session = await auth();
     const accessToken = session?.accessToken ?? null;
 
-    const { profile, stats, events, contributionStats } = await fetchUserData(username, accessToken);
+    const isAuthenticated = Boolean(accessToken);
+    const cacheKey = `user:${username}:${isAuthenticated ? "auth" : "public"}`;
+
+    const fetcher = () => fetchUserData(username, accessToken);
+
+    const { profile, stats, events, contributionStats } = isAuthenticated
+      ? await fetcher()
+      : await unstable_cache(fetcher, [cacheKey], {
+          revalidate: SERVER_CACHE.USER_PROFILE_REVALIDATE,
+          tags: [`user:${username}`],
+        })();
 
     if (!profile) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return createApiErrorResponse(404, "NOT_FOUND", "User not found");
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       profile,
       stats,
       events,
       contributionStats,
     });
+
+    if (!isAuthenticated) {
+      response.headers.set(
+        "Cache-Control",
+        buildPublicCacheControl(
+          SERVER_CACHE.USER_PROFILE_REVALIDATE,
+          SERVER_CACHE.USER_PROFILE_REVALIDATE * 2
+        )
+      );
+    }
+
+    return response;
   } catch (error) {
     console.error("Error fetching user data:", error);
 
     if (error instanceof GitHubRateLimitError) {
-      return NextResponse.json(
-        { error: "Rate limit exceeded. Please try again later." },
-        { status: 429 }
+      return createApiErrorResponse(
+        429,
+        "RATE_LIMIT",
+        "Rate limit exceeded. Please try again later."
       );
     }
 
-    return NextResponse.json(
-      { error: "Failed to fetch user data" },
-      { status: 500 }
-    );
+    return createApiErrorResponse(500, "INTERNAL", "Failed to fetch user data");
   }
 }

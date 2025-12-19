@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getLanguageStats } from "@/lib/github/stats";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
-import { createCachedFetch } from "@/lib/api-utils";
+import { createApiErrorResponse, createCachedFetch } from "@/lib/api-server-utils";
+import { GitHubRateLimitError } from "@/lib/github/errors";
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,10 +12,7 @@ export async function GET(request: NextRequest) {
     const repo = searchParams.get("repo");
 
     if (!owner || !repo) {
-      return NextResponse.json(
-        { error: "owner and repo are required" },
-        { status: 400 }
-      );
+      return createApiErrorResponse(400, "BAD_REQUEST", "owner and repo are required");
     }
 
     const session = await auth();
@@ -37,13 +35,15 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching languages:", error);
-    
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message.includes("rate limit") ? 429 : 500;
-    
-    return NextResponse.json(
-      { error: message },
-      { status }
-    );
+
+    if (error instanceof GitHubRateLimitError) {
+      return createApiErrorResponse(
+        429,
+        "RATE_LIMIT",
+        "Rate limit exceeded. Please try again later."
+      );
+    }
+
+    return createApiErrorResponse(500, "INTERNAL", "Failed to fetch languages");
   }
 }

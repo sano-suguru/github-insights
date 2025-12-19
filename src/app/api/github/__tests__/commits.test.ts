@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import type { Session } from "next-auth";
 import { GET } from "../commits/route";
 import type { CommitInfo } from "@/lib/github/types";
+import { GitHubRateLimitError } from "@/lib/github/errors";
 
 // モック設定
 const mockAuth = vi.fn<() => Promise<Session | null>>();
@@ -55,7 +56,10 @@ describe("GET /api/github/commits", () => {
 
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toBe("owner and repo are required");
+    expect(data.error).toEqual({
+      code: "BAD_REQUEST",
+      message: "owner and repo are required",
+    });
   });
 
   it("repo が未指定の場合は 400 エラーを返す", async () => {
@@ -64,7 +68,10 @@ describe("GET /api/github/commits", () => {
 
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toBe("owner and repo are required");
+    expect(data.error).toEqual({
+      code: "BAD_REQUEST",
+      message: "owner and repo are required",
+    });
   });
 
   it("days が不正な値の場合は 400 エラーを返す", async () => {
@@ -77,7 +84,10 @@ describe("GET /api/github/commits", () => {
 
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toBe("days must be a number or null");
+    expect(data.error).toEqual({
+      code: "BAD_REQUEST",
+      message: "days must be a number or null",
+    });
   });
 
   it("正常なリクエストでコミット履歴を返す", async () => {
@@ -131,9 +141,7 @@ describe("GET /api/github/commits", () => {
   });
 
   it("レート制限エラーの場合は 429 を返す", async () => {
-    mockGetCommitHistory.mockRejectedValue(
-      new Error("API rate limit exceeded")
-    );
+    mockGetCommitHistory.mockRejectedValue(new GitHubRateLimitError());
 
     const request = createRequest({
       owner: "test-owner",
@@ -143,7 +151,7 @@ describe("GET /api/github/commits", () => {
 
     expect(response.status).toBe(429);
     const data = await response.json();
-    expect(data.error).toContain("rate limit");
+    expect(data.error.code).toBe("RATE_LIMIT");
   });
 
   it("その他のエラーの場合は 500 を返す", async () => {
@@ -158,5 +166,7 @@ describe("GET /api/github/commits", () => {
     const response = await GET(request);
 
     expect(response.status).toBe(500);
+    const data = await response.json();
+    expect(data.error.code).toBe("INTERNAL");
   });
 });

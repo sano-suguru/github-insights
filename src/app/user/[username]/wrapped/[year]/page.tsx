@@ -31,6 +31,8 @@ import { getRankColors } from "@/lib/insight-score";
 import type { InsightRank } from "@/lib/insight-score";
 import type { ActivityTimeType } from "@/lib/github/types";
 import { WRAPPED_BADGES } from "@/lib/badges";
+import { getErrorMessage, isRateLimitResponse, isRateLimitText } from "@/lib/api-utils";
+import { safeDecodePathSegment } from "@/lib/path-utils";
 import DashboardLayout from "@/components/DashboardLayout";
 
 // バッジデータ型
@@ -83,10 +85,11 @@ async function fetchWrappedData(username: string, year: number): Promise<Wrapped
   const response = await fetch(`/api/github/user/${encodeURIComponent(username)}/wrapped/${year}`);
   
   if (!response.ok) {
+    const errorText = await getErrorMessage(response, "FETCH_ERROR");
     if (response.status === 404) {
       throw new Error("USER_NOT_FOUND");
     }
-    if (response.status === 429) {
+    if (isRateLimitResponse(response.status, errorText)) {
       throw new Error("RATE_LIMIT");
     }
     throw new Error("FETCH_ERROR");
@@ -142,7 +145,7 @@ function formatPeakHour(hour: number): string {
 
 export default function WrappedPage() {
   const params = useParams();
-  const username = params.username as string;
+  const username = safeDecodePathSegment(params.username as string);
   const year = parseInt(params.year as string, 10);
   const [isDownloading, setIsDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -167,7 +170,7 @@ export default function WrappedPage() {
       <DashboardLayout>
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-8 text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          {errorMessage === "USER_NOT_FOUND" ? (
+          {errorMessage === "USER_NOT_FOUND" || /user not found/i.test(errorMessage) ? (
             <>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 User Not Found
@@ -176,7 +179,7 @@ export default function WrappedPage() {
                 The user &quot;{username}&quot; does not exist.
               </p>
             </>
-          ) : errorMessage === "RATE_LIMIT" ? (
+          ) : errorMessage === "RATE_LIMIT" || isRateLimitText(errorMessage) ? (
             <>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 Rate Limit Exceeded

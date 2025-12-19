@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
 import { searchUsers } from "@/lib/github/user";
 import { GitHubRateLimitError } from "@/lib/github/errors";
+import { createApiErrorResponse } from "@/lib/api-server-utils";
 
 // 検索結果をキャッシュ（60秒）
 const createCachedSearchUsers = (accessToken: string | null, query: string) => {
@@ -43,19 +44,13 @@ export async function GET(request: NextRequest) {
     console.error("Search Users API error:", error);
 
     if (error instanceof GitHubRateLimitError) {
-      return NextResponse.json(
-        {
-          error: "Rate limit exceeded",
-          rateLimit: null,
-          message: "GitHub APIのレート制限に達しました。しばらくお待ちください。",
-        },
-        { status: 429 }
+      return createApiErrorResponse(
+        429,
+        "RATE_LIMIT",
+        "Rate limit exceeded. Please try again later."
       );
     }
 
-    return NextResponse.json(
-      { error: "Search failed", message: "ユーザー検索に失敗しました" },
-      { status: 500 }
-    );
+    return createApiErrorResponse(500, "INTERNAL", "ユーザー検索に失敗しました");
   }
 }
