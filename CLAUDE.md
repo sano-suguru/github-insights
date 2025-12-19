@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**GitHub Insights** - A Next.js web application that visualizes GitHub repository and user contribution statistics with a Japanese-first approach. The app supports both authenticated (via GitHub OAuth) and unauthenticated access for public repositories, featuring badge systems, OG card generation for social sharing, and comprehensive analytics dashboards.
+**GitHub Insights** - A Next.js web application that visualizes GitHub repository and user contribution statistics with a Japanese-first approach. The app supports both authenticated (via **GitHub App**) and unauthenticated access for public repositories, featuring badge systems, OG card generation for social sharing, and comprehensive analytics dashboards.
 
-**Tech Stack:** Next.js 16 (App Router), TypeScript, NextAuth v5, TanStack Query, Octokit GraphQL, Recharts, Tailwind CSS v4, Vitest, Playwright, Storybook
+**Tech Stack:** Next.js 16 (App Router), TypeScript, NextAuth v5 + GitHub App, TanStack Query, Octokit GraphQL, Recharts, Tailwind CSS v4, Vitest, Playwright, Storybook
+
+**Authentication:** Uses **GitHub App** with read-only permissions (`Contents: Read-only`, `Email addresses: Read-only`) instead of OAuth App for enhanced security.
 
 **Environment:** Development server runs on port 3001 (not the default 3000)
 
@@ -183,14 +185,26 @@ See [RepoSearchCombobox.tsx](src/components/RepoSearchCombobox.tsx) and [useSear
 Required for local development (`.env.local`):
 
 ```bash
-GITHUB_ID=<GitHub OAuth App Client ID>
-GITHUB_SECRET=<GitHub OAuth App Client Secret>
-AUTH_SECRET=<NextAuth secret (openssl rand -base64 32)>
+# GitHub App credentials
+GITHUB_APP_CLIENT_ID=<GitHub App Client ID>
+GITHUB_APP_CLIENT_SECRET=<GitHub App Client Secret>
+GITHUB_APP_ID=<GitHub App ID>
+
+# NextAuth configuration
+NEXTAUTH_SECRET=<NextAuth secret (openssl rand -base64 32)>
+NEXTAUTH_URL=http://localhost:3001
+AUTH_TRUST_HOST=true
+
+# Optional: For future Server-to-Server authentication
+# GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
 ```
 
-OAuth callback URL: `http://localhost:3001/api/auth/callback/github`
+**GitHub App setup:**
+- Callback URL (dev): `http://localhost:3001/api/auth/callback/github`
+- Callback URL (prod): `https://your-domain.vercel.app/api/auth/callback/github`
+- Permissions: `Contents: Read-only`, `Email addresses: Read-only`
 
-Production: Update callback URL to `https://your-domain.vercel.app/api/auth/callback/github`
+**For detailed GitHub App creation instructions, see [docs/GITHUB_APP_MIGRATION.md](docs/GITHUB_APP_MIGRATION.md).**
 
 ## Code Organization Principles
 

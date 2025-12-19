@@ -541,9 +541,10 @@ export async function GET(request: NextRequest) {
 1. ✅ GitHub App作成完了（2024-12-19）
 2. ✅ コード修正完了（2024-12-19）
 3. ✅ ローカル環境で動作確認完了（2024-12-19）
-4. ⬜ Preview環境デプロイ成功
-5. ⬜ 本番環境デプロイ成功
-6. ⬜ 旧OAuth Appの無効化
+4. ✅ 本番用GitHub App作成完了（2024-12-19）
+5. ✅ Vercel環境変数設定完了（2024-12-19）
+6. ✅ 本番環境デプロイ成功（2024-12-19）
+7. ⬜ 旧OAuth Appの無効化（移行完了後）
 
 ---
 
@@ -626,14 +627,17 @@ export async function GET(request: NextRequest) {
    - ✅ ローカル環境でブラウザテスト（http://localhost:3001）
    - ✅ 認証フローの動作確認
    - ✅ リポジトリ分析機能の動作確認
+6. ✅ 本番用GitHub App作成（Production: App ID 2497175）
+7. ✅ Vercel環境変数の設定（Dashboard経由）
+8. ✅ フェーズ4: 本番デプロイ（2024-12-19）
+   - ✅ 本番環境で認証フローの動作確認
+   - ✅ 読み取り専用権限の確認
 
 ### 📋 今後の作業
 
-1. ⬜ 本番用GitHub App作成（Production）
-2. ⬜ Vercel環境変数の設定
-3. ⬜ フェーズ4: 本番デプロイ
-4. ⬜ 既存ユーザーへの通知
-5. ⬜ 旧OAuth Appの無効化
+1. ⬜ 既存ユーザーへの通知（移行完了の案内）
+2. ⬜ 旧OAuth Appの無効化（既存ユーザーの移行完了後）
+3. ⬜ ドキュメント更新（README.md、CLAUDE.mdなど）
 
 ---
 
