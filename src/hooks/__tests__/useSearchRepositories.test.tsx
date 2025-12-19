@@ -350,10 +350,8 @@ describe("useSearchRepositories", () => {
     });
   });
 
-  describe("レート制限", () => {
-    it("429 エラー時は空配列を返す（コンソール警告あり）", async () => {
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
+  describe("レート制限(429)", () => {
+    it("リポジトリ検索が 429 の場合は error が返る", async () => {
       globalThis.fetch = vi.fn((url: string) => {
         const urlObj = new URL(url, "http://localhost");
         const pathname = urlObj.pathname;
@@ -364,26 +362,69 @@ describe("useSearchRepositories", () => {
             json: () => Promise.resolve(mockPopularReposData),
           });
         }
-        // リモート検索で 429 エラー
-        return Promise.resolve({
-          ok: false,
-          status: 429,
-        });
+
+        if (pathname.includes("/api/github/search")) {
+          return Promise.resolve({
+            ok: false,
+            status: 429,
+            json: () => Promise.resolve({ error: "Rate limit exceeded" }),
+          });
+        }
+
+        return Promise.reject(new Error(`Unknown URL: ${url}`));
       }) as unknown as typeof fetch;
 
-      const { result } = renderHook(() => useSearchRepositories("vue"), {
+      const { result } = renderHook(() => useSearchRepositories("re"), {
         wrapper: createWrapper(),
       });
 
-      // エラーが発生しないことを確認（空配列が返される）
       await waitFor(
         () => {
-          expect(result.current.error).toBeNull();
+          expect(result.current.error).toBeInstanceOf(Error);
         },
         { timeout: 2000 }
       );
 
-      consoleSpy.mockRestore();
+      const message = (result.current.error as Error).message;
+      expect(message.toLowerCase()).toContain("rate limit");
+    });
+
+    it("ユーザー検索が 429 の場合は error が返る", async () => {
+      globalThis.fetch = vi.fn((url: string) => {
+        const urlObj = new URL(url, "http://localhost");
+        const pathname = urlObj.pathname;
+
+        if (pathname.includes("/data/popular-repos.json")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(mockPopularReposData),
+          });
+        }
+
+        if (pathname.includes("/api/github/search-users")) {
+          return Promise.resolve({
+            ok: false,
+            status: 429,
+            json: () => Promise.resolve({ error: "Rate limit exceeded" }),
+          });
+        }
+
+        return Promise.reject(new Error(`Unknown URL: ${url}`));
+      }) as unknown as typeof fetch;
+
+      const { result } = renderHook(() => useSearchRepositories("@oct"), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(
+        () => {
+          expect(result.current.error).toBeInstanceOf(Error);
+        },
+        { timeout: 2000 }
+      );
+
+      const message = (result.current.error as Error).message;
+      expect(message.toLowerCase()).toContain("rate limit");
     });
   });
 });

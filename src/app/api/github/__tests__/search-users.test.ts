@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
-import { GET } from "../search-users/route";
+
+// 動的インポートを使用（モックを確実に反映させる）
+async function importRoute() {
+  return import("../search-users/route");
+}
 
 // モック設定
 const mockSearchUsers = vi.fn();
@@ -66,6 +70,7 @@ describe("GET /api/github/search-users", () => {
   });
 
   it("クエリが空の場合は空配列を返す", async () => {
+    const { GET } = await importRoute();
     const request = createRequest({});
     const response = await GET(request);
 
@@ -75,6 +80,7 @@ describe("GET /api/github/search-users", () => {
   });
 
   it("クエリが短すぎる場合は空配列を返す", async () => {
+    const { GET } = await importRoute();
     const request = createRequest({ q: "" });
     const response = await GET(request);
 
@@ -84,6 +90,7 @@ describe("GET /api/github/search-users", () => {
   });
 
   it("正常なリクエストでユーザー検索結果を返す", async () => {
+    const { GET } = await importRoute();
     mockSearchUsers.mockResolvedValue({ users: mockUsers, rateLimit: null });
 
     const request = createRequest({ q: "test" });
@@ -96,6 +103,7 @@ describe("GET /api/github/search-users", () => {
   });
 
   it("レート制限情報を含めて返す", async () => {
+    const { GET } = await importRoute();
     const resetDate = new Date("2024-01-01T00:00:00Z");
     const rateLimitInfo = {
       limit: 60,
@@ -117,6 +125,7 @@ describe("GET /api/github/search-users", () => {
   });
 
   it("レート制限エラーの場合は 429 を返す", async () => {
+    const { GET } = await importRoute();
     const { GitHubRateLimitError } = await import("@/lib/github/errors");
     mockSearchUsers.mockRejectedValue(new GitHubRateLimitError());
 
@@ -125,10 +134,12 @@ describe("GET /api/github/search-users", () => {
 
     expect(response.status).toBe(429);
     const data = await response.json();
-    expect(data.error).toBe("Rate limit exceeded");
+    expect(data.error.code).toBe("RATE_LIMIT");
+    expect(data.error.message).toContain("Rate limit exceeded");
   });
 
   it("その他のエラーの場合は 500 を返す", async () => {
+    const { GET } = await importRoute();
     mockSearchUsers.mockRejectedValue(new Error("Unknown error"));
 
     const request = createRequest({ q: "test" });
@@ -136,6 +147,9 @@ describe("GET /api/github/search-users", () => {
 
     expect(response.status).toBe(500);
     const data = await response.json();
-    expect(data.error).toBe("Search failed");
+    expect(data.error).toEqual({
+      code: "INTERNAL",
+      message: "ユーザー検索に失敗しました",
+    });
   });
 });

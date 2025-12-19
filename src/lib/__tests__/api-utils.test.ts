@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { getErrorMessage, sequentialFetch } from "../api-utils";
+import { getErrorMessage } from "../api-utils";
+import { sequentialFetch } from "../api-server-utils";
 
 describe("sequentialFetch", () => {
   it("タスクを順次実行して結果を配列で返す", async () => {
@@ -79,7 +80,9 @@ describe("getErrorMessage", () => {
   it("JSONレスポンスからerrorフィールドを取得", async () => {
     const mockResponse = {
       headers: new Headers({ "content-type": "application/json" }),
-      json: vi.fn().mockResolvedValue({ error: "Rate limit exceeded" }),
+      json: vi
+        .fn()
+        .mockResolvedValue({ error: { code: "RATE_LIMIT", message: "Rate limit exceeded" } }),
       status: 429,
       statusText: "Too Many Requests",
     } as unknown as Response;

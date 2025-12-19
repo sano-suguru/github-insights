@@ -21,6 +21,8 @@ import {
 import type { UserProfile, UserStats, UserEvent, UserContributionStats } from "@/lib/github/types";
 import { calculateUserBadges, Badge } from "@/lib/badges";
 import { calculateAccountYears } from "@/lib/insight-score";
+import { getErrorMessage, isRateLimitResponse, isRateLimitText } from "@/lib/api-utils";
+import { safeDecodePathSegment } from "@/lib/path-utils";
 import DashboardLayout, { SectionCard } from "@/components/DashboardLayout";
 import { InsightScoreCard } from "@/components/InsightScoreCard";
 
@@ -71,7 +73,7 @@ function UserCardModal({ isOpen, onClose, username, name }: UserCardModalProps) 
 
   if (!isOpen) return null;
 
-  const cardUrl = `/api/og/card/user/${username}`;
+  const cardUrl = `/api/og/card/user/${encodeURIComponent(username)}`;
   const fullUrl = `${typeof window !== "undefined" ? window.location.origin : ""}${cardUrl}`;
 
   // 画像をダウンロード
@@ -200,10 +202,11 @@ async function fetchUserData(username: string): Promise<{
   const response = await fetch(`/api/github/user/${encodeURIComponent(username)}`);
   
   if (!response.ok) {
+    const errorText = await getErrorMessage(response, "FETCH_ERROR");
     if (response.status === 404) {
       throw new Error("USER_NOT_FOUND");
     }
-    if (response.status === 429) {
+    if (isRateLimitResponse(response.status, errorText)) {
       throw new Error("RATE_LIMIT");
     }
     throw new Error("FETCH_ERROR");
@@ -214,7 +217,7 @@ async function fetchUserData(username: string): Promise<{
 
 export default function UserProfilePage() {
   const params = useParams();
-  const username = params.username as string;
+  const username = safeDecodePathSegment(params.username as string);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showBadgePopover, setShowBadgePopover] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState<"bottom" | "top">("bottom");
@@ -290,7 +293,7 @@ export default function UserProfilePage() {
       <DashboardLayout>
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-8 text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          {errorMessage === "USER_NOT_FOUND" ? (
+          {errorMessage === "USER_NOT_FOUND" || /user not found/i.test(errorMessage) ? (
             <>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 User Not Found
@@ -299,7 +302,7 @@ export default function UserProfilePage() {
                 The user &quot;{username}&quot; does not exist or is not accessible.
               </p>
             </>
-          ) : errorMessage === "RATE_LIMIT" ? (
+          ) : errorMessage === "RATE_LIMIT" || isRateLimitText(errorMessage) ? (
             <>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 Rate Limit Exceeded

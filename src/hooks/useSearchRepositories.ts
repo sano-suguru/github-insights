@@ -47,10 +47,9 @@ async function fetchFromApi<T>(
 
   if (!response.ok) {
     if (response.status === 429) {
-      console.warn(`Rate limit exceeded: ${endpoint}`);
-      return [];
+      throw new Error("Rate limit exceeded");
     }
-    throw new Error(`API request failed: ${endpoint}`);
+    throw new Error(`API request failed: ${endpoint} (${response.status})`);
   }
 
   const data = await response.json();

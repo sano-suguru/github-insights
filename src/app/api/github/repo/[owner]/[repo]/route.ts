@@ -15,7 +15,12 @@ import {
   getRepositoryStats,
 } from "@/lib/github/stats";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
-import { createCachedFetch, sequentialFetch } from "@/lib/api-utils";
+import {
+  createApiErrorResponse,
+  createCachedFetch,
+  sequentialFetch,
+} from "@/lib/api-server-utils";
+import { GitHubRateLimitError } from "@/lib/github/errors";
 
 // リポジトリデータの統合レスポンス型
 export interface RepoAllDataResponse {
@@ -38,10 +43,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     const { owner, repo } = await params;
 
     if (!owner || !repo) {
-      return NextResponse.json(
-        { error: "owner and repo are required" },
-        { status: 400 }
-      );
+      return createApiErrorResponse(400, "BAD_REQUEST", "owner and repo are required");
     }
 
     const session = await auth();
@@ -121,9 +123,27 @@ export async function GET(request: NextRequest, { params }: Params) {
   } catch (error) {
     console.error("Error fetching repo data:", error);
 
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message.includes("rate limit") ? 429 : 500;
+    if (error instanceof GitHubRateLimitError) {
+      return createApiErrorResponse(
+        429,
+        "RATE_LIMIT",
+        "Rate limit exceeded. Please try again later."
+      );
+    }
 
-    return NextResponse.json({ error: message }, { status });
+    if (error instanceof Error) {
+      if (error.message === "Repository not found") {
+        return createApiErrorResponse(404, "NOT_FOUND", "Repository not found");
+      }
+      if (error.message === "This is a private repository. Please login to access.") {
+        return createApiErrorResponse(
+          403,
+          "FORBIDDEN",
+          "This is a private repository. Please login to access."
+        );
+      }
+    }
+
+    return createApiErrorResponse(500, "INTERNAL", "Failed to fetch repository data");
   }
 }

@@ -14,7 +14,7 @@ import ContributorRanking from "@/components/ContributorRanking";
 import { PeriodSelector } from "@/components/PeriodSelector";
 import { useRepositories } from "@/hooks/useRepositories";
 import { useCommitHistory, usePrefetchCommitHistory } from "@/hooks/useCommitHistory";
-import { useLanguageStats, useContributorStats, useContributorDetails, useRepositoryStats } from "@/hooks/useRepoData";
+import { useRepoAllData } from "@/hooks/useRepoData";
 import { ChartErrorWrapper } from "@/components/ErrorDisplay";
 import AppHeader from "@/components/AppHeader";
 import {
@@ -95,42 +95,35 @@ function DashboardContent() {
   // 選択リポジトリのowner/repo
   const [owner, repo] = activeRepo ? activeRepo.split("/") : ["", ""];
 
-  // 期間ホバー時にプリフェッチ
-  const handlePeriodHover = useCallback((days: number | null) => {
-    prefetchCommits(session?.accessToken ?? null, owner, repo, days);
-  }, [prefetchCommits, session?.accessToken, owner, repo]);
-
-  // 各データ取得（React Query）
-  const { data: languages = [], isLoading: langLoading, isError: langError, error: langErrorData, refetch: refetchLanguages } = useLanguageStats({
+  // 統合API経由で全データを一括取得（セカンダリレート制限対策）
+  const {
+    repository,
+    languages,
+    contributorStats: contributors,
+    contributorDetails,
+    repositoryStats: stats,
+    isLoading: allDataLoading,
+    isError: allDataError,
+    error: allDataErrorData,
+    refetch: refetchAllData,
+  } = useRepoAllData({
     owner,
     repo,
     enabled: !!activeRepo,
   });
+
+  // 期間ホバー時にプリフェッチ
+  const handlePeriodHover = useCallback((days: number | null) => {
+    if (!repository) return;
+    prefetchCommits(session?.accessToken ?? null, owner, repo, days);
+  }, [prefetchCommits, session?.accessToken, owner, repo, repository]);
 
   const { data: commits = [], isLoading: commitsLoading, isFetching: commitsFetching, isError: commitsError, error: commitsErrorData, refetch: refetchCommits } = useCommitHistory({
     accessToken: session?.accessToken ?? null,
     owner,
     repo,
     days: selectedDays,
-    enabled: !!activeRepo,
-  });
-
-  const { data: contributors = [], isLoading: contributorsLoading, isError: contributorsError, error: contributorsErrorData, refetch: refetchContributors } = useContributorStats({
-    owner,
-    repo,
-    enabled: !!activeRepo,
-  });
-
-  const { data: contributorDetails = [], isLoading: detailsLoading, isError: detailsError, error: detailsErrorData, refetch: refetchDetails } = useContributorDetails({
-    owner,
-    repo,
-    enabled: !!activeRepo,
-  });
-
-  const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErrorData, refetch: refetchStats } = useRepositoryStats({
-    owner,
-    repo,
-    enabled: !!activeRepo,
+    enabled: !!repository,
   });
 
   // 認証チェック
@@ -181,7 +174,7 @@ function DashboardContent() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors group ${
-                  langLoading || commitsLoading ? "animate-pulse shadow-lg shadow-purple-500/30" : ""
+                    allDataLoading || commitsLoading ? "animate-pulse shadow-lg shadow-purple-500/30" : ""
                 }`}
               >
                 <Github className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -193,14 +186,14 @@ function DashboardContent() {
         </div>
 
         {/* 統計カード */}
-        {statsLoading ? (
+        {allDataLoading ? (
           <StatsGridSkeleton />
-        ) : statsError ? (
+        ) : allDataError ? (
           <div className="mb-8">
             <ChartErrorWrapper
               isError={true}
-              error={statsErrorData}
-              onRetry={() => refetchStats()}
+              error={allDataErrorData}
+              onRetry={() => refetchAllData()}
               errorHeight="h-24"
             />
           </div>
@@ -237,11 +230,11 @@ function DashboardContent() {
               <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
               Languages
             </h2>
-            <ChartSkeletonWrapper isLoading={langLoading} skeleton={<PieChartSkeleton />}>
+            <ChartSkeletonWrapper isLoading={allDataLoading} skeleton={<PieChartSkeleton />}>
               <ChartErrorWrapper
-                isError={langError}
-                error={langErrorData}
-                onRetry={() => refetchLanguages()}
+                isError={allDataError}
+                error={allDataErrorData}
+                onRetry={() => refetchAllData()}
                 >
                   <LanguagesPieChart data={languages} />
               </ChartErrorWrapper>
@@ -276,14 +269,11 @@ function DashboardContent() {
 
           {/* Contributors */}
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300">
-            <ChartSkeletonWrapper isLoading={contributorsLoading || detailsLoading} skeleton={<BarChartSkeleton />}>
+            <ChartSkeletonWrapper isLoading={allDataLoading} skeleton={<BarChartSkeleton />}>
               <ChartErrorWrapper
-                isError={contributorsError || detailsError}
-                error={contributorsErrorData || detailsErrorData}
-                onRetry={() => {
-                  refetchContributors();
-                  refetchDetails();
-                }}
+                isError={allDataError}
+                error={allDataErrorData}
+                onRetry={() => refetchAllData()}
               >
                 <ContributorChartWithToggle
                   contributors={contributors}
@@ -313,7 +303,7 @@ function DashboardContent() {
 
         {/* Your Contribution */}
         {session?.login && (
-          detailsLoading ? (
+          allDataLoading ? (
             <div className="mt-8">
               <MyContributionSkeleton />
             </div>
@@ -328,7 +318,7 @@ function DashboardContent() {
         )}
 
         {/* Ranking */}
-        {detailsLoading ? (
+        {allDataLoading ? (
           <div className="mt-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
               <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>

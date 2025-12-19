@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import type { Session } from "next-auth";
 import { GET } from "../contributors/route";
 import type { ContributorStat, ContributorDetailStat } from "@/lib/github/types";
+import { GitHubRateLimitError } from "@/lib/github/errors";
 
 // モック設定
 const mockAuth = vi.fn<() => Promise<Session | null>>();
@@ -68,7 +69,10 @@ describe("GET /api/github/contributors", () => {
 
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toBe("owner and repo are required");
+    expect(data.error).toEqual({
+      code: "BAD_REQUEST",
+      message: "owner and repo are required",
+    });
   });
 
   it("repo が未指定の場合は 400 エラーを返す", async () => {
@@ -77,7 +81,10 @@ describe("GET /api/github/contributors", () => {
 
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toBe("owner and repo are required");
+    expect(data.error).toEqual({
+      code: "BAD_REQUEST",
+      message: "owner and repo are required",
+    });
   });
 
   it("type が未指定の場合は 400 エラーを返す", async () => {
@@ -89,7 +96,10 @@ describe("GET /api/github/contributors", () => {
 
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toBe("type is required and must be 'stats' or 'details'");
+    expect(data.error).toEqual({
+      code: "BAD_REQUEST",
+      message: "type is required and must be 'stats' or 'details'",
+    });
   });
 
   it("type が不正な値の場合は 400 エラーを返す", async () => {
@@ -102,7 +112,10 @@ describe("GET /api/github/contributors", () => {
 
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toBe("type is required and must be 'stats' or 'details'");
+    expect(data.error).toEqual({
+      code: "BAD_REQUEST",
+      message: "type is required and must be 'stats' or 'details'",
+    });
   });
 
   it("type=stats でコントリビューター統計を返す", async () => {
@@ -159,9 +172,7 @@ describe("GET /api/github/contributors", () => {
   });
 
   it("レート制限エラーの場合は 429 を返す", async () => {
-    mockGetContributorStats.mockRejectedValue(
-      new Error("API rate limit exceeded")
-    );
+    mockGetContributorStats.mockRejectedValue(new GitHubRateLimitError());
 
     const request = createRequest({
       owner: "test-owner",
@@ -171,6 +182,8 @@ describe("GET /api/github/contributors", () => {
     const response = await GET(request);
 
     expect(response.status).toBe(429);
+    const data = await response.json();
+    expect(data.error.code).toBe("RATE_LIMIT");
   });
 
   it("その他のエラーの場合は 500 を返す", async () => {
@@ -186,5 +199,7 @@ describe("GET /api/github/contributors", () => {
     const response = await GET(request);
 
     expect(response.status).toBe(500);
+    const data = await response.json();
+    expect(data.error.code).toBe("INTERNAL");
   });
 });

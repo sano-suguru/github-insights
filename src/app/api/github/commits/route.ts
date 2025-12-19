@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getCommitHistory } from "@/lib/github/commits";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
-import { createCachedFetch } from "@/lib/api-utils";
+import { createApiErrorResponse, createCachedFetch } from "@/lib/api-server-utils";
+import { GitHubRateLimitError } from "@/lib/github/errors";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,10 +14,7 @@ export async function GET(request: NextRequest) {
 
     // バリデーション
     if (!owner || !repo) {
-      return NextResponse.json(
-        { error: "owner and repo are required" },
-        { status: 400 }
-      );
+      return createApiErrorResponse(400, "BAD_REQUEST", "owner and repo are required");
     }
 
     // daysをパース（"null"または未指定は全期間）
@@ -25,10 +23,7 @@ export async function GET(request: NextRequest) {
       : parseInt(daysParam, 10);
 
     if (daysParam !== null && daysParam !== "null" && isNaN(days as number)) {
-      return NextResponse.json(
-        { error: "days must be a number or null" },
-        { status: 400 }
-      );
+      return createApiErrorResponse(400, "BAD_REQUEST", "days must be a number or null");
     }
 
     // セッションからアクセストークンを取得
@@ -56,13 +51,15 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching commits:", error);
-    
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message.includes("rate limit") ? 429 : 500;
-    
-    return NextResponse.json(
-      { error: message },
-      { status }
-    );
+
+    if (error instanceof GitHubRateLimitError) {
+      return createApiErrorResponse(
+        429,
+        "RATE_LIMIT",
+        "Rate limit exceeded. Please try again later."
+      );
+    }
+
+    return createApiErrorResponse(500, "INTERNAL", "Failed to fetch commits");
   }
 }

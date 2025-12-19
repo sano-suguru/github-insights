@@ -20,7 +20,12 @@ import {
 } from "./client";
 import { parseAccountType, calculateUserStats as computeUserStats, calculateStreaks } from "./transforms";
 import { SERVER_CACHE } from "../cache-config";
-import { sequentialFetch } from "../api-utils";
+import { sequentialFetch } from "../api-server-utils";
+
+function isGraphQLUserLoginNotResolvable(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return /Could not resolve to a User/i.test(error.message);
+}
 
 // GitHub Events API のレスポンス型
 interface GitHubEventResponse {
@@ -185,6 +190,11 @@ export async function getUserRepositories(
     console.error("Get user repositories error:", error);
     if (isRateLimitError(error)) {
       throw new GitHubRateLimitError();
+    }
+    // Botアカウント等で GraphQL の user(login:) が解決できない場合は
+    // リポジトリが取得できないだけなので空配列として扱う。
+    if (isGraphQLUserLoginNotResolvable(error)) {
+      return [];
     }
     throw error;
   }
