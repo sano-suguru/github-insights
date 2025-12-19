@@ -16,13 +16,20 @@ function ThemeToggleSkeleton() {
 
 export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, systemTheme } = useTheme();
 
   // next-themes recommended pattern for SSR/hydration handling
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  // デバッグ用
+  useEffect(() => {
+    if (mounted) {
+      console.log("Current theme:", theme, "System theme:", systemTheme);
+    }
+  }, [theme, systemTheme, mounted]);
 
   if (!mounted) {
     return <ThemeToggleSkeleton />;
