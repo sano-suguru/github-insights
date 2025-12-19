@@ -301,24 +301,6 @@ Content Security Policy in [next.config.ts](next.config.ts) includes `unsafe-eva
 ### Data Freshness Trade-off
 Cache revalidation times (5-10min) mean data may be stale. This is intentional to prioritize rate limit conservation over real-time accuracy. For user-critical operations (auth, personal dashboard), we use authenticated endpoints with higher quotas.
 
-## MCP Server Integration
-
-This project leverages Model Context Protocol (MCP) servers for enhanced development workflows:
-
-| MCP Server    | Use Cases in This Project                           |
-|---------------|-----------------------------------------------------|
-| **Context7**  | TanStack Query, Next.js, Recharts documentation     |
-| **GitHub**    | Issue/PR management, code search, task assignment   |
-| **GitKraken** | Git operations (commit, push, stash, blame)         |
-| **Serena**    | Symbol search, reference finding, refactoring aid   |
-
-**Recommended usage:**
-- **API specification lookup** → Context7 for latest library docs
-- **Bug tracking** → GitHub MCP to create issues
-- **Committing changes** → GitKraken MCP for `git add` → `git commit`
-- **Finding function usage** → Serena's `find_referencing_symbols`
-- **Large refactoring** → Serena to identify impact scope before editing
-
 ## Papercut Philosophy (Continuous Quality Improvement)
 
 **Papercuts** are small but important improvements that maintain codebase health and prevent technical debt accumulation. Practice proactive quality maintenance.
