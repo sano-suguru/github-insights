@@ -1,121 +1,31 @@
 import { ImageResponse } from "@vercel/og";
 import { NextRequest } from "next/server";
+import { createOgBadgeColorGetter } from "@/lib/badges";
 import {
-  OgBadgeColorScheme,
-  createOgBadgeColorGetter,
-} from "@/lib/badges";
+  sequentialFetchEdge,
+  GITHUB_HEADERS,
+} from "@/lib/og/edge-utils";
+import {
+  OG_WIDTH,
+  OG_HEIGHT,
+  OG_COLORS,
+  OG_ICONS,
+  CONTRIBUTOR_BADGE_COLORS,
+  getRankColor,
+  getRankLabel,
+  generateActivityGrid,
+} from "@/lib/og/constants";
 
 export const runtime = "edge";
 
-// セカンダリレート制限対策: 順次実行ヘルパー（Edge Runtime用）
-async function sequentialFetchEdge<T>(
-  tasks: (() => Promise<T>)[],
-  delayMs = 100
-): Promise<T[]> {
-  const results: T[] = [];
-  for (let i = 0; i < tasks.length; i++) {
-    if (i > 0) await new Promise((r) => setTimeout(r, delayMs));
-    results.push(await tasks[i]());
-  }
-  return results;
-}
-
-// OG画像サイズ
-const WIDTH = 1200;
-const HEIGHT = 630;
-
-// サイトと統一したカラーパレット
-const COLORS = {
-  // 背景
-  bgDark: "#0f172a", // slate-900 (より深い)
-  bgPurple: "#581c87", // purple-900
-  // アクセント
-  purple500: "#a855f7",
-  purple400: "#c084fc",
-  pink500: "#ec4899",
-  pink400: "#f472b6",
-  // メダル
-  gold: "#fbbf24",
-  silver: "#94a3b8",
-  bronze: "#f59e0b",
-  // テキスト
-  white: "#ffffff",
-  gray300: "#d1d5db",
-  gray400: "#9ca3af",
-  gray500: "#6b7280",
-  // カード
-  cardBg: "rgba(31, 41, 55, 0.6)", // gray-800/60
-  cardBorder: "rgba(139, 92, 246, 0.2)", // purple-500/20
-  // バッジ
-  badgeBg: "rgba(168, 85, 247, 0.2)",
-  badgeText: "#c084fc", // purple-400
-  badgeBorder: "rgba(168, 85, 247, 0.4)",
-  // グロー
-  glowPurple: "rgba(168, 85, 247, 0.4)",
-  glowPink: "rgba(236, 72, 153, 0.3)",
-};
-
-// SVGアイコンパス
-const ICONS = {
-  gitCommit:
-    "M12 6a6 6 0 0 0-6 6h-4a1 1 0 0 0 0 2h4a6 6 0 0 0 12 0h4a1 1 0 0 0 0-2h-4a6 6 0 0 0-6-6zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8z",
-  trophy:
-    "M6 9H4V5a1 1 0 0 1 1-1h2v2H6v3zm14-4a1 1 0 0 0-1-1h-2v5h-2V4H9v5H7V4H5a1 1 0 0 0-1 1v4h2v1a5 5 0 0 0 4 4.9V18H7v2h10v-2h-3v-4.1a5 5 0 0 0 4-4.9V9h2V5a1 1 0 0 0-1-1z",
-  gitPullRequest:
-    "M18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm-1-3.17V6a4 4 0 0 0-4-4H9.83a3.001 3.001 0 1 0 0 2H13a2 2 0 0 1 2 2v5.83a3.001 3.001 0 1 0 2 0zM6 5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z",
-  circleDot: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm0-12a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
-  star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
-  gitFork:
-    "M12 2a3 3 0 0 0-1 5.83V10H7a2 2 0 0 0-2 2v1.17a3.001 3.001 0 1 0 2 0V12h4v4.17a3.001 3.001 0 1 0 2 0V12h4v1.17a3.001 3.001 0 1 0 2-0V12a2 2 0 0 0-2-2h-4V7.83A3 3 0 0 0 12 2z",
-  flame: "M12 23c-4.97 0-9-4.03-9-9 0-3.21 1.68-6.04 4.23-7.68.85-.55 1.77 1.06 2.07 2.22 1.06 4.04 2.7 5.04 2.7 5.04s-.5-4.58-.5-6.58c0-4 2.5-7 2.5-7s1.65 1.04 3 3c.67 .98 1 2.15 1 3.35 0 1.6-.63 3.05-1.65 4.11-.52.54-.35 1.46.33 1.79.68.33 1.32-.28 1.32-.28S19 9.73 19 7c0-.38-.04-.76-.1-1.13C21.14 7.83 23 10.72 23 14c0 4.97-4.03 9-9 9h-2z",
-  fire: "M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 17.03 19.32C18.86 17.66 19.5 15 18.56 12.72L18.43 12.46C18.22 12 17.66 11.2 17.66 11.2Z",
-};
-
-// バッジの色マップ（ダッシュボードと統一）
-const BADGE_COLORS: Record<string, OgBadgeColorScheme> = {
-  // 順位ベース（紫系）
-  "Top Contributor": { bg: "rgba(168, 85, 247, 0.3)", text: "#e9d5ff", border: "rgba(168, 85, 247, 0.6)" },
-  "Top 3": { bg: "rgba(236, 72, 153, 0.3)", text: "#fbcfe8", border: "rgba(236, 72, 153, 0.6)" },
-  // コミット数ベース（アンバー/ゴールド系）
-  "Core Contributor": { bg: "rgba(245, 158, 11, 0.3)", text: "#fde68a", border: "rgba(245, 158, 11, 0.6)" },
-  "Dedicated": { bg: "rgba(132, 204, 22, 0.3)", text: "#d9f99d", border: "rgba(132, 204, 22, 0.6)" },
-  "Active": { bg: "rgba(16, 185, 129, 0.3)", text: "#a7f3d0", border: "rgba(16, 185, 129, 0.6)" },
-  // PR/Issue ベース（ブルー系）
-  "PR Master": { bg: "rgba(59, 130, 246, 0.3)", text: "#bfdbfe", border: "rgba(59, 130, 246, 0.6)" },
-  "Bug Hunter": { bg: "rgba(249, 115, 22, 0.3)", text: "#fed7aa", border: "rgba(249, 115, 22, 0.6)" },
-};
+// ローカル定数（このカード固有）
+const WIDTH = OG_WIDTH;
+const HEIGHT = OG_HEIGHT;
+const COLORS = OG_COLORS;
+const ICONS = OG_ICONS;
 
 // バッジの色を取得
-const getBadgeColors = createOgBadgeColorGetter(BADGE_COLORS);
-
-// ランクに応じたメダルカラーを取得
-function getRankColor(rank: number): string {
-  if (rank === 1) return COLORS.gold;
-  if (rank === 2) return COLORS.silver;
-  if (rank === 3) return COLORS.bronze;
-  return COLORS.purple400;
-}
-
-// ランクに応じたラベルを取得
-function getRankLabel(rank: number): string {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
-  return `#${rank}`;
-}
-
-// アクティビティグリッドを生成（貢献度に基づいてランダム風に）
-function generateActivityGrid(commits: number, seed: number): number[] {
-  const grid: number[] = [];
-  const intensity = Math.min(commits / 10, 10); // 0-10
-  for (let i = 0; i < 35; i++) {
-    // 5x7グリッド
-    const random = ((seed * (i + 1) * 9301 + 49297) % 233280) / 233280;
-    const level = random < 0.2 ? 0 : random < 0.5 ? 1 : random < 0.7 ? 2 : random < 0.9 ? 3 : 4;
-    grid.push(Math.min(level, Math.ceil(intensity / 2)));
-  }
-  return grid;
-}
+const getBadgeColors = createOgBadgeColorGetter(CONTRIBUTOR_BADGE_COLORS);
 
 // コントリビューター統計の型
 interface ContributorStats {
@@ -145,40 +55,19 @@ async function getContributorStats(
       await sequentialFetchEdge([
         () => fetch(
           `https://api.github.com/repos/${owner}/${repo}/contributors?per_page=100`,
-          {
-            headers: {
-              Accept: "application/vnd.github.v3+json",
-              "User-Agent": "GitHub-Insights",
-            },
-            next: { revalidate: 3600 },
-          }
+          { headers: GITHUB_HEADERS, next: { revalidate: 3600 } }
         ),
-        () => fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-          headers: {
-            Accept: "application/vnd.github.v3+json",
-            "User-Agent": "GitHub-Insights",
-          },
-          next: { revalidate: 3600 },
-        }),
+        () => fetch(
+          `https://api.github.com/repos/${owner}/${repo}`,
+          { headers: GITHUB_HEADERS, next: { revalidate: 3600 } }
+        ),
         () => fetch(
           `https://api.github.com/search/issues?q=repo:${owner}/${repo}+author:${user}+type:pr&per_page=1`,
-          {
-            headers: {
-              Accept: "application/vnd.github.v3+json",
-              "User-Agent": "GitHub-Insights",
-            },
-            next: { revalidate: 3600 },
-          }
+          { headers: GITHUB_HEADERS, next: { revalidate: 3600 } }
         ),
         () => fetch(
           `https://api.github.com/search/issues?q=repo:${owner}/${repo}+author:${user}+type:issue&per_page=1`,
-          {
-            headers: {
-              Accept: "application/vnd.github.v3+json",
-              "User-Agent": "GitHub-Insights",
-            },
-            next: { revalidate: 3600 },
-          }
+          { headers: GITHUB_HEADERS, next: { revalidate: 3600 } }
         ),
       ]);
 
@@ -203,13 +92,10 @@ async function getContributorStats(
 
     const userData = contributors[userIndex];
 
-    const userRes = await fetch(`https://api.github.com/users/${user}`, {
-      headers: {
-        Accept: "application/vnd.github.v3+json",
-        "User-Agent": "GitHub-Insights",
-      },
-      next: { revalidate: 3600 },
-    });
+    const userRes = await fetch(
+      `https://api.github.com/users/${user}`,
+      { headers: GITHUB_HEADERS, next: { revalidate: 3600 } }
+    );
 
     const userDetails = userRes.ok ? await userRes.json() : { name: user };
 

@@ -2,14 +2,17 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Clock, ChevronDown, X, Globe, Star, Loader2, User, Users, Building2 } from "lucide-react";
+import { Search, Clock, ChevronDown, X, Globe, Star, Loader2, Users } from "lucide-react";
 import type { Repository } from "@/lib/github/types";
-import { useSearchRepositories, SearchResult, UserSearchResult, MIN_USER_SEARCH_QUERY_LENGTH, MIN_REPO_SEARCH_QUERY_LENGTH } from "@/hooks/useSearchRepositories";
+import { useSearchRepositories, MIN_USER_SEARCH_QUERY_LENGTH, MIN_REPO_SEARCH_QUERY_LENGTH } from "@/hooks/useSearchRepositories";
 import { isRateLimitText } from "@/lib/api-utils";
+import { useRecentRepos } from "./useRecentRepos";
+import { ResultSection } from "./ResultSection";
+import { UserResultSection } from "./UserResultSection";
 
 export type RepoSearchVariant = "default" | "compact" | "hero";
 
-interface RepoSearchComboboxProps {
+export interface RepoSearchComboboxProps {
   repositories?: Repository[];
   selectedRepo?: string;
   onSelectRepo: (repo: string) => void;
@@ -17,47 +20,7 @@ interface RepoSearchComboboxProps {
   placeholder?: string;
 }
 
-const RECENT_REPOS_KEY = "github-insights-recent-repos";
-const MAX_RECENT_REPOS = 5;
-
-// ローカルストレージから最近のリポジトリを取得
-function getRecentRepos(): string[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = localStorage.getItem(RECENT_REPOS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-// ローカルストレージに最近のリポジトリを保存
-function saveRecentRepo(repo: string) {
-  if (typeof window === "undefined") return;
-  try {
-    const recent = getRecentRepos().filter((r) => r !== repo);
-    recent.unshift(repo);
-    localStorage.setItem(
-      RECENT_REPOS_KEY,
-      JSON.stringify(recent.slice(0, MAX_RECENT_REPOS))
-    );
-  } catch {
-    // ignore storage errors
-  }
-}
-
-// ローカルストレージから特定のリポジトリを削除
-function removeRecentRepo(repo: string) {
-  if (typeof window === "undefined") return;
-  try {
-    const recent = getRecentRepos().filter(
-      (r) => r.toLowerCase() !== repo.toLowerCase()
-    );
-    localStorage.setItem(RECENT_REPOS_KEY, JSON.stringify(recent));
-  } catch {
-    // ignore storage errors
-  }
-}
+type RepoValidationResult = "exists" | "missing" | "rateLimit" | "error";
 
 export default function RepoSearchCombobox({
   repositories = [],
@@ -69,11 +32,12 @@ export default function RepoSearchCombobox({
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [recentRepos, setRecentRepos] = useState<string[]>(() => getRecentRepos());
   const [error, setError] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const { recentRepos, addRecentRepo, removeRepo } = useRecentRepos();
 
   // useSearchRepositories フックを使用
   const { results, userResults, isUserSearch, isLoading, isDebouncing, error: searchError } = useSearchRepositories(inputValue, {
@@ -108,8 +72,6 @@ export default function RepoSearchCombobox({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  type RepoValidationResult = "exists" | "missing" | "rateLimit" | "error";
-
   // リポジトリの存在確認（Route Handler 経由でキャッシュ/認証を活用）
   const validateRepository = useCallback(async (repo: string): Promise<RepoValidationResult> => {
     try {
@@ -134,13 +96,12 @@ export default function RepoSearchCombobox({
   const handleSelectRepo = useCallback(
     (repo: string) => {
       onSelectRepo(repo);
-      saveRecentRepo(repo);
-      setRecentRepos(getRecentRepos());
+      addRecentRepo(repo);
       setInputValue("");
       setIsOpen(false);
       setError("");
     },
-    [onSelectRepo]
+    [onSelectRepo, addRecentRepo]
   );
 
   // ユーザーを選択してプロファイルページに遷移
@@ -175,15 +136,14 @@ export default function RepoSearchCombobox({
 
       if (result === "missing") {
         // 存在しないリポジトリは履歴から削除
-        removeRecentRepo(repo);
-        setRecentRepos(getRecentRepos());
+        removeRepo(repo);
         setError(`「${repo}」は存在しないため履歴から削除しました`);
         return;
       }
       
       handleSelectRepo(repo);
     },
-    [validateRepository, handleSelectRepo]
+    [validateRepository, handleSelectRepo, removeRepo]
   );
 
   // 入力値で検索/選択（手動入力 - 存在確認が必要）
@@ -431,167 +391,24 @@ export default function RepoSearchCombobox({
 
           {/* 検索結果なし */}
           {!isUserSearch && results.length === 0 && !isExternalRepoInput && !isLoading && !isDebouncing && (
-              <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                {inputValue ? (
-                  <>
-                    <p>一致するリポジトリがありません</p>
-                    <p className="text-sm mt-1">
-                      外部リポジトリを分析するには「owner/repo」形式で入力してください
-                    </p>
-                    <p className="text-sm">
-                      ユーザーを検索するには「@username」と入力してください
-                    </p>
-                  </>
-                ) : (
-                  <p>リポジトリがありません</p>
-                )}
-              </div>
-            )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// 結果セクションコンポーネント
-interface ResultSectionProps {
-  title: string;
-  icon: React.ReactNode;
-  results: SearchResult[];
-  selectedRepo: string;
-  onSelect: (repo: string) => void;
-  showDetails?: boolean;
-  isValidating?: boolean;
-}
-
-function ResultSection({
-  title,
-  icon,
-  results,
-  selectedRepo,
-  onSelect,
-  showDetails = false,
-  isValidating = false,
-}: ResultSectionProps) {
-  return (
-    <div className="p-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
-      <p className="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-        {icon}
-        {title}
-      </p>
-      {results.map((result) => (
-        <button
-          key={result.nameWithOwner}
-          type="button"
-          onClick={() => onSelect(result.nameWithOwner)}
-          disabled={isValidating}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-            selectedRepo === result.nameWithOwner
-              ? "bg-purple-50 dark:bg-purple-900/30"
-              : "hover:bg-gray-50 dark:hover:bg-gray-700"
-          }`}
-        >
-          <div
-            className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-              selectedRepo === result.nameWithOwner
-                ? "bg-purple-100 dark:bg-purple-900"
-                : "bg-gray-100 dark:bg-gray-700"
-            }`}
-          >
-            {isValidating ? (
-              <Loader2 className="w-4 h-4 text-gray-500 animate-spin" />
-            ) : result.source === "history" ? (
-              <Clock className="w-4 h-4 text-gray-500" />
-            ) : result.source === "popular" ? (
-              <Star className="w-4 h-4 text-yellow-500" />
-            ) : result.source === "user" ? (
-              <Globe className="w-4 h-4 text-gray-500" />
-            ) : (
-              <Search className="w-4 h-4 text-gray-500" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p
-              className={`font-medium truncate ${
-                selectedRepo === result.nameWithOwner
-                  ? "text-purple-700 dark:text-purple-300"
-                  : "text-gray-900 dark:text-white"
-              }`}
-            >
-              {result.nameWithOwner}
-            </p>
-            {showDetails && result.description && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {result.description}
-              </p>
-            )}
-            {showDetails && result.stargazerCount !== undefined && result.stargazerCount > 0 && (
-              <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                <Star className="w-3 h-3" />
-                {result.stargazerCount.toLocaleString()}
-                {result.primaryLanguage && (
-                  <span className="ml-2 flex items-center gap-1">
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: result.primaryLanguage.color }}
-                    />
-                    {result.primaryLanguage.name}
-                  </span>
-                )}
-              </p>
-            )}
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ユーザー結果セクションコンポーネント
-interface UserResultSectionProps {
-  results: UserSearchResult[];
-  onSelect: (username: string) => void;
-}
-
-function UserResultSection({ results, onSelect }: UserResultSectionProps) {
-  return (
-    <div className="p-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
-      <p className="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-        <Users className="w-3 h-3 inline mr-1" />
-        ユーザー・組織
-      </p>
-      {results.map((user) => (
-        <button
-          key={user.login}
-          type="button"
-          onClick={() => onSelect(user.login)}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={user.avatarUrl}
-            alt={user.login}
-            className="shrink-0 w-8 h-8 rounded-full"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className="font-medium text-gray-900 dark:text-white truncate">
-                {user.login}
-              </p>
-              {user.type === "Organization" ? (
-                <Building2 className="w-3 h-3 text-gray-400 shrink-0" />
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+              {inputValue ? (
+                <>
+                  <p>一致するリポジトリがありません</p>
+                  <p className="text-sm mt-1">
+                    外部リポジトリを分析するには「owner/repo」形式で入力してください
+                  </p>
+                  <p className="text-sm">
+                    ユーザーを検索するには「@username」と入力してください
+                  </p>
+                </>
               ) : (
-                <User className="w-3 h-3 text-gray-400 shrink-0" />
+                <p>リポジトリがありません</p>
               )}
             </div>
-            {user.name && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {user.name}
-              </p>
-            )}
-          </div>
-        </button>
-      ))}
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -36,3 +36,38 @@ export function isRateLimitText(errorText: string): boolean {
 export function isRateLimitResponse(status: number, errorText: string): boolean {
   return status === 429 || isRateLimitText(errorText);
 }
+
+/**
+ * 共通のAPI fetchラッパー
+ * 
+ * 404、レート制限、その他のエラーを統一的にハンドリング
+ */
+export async function fetchApi<T>(
+  url: string,
+  options?: {
+    notFoundError?: string;
+    rateLimitError?: string;
+    fetchError?: string;
+  }
+): Promise<T> {
+  const {
+    notFoundError = "NOT_FOUND",
+    rateLimitError = "RATE_LIMIT",
+    fetchError = "FETCH_ERROR",
+  } = options ?? {};
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    const errorText = await getErrorMessage(response, fetchError);
+    if (response.status === 404) {
+      throw new Error(notFoundError);
+    }
+    if (isRateLimitResponse(response.status, errorText)) {
+      throw new Error(rateLimitError);
+    }
+    throw new Error(fetchError);
+  }
+
+  return response.json();
+}

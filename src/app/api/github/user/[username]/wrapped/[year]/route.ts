@@ -20,15 +20,9 @@ import { createApiErrorResponse, sequentialFetch } from "@/lib/api-server-utils"
 import { SERVER_CACHE } from "@/lib/cache-config";
 import { safeDecodePathSegment } from "@/lib/path-utils";
 import { buildPublicCacheControl } from "@/lib/cache-utils";
+import type { UserYearRouteParams } from "@/types/route-params";
 
-interface Params {
-  params: Promise<{
-    username: string;
-    year: string;
-  }>;
-}
-
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: UserYearRouteParams) {
   try {
     const { username: rawUsername, year: yearStr } = await params;
     const username = safeDecodePathSegment(rawUsername);

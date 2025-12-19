@@ -31,7 +31,7 @@ import { getRankColors } from "@/lib/insight-score";
 import type { InsightRank } from "@/lib/insight-score";
 import type { ActivityTimeType } from "@/lib/github/types";
 import { WRAPPED_BADGES } from "@/lib/badges";
-import { getErrorMessage, isRateLimitResponse, isRateLimitText } from "@/lib/api-utils";
+import { fetchApi } from "@/lib/api-utils";
 import { safeDecodePathSegment } from "@/lib/path-utils";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -82,20 +82,9 @@ interface WrappedData {
 }
 
 async function fetchWrappedData(username: string, year: number): Promise<WrappedData> {
-  const response = await fetch(`/api/github/user/${encodeURIComponent(username)}/wrapped/${year}`);
-  
-  if (!response.ok) {
-    const errorText = await getErrorMessage(response, "FETCH_ERROR");
-    if (response.status === 404) {
-      throw new Error("USER_NOT_FOUND");
-    }
-    if (isRateLimitResponse(response.status, errorText)) {
-      throw new Error("RATE_LIMIT");
-    }
-    throw new Error("FETCH_ERROR");
-  }
-
-  return response.json();
+  return fetchApi(`/api/github/user/${encodeURIComponent(username)}/wrapped/${year}`, {
+    notFoundError: "USER_NOT_FOUND",
+  });
 }
 
 function formatNumber(n: number): string {
@@ -179,7 +168,7 @@ export default function WrappedPage() {
                 The user &quot;{username}&quot; does not exist.
               </p>
             </>
-          ) : errorMessage === "RATE_LIMIT" || isRateLimitText(errorMessage) ? (
+          ) : errorMessage === "RATE_LIMIT" || /rate limit/i.test(errorMessage) ? (
             <>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 Rate Limit Exceeded

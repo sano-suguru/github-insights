@@ -19,12 +19,7 @@ import {
 import { GitHubRateLimitError } from "@/lib/github/errors";
 import { safeDecodePathSegment } from "@/lib/path-utils";
 import { buildPublicCacheControl } from "@/lib/cache-utils";
-
-interface Params {
-  params: Promise<{
-    username: string;
-  }>;
-}
+import type { UserRouteParams } from "@/types/route-params";
 
 // ユーザーデータを取得
 // 注: クライアント側で React Query がキャッシュするため、サーバー側キャッシュは使用しない
@@ -56,7 +51,7 @@ async function fetchUserData(
   return { profile, stats, events, contributionStats };
 }
 
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: UserRouteParams) {
   try {
     const { username: rawUsername } = await params;
     const username = safeDecodePathSegment(rawUsername);

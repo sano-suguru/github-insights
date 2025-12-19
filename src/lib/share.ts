@@ -53,10 +53,8 @@ export function generateRepoContributionShareText(params: {
  */
 export function generateUserProfileShareText(params: {
   username: string;
-  followers: number;
-  repos: number;
 }): string {
-  return `@${params.username} の GitHub 統計：フォロワー ${params.followers}人、リポジトリ ${params.repos}個 #GitHubInsights`;
+  return `@${params.username} の GitHub プロフィールカード #GitHubInsights`;
 }
 
 /**
