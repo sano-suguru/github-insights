@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Download, Link, Code, User, FolderGit2, Lightbulb, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import type { ContributorDetailStat } from "@/lib/github/types";
+import { generateTwitterShareUrl, generateRepoContributionShareText, generateUserProfileShareText } from "@/lib/share";
 
 type CardType = "repo" | "user";
 
@@ -96,6 +97,32 @@ export default function ContributionCardModal({
     } catch (error) {
       console.error("Copy failed:", error);
     }
+  };
+
+  // X (Twitter) でシェア
+  const handleShareX = () => {
+    const shareText =
+      cardType === "repo" && owner && repo
+        ? generateRepoContributionShareText({
+            owner,
+            repo,
+            username: contributor.login,
+            commits: contributor.commits,
+            rank: contributor.rank,
+          })
+        : generateUserProfileShareText({
+            username: contributor.login,
+            followers: 0, // TODO: フォロワー数を取得
+            repos: 0, // TODO: リポジトリ数を取得
+          });
+
+    const shareUrl = generateTwitterShareUrl({
+      text: shareText,
+      url: fullUrl,
+      hashtags: ["GitHubInsights"],
+    });
+
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
   };
 
   // カードタイプ変更時に画像ロード状態をリセット
@@ -230,6 +257,16 @@ export default function ContributionCardModal({
           >
             <Download className="w-4 h-4" />
             {downloading ? "ダウンロード中..." : "ダウンロード"}
+          </button>
+
+          <button
+            onClick={handleShareX}
+            className="inline-flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black font-semibold py-2.5 px-5 rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            Xでシェア
           </button>
 
           <button

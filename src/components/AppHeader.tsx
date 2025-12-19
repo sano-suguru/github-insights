@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 /**
  * 共通ヘッダーコンポーネント
@@ -37,8 +38,11 @@ export default function AppHeader() {
               </h1>
             </Link>
 
-            {/* 右側: ユーザー情報またはログインリンク */}
+            {/* 右側: テーマトグル + ユーザー情報またはログインリンク */}
             <div className="flex items-center gap-2 sm:gap-4">
+              {/* テーマトグル */}
+              <ThemeToggle />
+
               {isAuthenticated ? (
                 <>
                   <div className="flex items-center gap-2 sm:gap-3">
