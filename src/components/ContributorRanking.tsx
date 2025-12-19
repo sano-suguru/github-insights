@@ -232,7 +232,7 @@ function ContributorRow({
                 </div>
                 
                 {/* デスクトップ: 相対位置ポップオーバー */}
-                <div className="hidden sm:block absolute left-0 top-full mt-2 z-50 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200">
+                <div className="hidden sm:block absolute right-0 top-full mt-2 z-50 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-900 dark:text-white">獲得バッジ</span>
                     <button
