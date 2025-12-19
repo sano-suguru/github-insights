@@ -101,7 +101,9 @@ function ContributorRow({
   showCardButton: boolean;
 }) {
   const [showBadgePopover, setShowBadgePopover] = useState(false);
+  const [popoverPosition, setPopoverPosition] = useState<"bottom" | "top">("bottom");
   const popoverRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const badges = sortBadgesByImportance(
     calculateBadges(contributor, totalContributors)
   );
@@ -109,16 +111,39 @@ function ContributorRow({
   // ポップオーバー外クリックで閉じる
   useEffect(() => {
     if (!showBadgePopover) return;
-    
+
     const handleClickOutside = (e: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         setShowBadgePopover(false);
       }
     };
-    
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showBadgePopover]);
+
+  // ポップオーバーの表示位置を計算（上 or 下）
+  useEffect(() => {
+    if (!showBadgePopover || !buttonRef.current) return;
+
+    const buttonRect = buttonRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - buttonRect.bottom;
+    const spaceAbove = buttonRect.top;
+
+    // ポップオーバーの推定高さ（バッジ数に応じて変動）
+    const estimatedPopoverHeight = Math.min(badges.length * 60 + 60, 400);
+
+    // 下のスペースが足りない場合は上に表示
+    // 位置計算のためのsetStateはパフォーマンス問題なし
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (spaceBelow < estimatedPopoverHeight && spaceAbove > spaceBelow) {
+      setPopoverPosition("top");
+    } else {
+      setPopoverPosition("bottom");
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [showBadgePopover, badges.length]);
 
   return (
     <div
@@ -184,6 +209,7 @@ function ContributorRow({
         {badges.length > 0 && (
           <div className="relative mt-1" ref={popoverRef}>
             <button
+              ref={buttonRef}
               onClick={() => setShowBadgePopover(!showBadgePopover)}
               className="flex flex-wrap gap-1 items-center cursor-pointer hover:opacity-80 transition-opacity"
             >
@@ -232,7 +258,9 @@ function ContributorRow({
                 </div>
                 
                 {/* デスクトップ: 相対位置ポップオーバー */}
-                <div className="hidden sm:block absolute right-0 top-full mt-2 z-50 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200">
+                <div className={`hidden sm:block absolute right-0 z-50 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200 max-h-96 overflow-y-auto ${
+                  popoverPosition === "bottom" ? "top-full mt-2" : "bottom-full mb-2"
+                }`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-900 dark:text-white">獲得バッジ</span>
                     <button

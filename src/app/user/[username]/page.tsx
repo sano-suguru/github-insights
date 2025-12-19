@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -217,6 +217,8 @@ export default function UserProfilePage() {
   const username = params.username as string;
   const [showCardModal, setShowCardModal] = useState(false);
   const [showBadgePopover, setShowBadgePopover] = useState(false);
+  const [popoverPosition, setPopoverPosition] = useState<"bottom" | "top">("bottom");
+  const badgeButtonRef = useRef<HTMLButtonElement>(null);
 
   const {
     data,
@@ -228,6 +230,40 @@ export default function UserProfilePage() {
     staleTime: 1000 * 60 * 30, // 30分
     retry: false,
   });
+
+  // バッジ計算（メモ化）
+  const userBadges = useMemo(() => {
+    if (!data) return [];
+    const { profile, stats } = data;
+    return calculateUserBadges({
+      followers: profile.followers,
+      publicRepos: stats.totalRepos,
+      createdAt: profile.createdAt,
+    });
+  }, [data]);
+
+  // ポップオーバーの表示位置を計算（上 or 下）
+  useEffect(() => {
+    if (!showBadgePopover || !badgeButtonRef.current) return;
+
+    const buttonRect = badgeButtonRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - buttonRect.bottom;
+    const spaceAbove = buttonRect.top;
+
+    // ポップオーバーの推定高さ（バッジ数に応じて変動）
+    const estimatedPopoverHeight = Math.min(userBadges.length * 60 + 60, 400);
+
+    // 下のスペースが足りない場合は上に表示
+    // 位置計算のためのsetStateはパフォーマンス問題なし
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (spaceBelow < estimatedPopoverHeight && spaceAbove > spaceBelow) {
+      setPopoverPosition("top");
+    } else {
+      setPopoverPosition("bottom");
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [showBadgePopover, userBadges.length]);
 
   // Contribution Types セクションのスクリーンリーダー向けサマリー
   const userEvents = data?.events;
@@ -384,82 +420,48 @@ export default function UserProfilePage() {
             </div>
 
             {/* バッジ */}
-            {(() => {
-              const badges = calculateUserBadges({
-                followers: profile.followers,
-                publicRepos: stats.totalRepos,
-                createdAt: profile.createdAt,
-              });
-              if (badges.length === 0) return null;
-              return (
-                <div className="relative mt-4">
-                  <button
-                    onClick={() => setShowBadgePopover(!showBadgePopover)}
-                    aria-expanded={showBadgePopover}
-                    aria-label={`${badges.length}個のバッジを表示`}
-                    className="flex flex-wrap gap-2 items-center cursor-pointer hover:opacity-80 transition-opacity"
-                  >
-                    {badges.slice(0, 4).map((badge) => (
-                      <BadgeChip key={badge.id} badge={badge} />
-                    ))}
-                    {badges.length > 4 && (
-                      <span className="text-xs text-gray-400">+{badges.length - 4}</span>
-                    )}
+            {userBadges.length > 0 && (
+              <div className="relative mt-4">
+                <button
+                  ref={badgeButtonRef}
+                  onClick={() => setShowBadgePopover(!showBadgePopover)}
+                  aria-expanded={showBadgePopover}
+                  aria-label={`${userBadges.length}個のバッジを表示`}
+                  className="flex flex-wrap gap-2 items-center cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  {userBadges.slice(0, 4).map((badge) => (
+                    <BadgeChip key={badge.id} badge={badge} />
+                  ))}
+                  {userBadges.length > 4 && (
+                    <span className="text-xs text-gray-400">+{userBadges.length - 4}</span>
+                  )}
                   </button>
                   
-                  {/* バッジ一覧ポップオーバー */}
-                  {showBadgePopover && (
-                    <>
-                      {/* モバイル: 固定位置モーダル */}
-                      <div className="sm:hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div 
-                          className="fixed inset-0 bg-black/50"
-                          onClick={() => setShowBadgePopover(false)}
-                        />
-                        <div className="relative z-50 w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4 animate-in fade-in zoom-in-95 duration-200">
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-base font-medium text-gray-900 dark:text-white">Badges</span>
-                            <button
-                              onClick={() => setShowBadgePopover(false)}
-                              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            >
-                              <X className="w-5 h-5 text-gray-400" />
-                            </button>
-                          </div>
-                          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                            {badges.map((badge) => {
-                              const IconComponent = badge.icon;
-                              return (
-                                <div key={badge.id} className={`flex items-start gap-2 p-2.5 rounded-lg ${badge.color}`}>
-                                  <IconComponent className="w-5 h-5 shrink-0 mt-0.5" />
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-medium">{badge.name}</p>
-                                    <p className="text-xs opacity-80">{badge.description}</p>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* デスクトップ: 相対位置ポップオーバー */}
-                      <div className="hidden sm:block absolute right-0 top-full mt-2 z-50 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">Badges</span>
+                {/* バッジ一覧ポップオーバー */}
+                {showBadgePopover && (
+                  <>
+                    {/* モバイル: 固定位置モーダル */}
+                    <div className="sm:hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+                      <div
+                        className="fixed inset-0 bg-black/50"
+                        onClick={() => setShowBadgePopover(false)}
+                      />
+                      <div className="relative z-50 w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-base font-medium text-gray-900 dark:text-white">Badges</span>
                           <button
                             onClick={() => setShowBadgePopover(false)}
-                            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                           >
-                            <X className="w-4 h-4 text-gray-400" />
+                            <X className="w-5 h-5 text-gray-400" />
                           </button>
                         </div>
-                        <div className="space-y-2">
-                          {badges.map((badge) => {
+                        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                          {userBadges.map((badge) => {
                             const IconComponent = badge.icon;
                             return (
-                              <div key={badge.id} className={`flex items-start gap-2 p-2 rounded-lg ${badge.color}`}>
-                                <IconComponent className="w-4 h-4 shrink-0 mt-0.5" />
+                              <div key={badge.id} className={`flex items-start gap-2 p-2.5 rounded-lg ${badge.color}`}>
+                                <IconComponent className="w-5 h-5 shrink-0 mt-0.5" />
                                 <div className="min-w-0">
                                   <p className="text-sm font-medium">{badge.name}</p>
                                   <p className="text-xs opacity-80">{badge.description}</p>
@@ -469,11 +471,40 @@ export default function UserProfilePage() {
                           })}
                         </div>
                       </div>
-                    </>
-                  )}
-                </div>
-              );
-            })()}
+                    </div>
+
+                    {/* デスクトップ: 相対位置ポップオーバー */}
+                    <div className={`hidden sm:block absolute right-0 z-50 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200 max-h-96 overflow-y-auto ${
+                      popoverPosition === "bottom" ? "top-full mt-2" : "bottom-full mb-2"
+                    }`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">Badges</span>
+                        <button
+                          onClick={() => setShowBadgePopover(false)}
+                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <X className="w-4 h-4 text-gray-400" />
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {userBadges.map((badge) => {
+                          const IconComponent = badge.icon;
+                          return (
+                            <div key={badge.id} className={`flex items-start gap-2 p-2 rounded-lg ${badge.color}`}>
+                              <IconComponent className="w-4 h-4 shrink-0 mt-0.5" />
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium">{badge.name}</p>
+                                <p className="text-xs opacity-80">{badge.description}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* カード生成ボタン */}
             <div className="mt-4 flex flex-wrap gap-2">
