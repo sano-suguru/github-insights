@@ -2,6 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Pre-Work Checklist
+
+**Before starting any work, verify:**
+
+1. **Available Scripts** - Review `package.json` for available commands
+   - `npm run dev` - Development server
+   - `npm run lint` - ESLint
+   - `npm run test:run` - Test execution
+   - `npm run similarity` - Duplicate code detection (85% threshold)
+   - `npm run similarity:strict` - Strict duplicate detection (80% threshold)
+
+2. **Current Branch State** - Check `git status` if needed to understand working directory state
+
 ## Project Overview
 
 **GitHub Insights** - A Next.js web application that visualizes GitHub repository and user contribution statistics with a Japanese-first approach. The app supports both authenticated (via **GitHub App**) and unauthenticated access for public repositories, featuring badge systems, OG card generation for social sharing, and comprehensive analytics dashboards.
@@ -39,6 +52,15 @@ npm run update-repos     # Update popular repositories JSON
 ```
 
 ## Architecture Overview
+
+### Page Structure
+
+- `/` - Landing page (unauthenticated access, public repository search)
+- `/login` - Login page (Public/Private scope selection)
+- `/dashboard` - Authenticated user dashboard
+- `/repo/[owner]/[repo]` - Public repository details (unauthenticated access supported)
+- `/user/[username]` - User profile page
+- `/user/[username]/wrapped/[year]` - GitHub Wrapped annual summary
 
 ### Core Dual-Caching Strategy
 
@@ -279,27 +301,154 @@ Content Security Policy in [next.config.ts](next.config.ts) includes `unsafe-eva
 ### Data Freshness Trade-off
 Cache revalidation times (5-10min) mean data may be stale. This is intentional to prioritize rate limit conservation over real-time accuracy. For user-critical operations (auth, personal dashboard), we use authenticated endpoints with higher quotas.
 
+## MCP Server Integration
+
+This project leverages Model Context Protocol (MCP) servers for enhanced development workflows:
+
+| MCP Server    | Use Cases in This Project                           |
+|---------------|-----------------------------------------------------|
+| **Context7**  | TanStack Query, Next.js, Recharts documentation     |
+| **GitHub**    | Issue/PR management, code search, task assignment   |
+| **GitKraken** | Git operations (commit, push, stash, blame)         |
+| **Serena**    | Symbol search, reference finding, refactoring aid   |
+
+**Recommended usage:**
+- **API specification lookup** → Context7 for latest library docs
+- **Bug tracking** → GitHub MCP to create issues
+- **Committing changes** → GitKraken MCP for `git add` → `git commit`
+- **Finding function usage** → Serena's `find_referencing_symbols`
+- **Large refactoring** → Serena to identify impact scope before editing
+
+## Papercut Philosophy (Continuous Quality Improvement)
+
+**Papercuts** are small but important improvements that maintain codebase health and prevent technical debt accumulation. Practice proactive quality maintenance.
+
+### Post-Task Checklist (Self-Initiated)
+
+**After completing any task, verify and fix:**
+
+1. **Lint & Type Errors**
+   - Run `npm run lint` and `npx tsc --noEmit`
+   - Resolve warnings when possible
+
+2. **Unused Code Cleanup**
+   - Remove unused imports, variables, functions
+   - Delete commented-out old code
+
+3. **Code Duplication**
+   - Run `npm run similarity` to detect repetition
+   - Extract common logic to utilities/hooks when seeing 3+ repetitions
+
+4. **Consistency Check**
+   - Follow existing naming conventions
+   - Unify styles across similar components
+
+5. **Documentation Updates**
+   - Update README/CLAUDE.md for new features
+   - Add JSDoc comments for complex logic
+
+### Immediate Fix Priorities
+
+Address these issues on discovery (if time permits):
+
+| Issue                     | Action                                      |
+|---------------------------|---------------------------------------------|
+| Duplicate code            | Extract to shared functions/components      |
+| Magic numbers             | Define as named constants                   |
+| Overly long functions     | Split by responsibility                     |
+| Missing type definitions  | Replace `any` with specific types           |
+| Missing error handling    | Add try-catch or fallbacks                  |
+| Performance bottlenecks   | Apply `useMemo`, `useCallback`, lazy load   |
+
+### Development Efficiency Tools
+
+When patterns repeat, consider:
+- **Utility functions** → Centralize in `lib/utils.ts`
+- **Custom hooks** → Extract shared state logic
+- **Type helpers** → Add reusable types to `types/`
+- **Test helpers** → Standardize mocks and setup
+
+### ROI-Based Prioritization
+
+Prioritize papercuts by:
+1. **Impact scope** - Widely used code first
+2. **Frequency** - Frequently touched areas first
+3. **Risk** - Bug-prone sections first
+4. **Time-to-fix** - <5min fixes → do immediately
+
+**When uncertain, leave a TODO comment:**
+```typescript
+// TODO: Extract this logic to useXxx hook
+// TODO: Add error handling here
+```
+
+## Code Quality Rules
+
+### Type Safety
+- **Avoid `any` types** - Use specific types or `unknown`
+- **Define explicit return types** for functions
+- **Use `as const` assertions** for literal objects/arrays
+
+### Error Handling
+- **External API calls** - Wrap in try-catch with user-friendly fallbacks
+- **User input validation** - Validate at boundaries
+- **Graceful degradation** - Show partial UI on non-critical errors
+
+### Performance Optimization
+- **Expensive computations** - Use `useMemo`
+- **Callback props** - Use `useCallback` to prevent re-renders
+- **Large components** - Lazy load with `dynamic()`
+- **Images** - Use Next.js `Image` component with proper sizing
+
+### Code Organization
+- **No magic numbers** - Extract to named constants (e.g., `const MAX_RETRIES = 3`)
+- **DRY principle** - Extract shared logic after 3+ repetitions
+- **Single Responsibility** - Functions/components should do one thing well
+- **Early returns** - Reduce nesting with guard clauses
+
+### UI/UX Patterns
+- **Loading states** - Use Skeleton components or `animate-spin` spinners
+- **Icons** - Use Lucide React consistently
+- **Accessibility** - Add ARIA labels, keyboard navigation support
+- **Responsive design** - Test mobile/tablet/desktop breakpoints
+
+### Testing Priorities
+1. **API logic** - Core business logic first
+2. **Hooks** - Custom hook behavior
+3. **Components** - Visual regression via Storybook
+
+## Deployment (Vercel)
+
+### Environment Variables Setup
+
+Configure these variables in Vercel Dashboard:
+
+```bash
+GITHUB_APP_CLIENT_ID=<GitHub App Client ID>
+GITHUB_APP_CLIENT_SECRET=<GitHub App Client Secret>
+GITHUB_APP_ID=<GitHub App ID>
+NEXTAUTH_SECRET=<NextAuth secret>
+NEXTAUTH_URL=https://your-domain.vercel.app
+AUTH_TRUST_HOST=true
+```
+
+### GitHub App Callback URLs
+
+Register both production and preview environment URLs:
+
+```
+https://your-domain.vercel.app/api/auth/callback/github
+https://your-project-git-*.vercel.app/api/auth/callback/github
+```
+
+### Deployment Notes
+
+- `next.config.ts` already includes `images.remotePatterns` for GitHub avatars
+- Recharts requires SSR disabling (`dynamic` import with `{ ssr: false }`)
+- CSP configuration includes `unsafe-eval` for Recharts compatibility
+
 ## Related Documentation
 
 - **Technical implementation details:** [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md)
 - **Development roadmap:** [docs/ROADMAP.md](docs/ROADMAP.md)
-- **Copilot instructions:** [.github/copilot-instructions.md](.github/copilot-instructions.md) (includes papercut philosophy and code quality guidelines)
-
-## Important Copilot Guidelines
-
-From [.github/copilot-instructions.md](.github/copilot-instructions.md):
-
-### Papercut Philosophy
-After every task, proactively check and fix:
-1. Lint errors and type errors (`npm run lint`, `npx tsc --noEmit`)
-2. Unused code (imports, variables, commented code)
-3. Code duplication (`npm run similarity`)
-4. Naming consistency with existing patterns
-5. Documentation updates if behavior changes
-
-### Code Quality Rules
-- **No magic numbers:** Extract to named constants
-- **Avoid `any` types:** Use specific types or `unknown`
-- **Error handling:** Add try-catch or fallbacks for external calls
-- **Performance:** Use `useMemo`/`useCallback` for expensive operations, lazy load components
-- **DRY principle:** Extract shared logic to utilities/hooks when seeing 3+ repetitions
+- **GitHub App migration guide:** [docs/GITHUB_APP_MIGRATION.md](docs/GITHUB_APP_MIGRATION.md)
