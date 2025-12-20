@@ -8,12 +8,8 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import type { UserEvent } from "@/lib/github/types";
+import type { EventsChartProps } from "@/types/chart";
 import { useMemo } from "react";
-
-interface Props {
-  events: UserEvent[];
-}
 
 // イベントタイプの日本語ラベルと色
 const EVENT_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
@@ -34,7 +30,7 @@ const EVENT_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
 /**
  * ユーザーイベントタイプの分布を円グラフで表示
  */
-export default function ContributionTypePie({ events }: Props) {
+export default function ContributionTypePie({ events }: EventsChartProps) {
   const chartData = useMemo(() => {
     const typeCount: Record<string, number> = {};
 
@@ -85,7 +81,7 @@ export default function ContributionTypePie({ events }: Props) {
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number) => [`${value}件`, "アクティビティ"]}
+            formatter={(value) => [`${value ?? 0}件`, "アクティビティ"]}
             contentStyle={{
               backgroundColor: "rgba(0, 0, 0, 0.8)",
               border: "none",

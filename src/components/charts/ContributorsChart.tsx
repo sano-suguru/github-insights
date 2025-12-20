@@ -72,7 +72,7 @@ export default function ContributorsChart({ data }: Props) {
               fontWeight: "bold",
               marginBottom: "4px",
             }}
-            formatter={(value: number) => [value, "Commits"]}
+            formatter={(value) => [value ?? 0, "Commits"]}
           />
           <Bar dataKey="commits" radius={[0, 4, 4, 0]}>
             {chartData.map((entry, index) => (
