@@ -1,4 +1,7 @@
-import type { LucideIcon } from "lucide-react";
+/**
+ * バッジ定義
+ */
+
 import {
   Sparkles,
   Medal,
@@ -25,55 +28,12 @@ import {
   TrendingUp,
   Activity,
 } from "lucide-react";
-import type { ContributorDetailStat, ActivityTimeType } from "./github/types";
+import type { Badge, WrappedBadge } from "./types";
+import { WRAPPED_BADGE_COLORS } from "./types";
 
-// ========== OG カード用バッジ色スキーム ==========
+// ========== バッジ定義 ==========
 
-/**
- * OG画像用のバッジ色スキーム
- */
-export interface OgBadgeColorScheme {
-  bg: string;
-  text: string;
-  border: string;
-}
-
-/**
- * OG画像用のデフォルトバッジ色
- */
-export const OG_BADGE_DEFAULT_COLORS: OgBadgeColorScheme = {
-  bg: "rgba(139, 92, 246, 0.3)",
-  text: "#ddd6fe",
-  border: "rgba(139, 92, 246, 0.6)",
-};
-
-/**
- * OG画像用のバッジ色取得関数を作成するファクトリ
- * @param colorMap バッジ名と色のマッピング
- * @returns バッジ名から色スキームを返す関数
- */
-export function createOgBadgeColorGetter(
-  colorMap: Record<string, OgBadgeColorScheme>
-): (badge: string) => OgBadgeColorScheme {
-  return (badge: string) => colorMap[badge] || OG_BADGE_DEFAULT_COLORS;
-}
-
-// ========== バッジのカテゴリ ==========
-
-// バッジのカテゴリ
-export type BadgeCategory = "contributor" | "user";
-
-// バッジの型定義
-export interface Badge {
-  id: string;
-  name: string;
-  description: string;
-  icon: LucideIcon;
-  color: string; // Tailwind色クラス
-  category: BadgeCategory;
-}
-
-// すべてのバッジ定義（統合版）
+/** すべてのバッジ定義（統合版） */
 export const BADGES: Record<string, Badge> = {
   // ========== コントリビューター用バッジ ==========
   
@@ -233,8 +193,12 @@ export const BADGES: Record<string, Badge> = {
   },
 };
 
-// バッジの重要度順（ソート用）
-// 注意: 新しいバッジを BADGES に追加したら、ここにも追加すること
+// ========== バッジ優先度 ==========
+
+/**
+ * バッジの重要度順（ソート用）
+ * 注意: 新しいバッジを BADGES に追加したら、ここにも追加すること
+ */
 export const BADGE_PRIORITY: string[] = [
   // コントリビューター用（高優先度）
   "top_contributor",
@@ -258,143 +222,9 @@ export const BADGE_PRIORITY: string[] = [
   "veteran",
 ];
 
-// ========== ヘルパー関数 ==========
+// ========== Wrapped バッジ定義 ==========
 
-// カテゴリでバッジをフィルタ
-export function getBadgesByCategory(category: BadgeCategory): Badge[] {
-  return Object.values(BADGES).filter((badge) => badge.category === category);
-}
-
-// バッジの重要度順にソート
-export function sortBadgesByImportance(badges: Badge[]): Badge[] {
-  return [...badges].sort((a, b) => {
-    const aIndex = BADGE_PRIORITY.indexOf(a.id);
-    const bIndex = BADGE_PRIORITY.indexOf(b.id);
-    // 未登録のバッジは末尾に
-    const aPriority = aIndex === -1 ? Infinity : aIndex;
-    const bPriority = bIndex === -1 ? Infinity : bIndex;
-    return aPriority - bPriority;
-  });
-}
-
-// ========== コントリビューター用バッジ計算 ==========
-
-export function calculateBadges(
-  contributor: ContributorDetailStat,
-  totalContributors: number
-): Badge[] {
-  const badges: Badge[] = [];
-
-  // コミット数ベース
-  if (contributor.commits >= 1) {
-    badges.push(BADGES.first_commit);
-  }
-  if (contributor.commits >= 10) {
-    badges.push(BADGES.active_contributor);
-  }
-  if (contributor.commits >= 50) {
-    badges.push(BADGES.dedicated_contributor);
-  }
-  if (contributor.commits >= 100) {
-    badges.push(BADGES.core_contributor);
-  }
-
-  // 順位ベース
-  if (contributor.rank === 1) {
-    badges.push(BADGES.top_contributor);
-  } else if (contributor.rank <= 3 && totalContributors >= 3) {
-    badges.push(BADGES.top_3);
-  } else if (contributor.rank <= 10 && totalContributors >= 10) {
-    badges.push(BADGES.top_10);
-  }
-
-  // PR/レビューベース
-  if (contributor.pullRequests >= 10) {
-    badges.push(BADGES.pr_master);
-  }
-  if (contributor.reviews >= 10) {
-    badges.push(BADGES.reviewer);
-  }
-
-  // 行数ベース
-  if (contributor.additions >= 10000) {
-    badges.push(BADGES.code_machine);
-  }
-  if (contributor.deletions >= 5000) {
-    badges.push(BADGES.refactor_hero);
-  }
-
-  return badges;
-}
-
-// ========== ユーザープロファイル用バッジ計算 ==========
-
-export interface UserProfileStats {
-  followers: number;
-  publicRepos: number;
-  totalPRs?: number;
-  createdAt: string; // ISO 8601 形式
-}
-
-export function calculateUserBadges(stats: UserProfileStats): Badge[] {
-  const badges: Badge[] = [];
-
-  // フォロワー数ベース（排他的）
-  if (stats.followers >= 1000) {
-    badges.push(BADGES.influencer);
-  } else if (stats.followers >= 100) {
-    badges.push(BADGES.popular);
-  }
-
-  // リポジトリ数ベース（排他的）
-  if (stats.publicRepos >= 50) {
-    badges.push(BADGES.prolific);
-  } else if (stats.publicRepos >= 20) {
-    badges.push(BADGES.builder);
-  }
-
-  // PR数ベース（オプション、排他的）
-  if (stats.totalPRs !== undefined) {
-    if (stats.totalPRs >= 100) {
-      badges.push(BADGES.user_pr_master);
-    } else if (stats.totalPRs >= 50) {
-      badges.push(BADGES.user_contributor);
-    }
-  }
-
-  // アカウント作成年ベース
-  const createdYear = new Date(stats.createdAt).getFullYear();
-  if (createdYear <= 2015) {
-    badges.push(BADGES.veteran);
-  }
-
-  return badges;
-}
-
-// ========== GitHub Wrapped 用バッジ ==========
-
-// Wrapped バッジの希少度
-export type WrappedBadgeRarity = "common" | "rare" | "epic" | "legendary";
-
-// 希少度に応じたTailwind色クラス
-const WRAPPED_BADGE_COLORS: Record<WrappedBadgeRarity, string> = {
-  legendary: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 backdrop-blur-sm",
-  epic: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 backdrop-blur-sm",
-  rare: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 backdrop-blur-sm",
-  common: "bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30 backdrop-blur-sm",
-};
-
-// Wrapped バッジ定義
-export interface WrappedBadge {
-  id: string;
-  name: string;
-  description: string;
-  icon: LucideIcon;
-  rarity: WrappedBadgeRarity;
-  color: string; // Tailwind色クラス
-}
-
-// Wrapped用バッジ定義
+/** Wrapped用バッジ定義 */
 export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
   // ストリーク系
   "streak-7": {
@@ -570,97 +400,3 @@ export const WRAPPED_BADGES: Record<string, WrappedBadge> = {
     color: WRAPPED_BADGE_COLORS.epic,
   },
 };
-
-// Wrapped バッジ計算用の入力
-export interface WrappedBadgeInput {
-  longestStreak: number;
-  totalContributions: number;
-  prs: number;
-  languageCount: number;
-  activityType: ActivityTimeType;
-  contributionGrowth: number | null;
-  accountYears: number;
-  isFirstYear: boolean;
-}
-
-/**
- * Wrapped用バッジを計算
- */
-export function calculateWrappedBadges(input: WrappedBadgeInput): WrappedBadge[] {
-  const badges: WrappedBadge[] = [];
-
-  // ストリーク系（排他的 - 最高のみ）
-  if (input.longestStreak >= 100) {
-    badges.push(WRAPPED_BADGES["streak-100"]);
-  } else if (input.longestStreak >= 30) {
-    badges.push(WRAPPED_BADGES["streak-30"]);
-  } else if (input.longestStreak >= 7) {
-    badges.push(WRAPPED_BADGES["streak-7"]);
-  }
-
-  // 活動量系（排他的）
-  if (input.totalContributions >= 2000) {
-    badges.push(WRAPPED_BADGES["contributions-2000"]);
-  } else if (input.totalContributions >= 1000) {
-    badges.push(WRAPPED_BADGES["contributions-1000"]);
-  } else if (input.totalContributions >= 500) {
-    badges.push(WRAPPED_BADGES["contributions-500"]);
-  } else if (input.totalContributions >= 100) {
-    badges.push(WRAPPED_BADGES["contributions-100"]);
-  }
-
-  // PR系（排他的）
-  if (input.prs >= 100) {
-    badges.push(WRAPPED_BADGES["prs-100"]);
-  } else if (input.prs >= 50) {
-    badges.push(WRAPPED_BADGES["prs-50"]);
-  } else if (input.prs >= 10) {
-    badges.push(WRAPPED_BADGES["prs-10"]);
-  }
-
-  // 言語系（排他的）
-  if (input.languageCount >= 10) {
-    badges.push(WRAPPED_BADGES["polyglot-10"]);
-  } else if (input.languageCount >= 5) {
-    badges.push(WRAPPED_BADGES["polyglot-5"]);
-  } else if (input.languageCount >= 3) {
-    badges.push(WRAPPED_BADGES["polyglot-3"]);
-  }
-
-  // 時間帯系
-  if (input.activityType === "night-owl") {
-    badges.push(WRAPPED_BADGES["night-owl"]);
-  } else if (input.activityType === "early-bird") {
-    badges.push(WRAPPED_BADGES["early-bird"]);
-  }
-
-  // 成長系（排他的）
-  if (input.contributionGrowth !== null) {
-    if (input.contributionGrowth >= 100) {
-      badges.push(WRAPPED_BADGES["growth-100"]);
-    } else if (input.contributionGrowth >= 50) {
-      badges.push(WRAPPED_BADGES["growth-50"]);
-    }
-  }
-
-  // 特別系
-  if (input.isFirstYear) {
-    badges.push(WRAPPED_BADGES["first-year"]);
-  }
-  if (input.accountYears >= 10) {
-    badges.push(WRAPPED_BADGES["veteran-10"]);
-  } else if (input.accountYears >= 5) {
-    badges.push(WRAPPED_BADGES["veteran-5"]);
-  }
-
-  // 希少度順にソート（legendary > epic > rare > common）
-  const rarityOrder: Record<WrappedBadgeRarity, number> = {
-    legendary: 4,
-    epic: 3,
-    rare: 2,
-    common: 1,
-  };
-
-  return badges.sort((a, b) => rarityOrder[b.rarity] - rarityOrder[a.rarity]);
-}
-

@@ -23,6 +23,8 @@ import {
 import { GitHubRateLimitError } from "@/lib/github/errors";
 
 // リポジトリデータの統合レスポンス型
+import type { RepoRouteParams } from "@/types/route-params";
+
 export interface RepoAllDataResponse {
   repository: Repository;
   languages: LanguageStat[];
@@ -31,14 +33,7 @@ export interface RepoAllDataResponse {
   repositoryStats: RepositoryStat;
 }
 
-interface Params {
-  params: Promise<{
-    owner: string;
-    repo: string;
-  }>;
-}
-
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: RepoRouteParams) {
   try {
     const { owner, repo } = await params;
 

@@ -7,73 +7,16 @@ import {
   calculateAccountYears,
 } from "@/lib/insight-score";
 import { SERVER_CACHE } from "@/lib/cache-config";
+import {
+  OG_WIDTH as WIDTH,
+  OG_HEIGHT as HEIGHT,
+  OG_COLORS as COLORS,
+  OG_ICONS as ICONS,
+  SvgIcon,
+} from "@/lib/og/constants";
+import { sequentialFetchEdge, GITHUB_HEADERS } from "@/lib/og/edge-utils";
 
 export const runtime = "edge";
-
-// セカンダリレート制限対策: 順次実行ヘルパー（Edge Runtime用）
-async function sequentialFetchEdge<T>(
-  tasks: (() => Promise<T>)[],
-  delayMs = 100
-): Promise<T[]> {
-  const results: T[] = [];
-  for (let i = 0; i < tasks.length; i++) {
-    if (i > 0) await new Promise((r) => setTimeout(r, delayMs));
-    results.push(await tasks[i]());
-  }
-  return results;
-}
-
-// OG画像サイズ
-const WIDTH = 1200;
-const HEIGHT = 630;
-
-// カラーパレット
-const COLORS = {
-  bgDark: "#1e1b4b", // indigo-950
-  bgMid: "#581c87", // purple-900
-  bgPurple: "#6b21a8", // purple-800
-  white: "#ffffff",
-  purple200: "#e9d5ff",
-  purple300: "#d8b4fe",
-  purple400: "#c084fc",
-  green400: "#4ade80",
-  orange400: "#fb923c",
-  blue400: "#60a5fa",
-  yellow400: "#facc15",
-  // メダル
-  gold: "#fbbf24",
-  silver: "#9ca3af",
-  bronze: "#cd7f32",
-};
-
-// SVGアイコンパス（lucide-reactと同じパス）
-const ICONS = {
-  gitPullRequest: "M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM4 6a2 2 0 1 1 4 0 2 2 0 0 1-4 0zm2 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm-2 3a2 2 0 1 1 4 0 2 2 0 0 1-4 0zm13-3a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm-2 3a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM6 9v6M18 9v6M6 9a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3",
-  circleDot: "M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z",
-  trophy: "M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z",
-  code: "M16 18l6-6-6-6M8 6l-6 6 6 6",
-  calendar: "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
-  flame: "M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z",
-  activity: "M22 12h-4l-3 9L9 3l-3 9H2",
-};
-
-// SVGアイコンコンポーネント
-function SvgIcon({ path, size = 24, color = COLORS.white }: { path: string; size?: number; color?: string }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d={path} />
-    </svg>
-  );
-}
 
 interface UserStats {
   name: string;
@@ -88,12 +31,6 @@ interface UserStats {
   totalForks: number;
   topLanguages: string[]; // 言語名のみ（REST APIでは色情報が取得できないため）
 }
-
-// 共通のHTTPヘッダー（lib/github.tsと同じ形式）
-const GITHUB_HEADERS: HeadersInit = {
-  Accept: "application/vnd.github.v3+json",
-  "User-Agent": "GitHub-Insights",
-};
 
 /**
  * GitHub APIからユーザー統計を取得（Edge Runtime対応）

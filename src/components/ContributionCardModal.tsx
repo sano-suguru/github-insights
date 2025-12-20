@@ -112,8 +112,6 @@ export default function ContributionCardModal({
           })
         : generateUserProfileShareText({
             username: contributor.login,
-            followers: 0, // TODO: フォロワー数を取得
-            repos: 0, // TODO: リポジトリ数を取得
           });
 
     const shareUrl = generateTwitterShareUrl({

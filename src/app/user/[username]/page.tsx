@@ -21,7 +21,7 @@ import {
 import type { UserProfile, UserStats, UserEvent, UserContributionStats } from "@/lib/github/types";
 import { calculateUserBadges, Badge } from "@/lib/badges";
 import { calculateAccountYears } from "@/lib/insight-score";
-import { getErrorMessage, isRateLimitResponse, isRateLimitText } from "@/lib/api-utils";
+import { fetchApi } from "@/lib/api-utils";
 import { safeDecodePathSegment } from "@/lib/path-utils";
 import DashboardLayout, { SectionCard } from "@/components/DashboardLayout";
 import { InsightScoreCard } from "@/components/InsightScoreCard";
@@ -199,20 +199,9 @@ async function fetchUserData(username: string): Promise<{
   events: UserEvent[];
   contributionStats: UserContributionStats;
 }> {
-  const response = await fetch(`/api/github/user/${encodeURIComponent(username)}`);
-  
-  if (!response.ok) {
-    const errorText = await getErrorMessage(response, "FETCH_ERROR");
-    if (response.status === 404) {
-      throw new Error("USER_NOT_FOUND");
-    }
-    if (isRateLimitResponse(response.status, errorText)) {
-      throw new Error("RATE_LIMIT");
-    }
-    throw new Error("FETCH_ERROR");
-  }
-
-  return response.json();
+  return fetchApi(`/api/github/user/${encodeURIComponent(username)}`, {
+    notFoundError: "USER_NOT_FOUND",
+  });
 }
 
 export default function UserProfilePage() {
@@ -302,7 +291,7 @@ export default function UserProfilePage() {
                 The user &quot;{username}&quot; does not exist or is not accessible.
               </p>
             </>
-          ) : errorMessage === "RATE_LIMIT" || isRateLimitText(errorMessage) ? (
+          ) : errorMessage === "RATE_LIMIT" || /rate limit/i.test(errorMessage) ? (
             <>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 Rate Limit Exceeded
