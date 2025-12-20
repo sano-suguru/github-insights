@@ -137,6 +137,7 @@ jobs:
 
       - name: Cache Cargo
         uses: actions/cache@v4
+        id: cargo-cache
         with:
           path: |
             ~/.cargo/bin/
@@ -144,13 +145,15 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
           key: ${{ runner.os }}-cargo-similarity-ts-0.4.1
+          restore-keys: |
+            ${{ runner.os }}-cargo-similarity-ts-
 
       - name: Install similarity-ts
-        run: |
-          if ! command -v similarity-ts &> /dev/null; then
-            cargo install similarity-ts
-          fi
+        if: steps.cargo-cache.outputs.cache-hit != 'true'
+        run: cargo install similarity-ts
 
       - name: Check code similarity
-        run: similarity-ts src --threshold 0.85
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          similarity-ts src --threshold 0.85
         continue-on-error: true
