@@ -55,7 +55,7 @@ export default function AppHeader() {
                       />
                     )}
                     {/* ユーザー名（デスクトップのみ） */}
-                    <span className="hidden md:block text-sm text-gray-700 dark:text-gray-300 max-w-[120px] truncate">
+                    <span className="hidden md:block text-sm text-gray-700 dark:text-gray-300 max-w-30 truncate">
                       {session.user?.name}
                     </span>
                   </div>
