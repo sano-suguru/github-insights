@@ -1,31 +1,59 @@
 "use client";
 
 import { ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
+import RepoSearchCombobox from "@/components/RepoSearchCombobox";
 
 interface DashboardLayoutProps {
   /** 子要素（ページコンテンツ） */
   children?: ReactNode;
   /** ローディング中かどうか */
   isLoading?: boolean;
+  /** 検索バーを非表示にする */
+  hideSearchBar?: boolean;
 }
 
 /**
  * 統一レイアウトコンポーネント
- * - AppHeader（ロゴ + 検索バー + 認証状態）
+ * - AppHeader（ロゴ + 認証状態）
+ * - 検索バー（カード型）
  * - コンテンツ領域
  */
 export default function DashboardLayout({
   children,
   isLoading = false,
+  hideSearchBar = false,
 }: DashboardLayoutProps) {
+  const router = useRouter();
+
+  const handleSelectRepo = (repo: string) => {
+    // @username 形式の場合はユーザーページへ
+    if (repo.startsWith("@")) {
+      router.push(`/user/${repo.slice(1)}`);
+    } else {
+      // owner/repo 形式の場合はリポジトリページへ
+      router.push(`/repo/${repo}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-purple-50/30 to-gray-50 dark:from-gray-800 dark:via-purple-900/30 dark:to-gray-800">
-      {/* 共通ヘッダー（検索バー含む） */}
+      {/* 共通ヘッダー */}
       <AppHeader />
 
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 検索バー（カード型） */}
+        {!hideSearchBar && (
+          <div className="relative z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 mb-8">
+            <RepoSearchCombobox
+              onSelectRepo={handleSelectRepo}
+              placeholder="リポジトリ or @ユーザー を検索..."
+            />
+          </div>
+        )}
+
         {/* ローディング状態 */}
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
