@@ -11,20 +11,20 @@ import {
 import type { EventsChartProps } from "@/types/chart";
 import { useMemo } from "react";
 
-// イベントタイプの日本語ラベルと色
+// イベントタイプのラベルと色
 const EVENT_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  PushEvent: { label: "コミット", color: "#22c55e" },           // green-500
-  PullRequestEvent: { label: "プルリクエスト", color: "#3b82f6" }, // blue-500
-  IssuesEvent: { label: "Issue", color: "#f97316" },            // orange-500
-  IssueCommentEvent: { label: "Issueコメント", color: "#eab308" }, // yellow-500
-  PullRequestReviewEvent: { label: "PRレビュー", color: "#8b5cf6" }, // violet-500
-  PullRequestReviewCommentEvent: { label: "PRコメント", color: "#a855f7" }, // purple-500
-  CreateEvent: { label: "作成", color: "#06b6d4" },             // cyan-500
-  DeleteEvent: { label: "削除", color: "#ef4444" },             // red-500
-  ForkEvent: { label: "フォーク", color: "#14b8a6" },           // teal-500
-  WatchEvent: { label: "スター", color: "#f59e0b" },            // amber-500
-  ReleaseEvent: { label: "リリース", color: "#ec4899" },        // pink-500
-  CommitCommentEvent: { label: "コミットコメント", color: "#84cc16" }, // lime-500
+  PushEvent: { label: "Commits", color: "#22c55e" },              // green-500
+  PullRequestEvent: { label: "Pull Requests", color: "#3b82f6" }, // blue-500
+  IssuesEvent: { label: "Issues", color: "#f97316" },             // orange-500
+  IssueCommentEvent: { label: "Issue Comments", color: "#eab308" }, // yellow-500
+  PullRequestReviewEvent: { label: "PR Reviews", color: "#8b5cf6" }, // violet-500
+  PullRequestReviewCommentEvent: { label: "PR Comments", color: "#a855f7" }, // purple-500
+  CreateEvent: { label: "Creates", color: "#06b6d4" },            // cyan-500
+  DeleteEvent: { label: "Deletes", color: "#ef4444" },            // red-500
+  ForkEvent: { label: "Forks", color: "#14b8a6" },                // teal-500
+  WatchEvent: { label: "Stars", color: "#f59e0b" },               // amber-500
+  ReleaseEvent: { label: "Releases", color: "#ec4899" },          // pink-500
+  CommitCommentEvent: { label: "Commit Comments", color: "#84cc16" }, // lime-500
 };
 
 /**
@@ -57,7 +57,7 @@ export default function ContributionTypePie({ events }: EventsChartProps) {
   if (events.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
-        活動データがありません
+        No activity data
       </div>
     );
   }
@@ -81,7 +81,7 @@ export default function ContributionTypePie({ events }: EventsChartProps) {
             ))}
           </Pie>
           <Tooltip
-            formatter={(value) => [`${value ?? 0}件`, "アクティビティ"]}
+            formatter={(value) => [`${value ?? 0}`, "Activities"]}
             contentStyle={{
               backgroundColor: "rgba(0, 0, 0, 0.8)",
               border: "none",
@@ -110,7 +110,7 @@ export default function ContributionTypePie({ events }: EventsChartProps) {
                   </li>
                 ))}
                 {chartData.length > 6 && (
-                  <li className="text-sm text-gray-400">+{chartData.length - 6}種類</li>
+                  <li className="text-sm text-gray-400">+{chartData.length - 6} more</li>
                 )}
               </ul>
             )}
@@ -125,7 +125,7 @@ export default function ContributionTypePie({ events }: EventsChartProps) {
             {events.length}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            アクティビティ
+            Activities
           </p>
         </div>
       </div>
