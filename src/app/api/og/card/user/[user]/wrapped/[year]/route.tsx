@@ -14,7 +14,12 @@ import {
   OG_ICONS as ICONS,
   SvgIcon,
 } from "@/lib/og/constants";
-import { sequentialFetchEdge, GITHUB_HEADERS } from "@/lib/og/edge-utils";
+import {
+  sequentialFetchEdge,
+  GITHUB_HEADERS,
+  formatNumberUppercase as formatNumber,
+  ErrorCard,
+} from "@/lib/og";
 
 export const runtime = "edge";
 
@@ -130,22 +135,7 @@ export async function GET(
 
   if (isNaN(year) || year < 2008 || year > new Date().getFullYear()) {
     return new ImageResponse(
-      (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: `linear-gradient(135deg, ${COLORS.bgDark} 0%, ${COLORS.bgPurple} 100%)`,
-            color: COLORS.white,
-            fontSize: 32,
-          }}
-        >
-          Invalid year: {yearStr}
-        </div>
-      ),
+      <ErrorCard message={`Invalid year: ${yearStr}`} />,
       { width: WIDTH, height: HEIGHT }
     );
   }
@@ -154,22 +144,7 @@ export async function GET(
 
   if (!stats) {
     return new ImageResponse(
-      (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: `linear-gradient(135deg, ${COLORS.bgDark} 0%, ${COLORS.bgPurple} 100%)`,
-            color: COLORS.white,
-            fontSize: 32,
-          }}
-        >
-          User not found: {user}
-        </div>
-      ),
+      <ErrorCard message={`User not found: ${user}`} />,
       { width: WIDTH, height: HEIGHT }
     );
   }
@@ -185,12 +160,6 @@ export async function GET(
     accountYears: calculateAccountYears(stats.createdAt),
   });
   const rankColors = getRankColorsForOg(insightResult.rank);
-
-  const formatNumber = (n: number) => {
-    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-    return n.toString();
-  };
 
   return new ImageResponse(
     (
