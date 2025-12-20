@@ -178,7 +178,7 @@ export default function CommitsLineChart({ data, days = 30 }: Props) {
           }}
           itemStyle={{ color: "#fff" }}
           labelStyle={{ color: "#c4b5fd", fontSize: "12px", fontWeight: 500 }}
-          formatter={(value: number) => [value, "Commits"]}
+          formatter={(value) => [value ?? 0, "Commits"]}
           cursor={{ stroke: "rgba(168, 85, 247, 0.3)", strokeWidth: 1 }}
         />
         <Area

@@ -123,8 +123,8 @@ export default function ContributorPieChart({ data, metric }: Props) {
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number, name: string) => [
-              `${value.toLocaleString()} (${chartData.find(d => d.name === name)?.percentage}%)`,
+            formatter={(value, name) => [
+              `${(value ?? 0).toLocaleString()} (${chartData.find(d => d.name === name)?.percentage ?? 0}%)`,
               metricLabels[metric],
             ]}
             contentStyle={{

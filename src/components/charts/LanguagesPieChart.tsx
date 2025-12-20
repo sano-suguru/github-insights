@@ -52,7 +52,7 @@ export default function LanguagesPieChart({ data }: Props) {
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number) => [`${value}%`, "割合"]}
+            formatter={(value) => [`${value ?? 0}%`, "割合"]}
             contentStyle={{
               backgroundColor: "rgba(0, 0, 0, 0.8)",
               border: "none",

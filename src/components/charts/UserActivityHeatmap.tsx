@@ -1,12 +1,8 @@
 "use client";
 
-import type { UserEvent } from "@/lib/github/types";
+import type { EventsChartProps } from "@/types/chart";
 import { getHeatmapColorClass } from "@/lib/colors";
 import { useMemo } from "react";
-
-interface Props {
-  events: UserEvent[];
-}
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -17,7 +13,7 @@ const HOUR_LABEL_MIN_WIDTH = `${100 / HOUR_LABELS.length}%`; // 各ラベルの�
  * ユーザーイベントのアクティビティヒートマップ
  * 曜日×時間帯でイベント頻度を可視化
  */
-export default function UserActivityHeatmap({ events }: Props) {
+export default function UserActivityHeatmap({ events }: EventsChartProps) {
   // 曜日×時間帯のマトリックスを作成
   const heatmapData = useMemo(() => {
     const matrix: number[][] = Array.from({ length: 7 }, () =>
