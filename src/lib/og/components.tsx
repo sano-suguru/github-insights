@@ -260,6 +260,8 @@ export function Avatar({
   borderWidth?: number;
 }) {
   return (
+    // @vercel/og の ImageResponse は Satori を使用してReact要素をSVGに変換するため、
+    // next/image の <Image /> コンポーネントは使用できません。通常の <img> タグが必要です。
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
