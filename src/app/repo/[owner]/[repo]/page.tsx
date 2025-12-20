@@ -250,7 +250,7 @@ function RepoPageContent() {
   }
 
   return (
-    <DashboardLayout hideSearchBar={true}>
+    <DashboardLayout>
       {/* リポジトリヘッダー */}
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 mb-6 overflow-hidden">
         <div className="flex items-start gap-4">

@@ -1,73 +1,31 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
 import AppHeader from "@/components/AppHeader";
-import RepoSearchCombobox from "@/components/RepoSearchCombobox";
-import type { Repository } from "@/lib/github/types";
 
 interface DashboardLayoutProps {
   /** 子要素（ページコンテンツ） */
   children?: ReactNode;
-  /** ユーザーのリポジトリ一覧（認証済みの場合） */
-  repositories?: Repository[];
-  /** 現在選択中のリポジトリ（ダッシュボード用） */
-  selectedRepo?: string;
-  /** リポジトリ選択時のコールバック（ダッシュボード用） */
-  onSelectRepo?: (repo: string) => void;
-  /** 検索バーを非表示にする */
-  hideSearchBar?: boolean;
   /** ローディング中かどうか */
   isLoading?: boolean;
 }
 
 /**
  * 統一レイアウトコンポーネント
- * - AppHeader（ロゴ + 認証状態）
- * - 検索バー（リポジトリ + ユーザー検索）
+ * - AppHeader（ロゴ + 検索バー + 認証状態）
  * - コンテンツ領域
  */
 export default function DashboardLayout({
   children,
-  repositories = [],
-  selectedRepo = "",
-  onSelectRepo,
-  hideSearchBar = false,
   isLoading = false,
 }: DashboardLayoutProps) {
-  const router = useRouter();
-
-  // リポジトリ選択時のデフォルトハンドラー（リポジトリページへ遷移）
-  const handleSelectRepo = (repo: string) => {
-    if (onSelectRepo) {
-      onSelectRepo(repo);
-    } else {
-      // デフォルト: リポジトリページへ遷移
-      const [owner, repoName] = repo.split("/");
-      if (owner && repoName) {
-        router.push(`/repo/${owner}/${repoName}`);
-      }
-    }
-  };
-
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-purple-50/30 to-gray-50 dark:from-gray-800 dark:via-purple-900/30 dark:to-gray-800">
-      {/* 共通ヘッダー */}
+      {/* 共通ヘッダー（検索バー含む） */}
       <AppHeader />
 
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 検索バーエリア */}
-        {!hideSearchBar && (
-          <div className="relative z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 mb-8">
-            <RepoSearchCombobox
-              repositories={repositories}
-              selectedRepo={selectedRepo}
-              onSelectRepo={handleSelectRepo}
-            />
-          </div>
-        )}
-
         {/* ローディング状態 */}
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
