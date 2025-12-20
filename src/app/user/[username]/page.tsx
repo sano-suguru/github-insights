@@ -620,7 +620,7 @@ export default function UserProfilePage() {
 
         {/* Contribution Type Distribution */}
         {events.length > 0 && (
-          <SectionCard title="Contribution Types">
+          <SectionCard title="Contributions">
             <p className="sr-only">{contributionTypeSummary}</p>
             <div aria-hidden="true">
               <ContributionTypePie events={events} />
