@@ -10,6 +10,7 @@ import {
   withRetry,
   updateRateLimit,
 } from "./client";
+import { logger } from "@/lib/logger";
 
 /**
  * リポジトリ情報を取得（認証/未認証両対応）
@@ -167,7 +168,7 @@ export async function searchRepositories(
 
     return { repositories, rateLimit };
   } catch (error) {
-    console.error("Search repositories error:", error);
+    logger.error("Search repositories error:", error);
     if (isRateLimitError(error)) {
       throw new GitHubRateLimitError();
     }

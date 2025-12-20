@@ -5,6 +5,7 @@
 import { graphql } from "@octokit/graphql";
 import type { RateLimitInfo } from "./types";
 import { isRateLimitError } from "./errors";
+import { logger } from "@/lib/logger";
 
 // グローバルレート制限状態（未認証用）
 let publicRateLimitInfo: RateLimitInfo | null = null;
@@ -61,7 +62,7 @@ export async function withRetry<T>(
       // 通常のレート制限またはセカンダリレート制限の場合はリトライ
       if ((isRateLimitError(error) || isSecondaryLimit) && attempt < maxRetries - 1) {
         const delay = Math.pow(2, attempt) * baseDelay;
-        console.warn(
+        logger.warn(
           `Rate limited (attempt ${attempt + 1}/${maxRetries}), retrying in ${delay}ms...`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));

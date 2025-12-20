@@ -18,6 +18,7 @@ import {
   createPublicGitHubClient,
   withRetry,
 } from "./client";
+import { logger } from "@/lib/logger";
 import { parseAccountType, calculateUserStats as computeUserStats, calculateStreaks } from "./transforms";
 import { SERVER_CACHE } from "../cache-config";
 import { sequentialFetch } from "../api-server-utils";
@@ -105,7 +106,7 @@ export async function getUserProfile(
       type: parseAccountType(data.type),
     };
   } catch (error) {
-    console.error("Get user profile error:", error);
+    logger.error("Get user profile error:", error);
     throw error;
   }
 }
@@ -187,7 +188,7 @@ export async function getUserRepositories(
       isFork: repo.isFork,
     }));
   } catch (error) {
-    console.error("Get user repositories error:", error);
+    logger.error("Get user repositories error:", error);
     if (isRateLimitError(error)) {
       throw new GitHubRateLimitError();
     }
@@ -279,7 +280,7 @@ export async function searchUsers(
 
     return { users: userResults, rateLimit: rateLimitInfo };
   } catch (error) {
-    console.error("Search users error:", error);
+    logger.error("Search users error:", error);
     throw error;
   }
 }
@@ -348,7 +349,7 @@ export async function getUserEvents(
 
     return allEvents;
   } catch (error) {
-    console.error("Get user events error:", error);
+    logger.error("Get user events error:", error);
     throw error;
   }
 }
@@ -405,7 +406,7 @@ export async function getUserContributionStats(
     if (error instanceof GitHubRateLimitError) {
       throw error;
     }
-    console.error("Get user contribution stats error:", error);
+    logger.error("Get user contribution stats error:", error);
     return { totalPRs: 0, totalIssues: 0 };
   }
 }
@@ -468,7 +469,7 @@ export async function getYearlyContributionStats(
     if (error instanceof GitHubRateLimitError) {
       throw error;
     }
-    console.error("Get yearly contribution stats error:", error);
+    logger.error("Get yearly contribution stats error:", error);
     return { year, prs: 0, issues: 0 };
   }
 }
@@ -517,7 +518,7 @@ export async function getContributionCalendar(
     );
 
     if (!response.user) {
-      console.warn(`User ${username} not found for contribution calendar`);
+      logger.warn(`User ${username} not found for contribution calendar`);
       return { totalContributions: 0, longestStreak: 0, currentStreak: 0 };
     }
 
@@ -531,7 +532,7 @@ export async function getContributionCalendar(
       currentStreak,
     };
   } catch (error) {
-    console.error("Get contribution calendar error:", error);
+    logger.error("Get contribution calendar error:", error);
     return { totalContributions: 0, longestStreak: 0, currentStreak: 0 };
   }
 }
