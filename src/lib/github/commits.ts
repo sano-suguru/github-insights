@@ -5,6 +5,7 @@
 import type { CommitInfo, CommitHistoryOptions } from "./types";
 import { isRateLimitError } from "./errors";
 import { createGitHubClient, createPublicGitHubClient } from "./client";
+import { logger } from "@/lib/logger";
 
 // コミット履歴 API レスポンス型
 interface CommitHistoryResponse {
@@ -132,7 +133,7 @@ export async function getCommitHistory(
         if (isRateLimitError(error) && retries < maxRetries - 1) {
           // 指数バックオフでリトライ（1秒、2秒、4秒）
           const delay = Math.pow(2, retries) * 1000;
-          console.warn(`Rate limited, retrying in ${delay}ms...`);
+          logger.warn(`Rate limited, retrying in ${delay}ms...`);
           await new Promise((resolve) => setTimeout(resolve, delay));
           retries++;
         } else {

@@ -2,6 +2,8 @@
  * ソーシャルメディアシェア用のユーティリティ
  */
 
+import { logger } from "@/lib/logger";
+
 /**
  * X (Twitter) シェアURLを生成
  */
@@ -30,7 +32,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     await navigator.clipboard.writeText(text);
     return true;
   } catch (error) {
-    console.error("Copy failed:", error);
+    logger.error("Copy failed:", error);
     return false;
   }
 }

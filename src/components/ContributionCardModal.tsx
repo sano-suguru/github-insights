@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Download, Link, Code, User, FolderGit2, Lightbulb, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import type { ContributorDetailStat } from "@/lib/github/types";
 import { generateTwitterShareUrl, generateRepoContributionShareText, generateUserProfileShareText } from "@/lib/share";
+import { logger } from "@/lib/logger";
 
 type CardType = "repo" | "user";
 
@@ -62,7 +63,7 @@ export default function ContributionCardModal({
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Download failed:", error);
+      logger.error("Download failed:", error);
     } finally {
       setDownloading(false);
     }
@@ -75,7 +76,7 @@ export default function ContributionCardModal({
       setCopiedUrl(true);
       setTimeout(() => setCopiedUrl(false), 2000);
     } catch (error) {
-      console.error("Copy failed:", error);
+      logger.error("Copy failed:", error);
     }
   };
 
@@ -95,7 +96,7 @@ export default function ContributionCardModal({
       setCopiedMarkdown(true);
       setTimeout(() => setCopiedMarkdown(false), 2000);
     } catch (error) {
-      console.error("Copy failed:", error);
+      logger.error("Copy failed:", error);
     }
   };
 
