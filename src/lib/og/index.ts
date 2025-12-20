@@ -4,3 +4,5 @@
 
 export * from "./constants";
 export * from "./edge-utils";
+export * from "./utils";
+export * from "./components";

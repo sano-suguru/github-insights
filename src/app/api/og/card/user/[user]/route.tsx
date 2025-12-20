@@ -9,7 +9,11 @@ import {
 import {
   sequentialFetchEdge,
   GITHUB_HEADERS,
-} from "@/lib/og/edge-utils";
+  formatNumber,
+  Footer,
+  ErrorCard,
+  StatBox,
+} from "@/lib/og";
 import {
   OG_WIDTH,
   OG_HEIGHT,
@@ -140,32 +144,10 @@ export async function GET(
 
   if (!stats) {
     return new ImageResponse(
-      (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: `linear-gradient(135deg, ${COLORS.bgDark} 0%, ${COLORS.bgPurple} 50%, ${COLORS.bgDark} 100%)`,
-            color: COLORS.white,
-            fontSize: 32,
-          }}
-        >
-          User not found: {user}
-        </div>
-      ),
+      <ErrorCard message={`User not found: ${user}`} />,
       { width: WIDTH, height: HEIGHT }
     );
   }
-
-  // 数値をフォーマット
-  const formatNumber = (n: number) => {
-    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-    return n.toString();
-  };
 
   // バッジを計算（絵文字なし）
   const badges: string[] = [];
@@ -458,43 +440,7 @@ export async function GET(
         </div>
 
         {/* フッター */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginTop: 20,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {/* GitHubロゴ */}
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 14,
-                background: `linear-gradient(135deg, ${COLORS.purple500}, ${COLORS.pink500})`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                <path d={ICONS.github} />
-              </svg>
-            </div>
-            <span
-              style={{
-                background: `linear-gradient(135deg, ${COLORS.purple400}, ${COLORS.pink500})`,
-                backgroundClip: "text",
-                color: "transparent",
-                fontSize: 22,
-                fontWeight: 700,
-              }}
-            >
-              GitHub Insights
-            </span>
-          </div>
-        </div>
+        <Footer />
       </div>
     ),
     {
@@ -504,35 +450,5 @@ export async function GET(
         "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
       },
     }
-  );
-}
-
-// 統計ボックスコンポーネント
-function StatBox({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        backgroundColor: COLORS.cardBg,
-        padding: "16px 28px",
-        borderRadius: 16,
-        minWidth: 110,
-        border: `1px solid ${COLORS.cardBorder}`,
-      }}
-    >
-      <span
-        style={{
-          color: COLORS.white,
-          fontSize: 34,
-          fontWeight: 700,
-          marginBottom: 4,
-        }}
-      >
-        {value}
-      </span>
-      <span style={{ color: COLORS.gray400, fontSize: 18 }}>{label}</span>
-    </div>
   );
 }

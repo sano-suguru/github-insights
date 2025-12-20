@@ -728,9 +728,15 @@ npm run storybook
 - [x] 2.3 ロギングユーティリティ導入（src/lib/logger.ts 作成、console.* を一括置換）
 - 結果: カバレッジ 86.31% → 88.55% に向上
 
-### Phase 3
-- [ ] 3.1 user/[username]/page.tsx 分割
+### Phase 3 🚧 進行中
+- [x] 3.1 user/[username]/page.tsx 分割（PR #17: 644行 → 269行）
 - [ ] 3.2 OG画像ルート共通化
+
+### 追加改善（2025-12-20）
+- [x] CI キャッシュ修正（PR #16）
+- [x] 検索バーをヘッダーに統合（PR #18）
+- [x] 検索バー重複修正 - DashboardLayoutに移動（PR #19）
+- [x] Tailwind v4 の標準クラスに置き換え（PR #20）
 
 ---
 
