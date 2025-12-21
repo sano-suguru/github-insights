@@ -68,10 +68,10 @@ export default function AppHeader() {
               // 未認証時はログインへのリンク
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 px-3 py-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors shadow-sm"
               >
                 <GitHubIcon className="w-4 h-4" />
-                ログイン
+                <span className="hidden sm:inline">GitHubで</span>ログイン
               </Link>
             )}
           </nav>

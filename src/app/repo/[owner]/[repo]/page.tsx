@@ -5,7 +5,8 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { AlertTriangle, AlertCircle, Lightbulb, GitCommit, GitPullRequest, CircleDot, Star, Frown, ExternalLink, Github } from "lucide-react";
+import { AlertTriangle, AlertCircle, Lightbulb, GitCommit, GitPullRequest, CircleDot, Star, Frown, ExternalLink } from "lucide-react";
+import { GitHubIcon } from "@/components/icons";
 import { getPublicRateLimitInfo } from "@/lib/github/client";
 import { useRepoAllData } from "@/hooks/useRepoData";
 import { useCommitHistory, usePrefetchCommitHistory } from "@/hooks/useCommitHistory";
@@ -228,8 +229,9 @@ function RepoPageContent() {
                   </div>
                   <Link
                     href="/login"
-                    className="inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors shadow-lg"
                   >
+                    <GitHubIcon className="w-5 h-5" />
                     GitHubでログイン
                   </Link>
                 </>
@@ -255,7 +257,7 @@ function RepoPageContent() {
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 mb-6 overflow-hidden">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-full bg-linear-to-r from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
-            <Github className="w-6 h-6 text-white" />
+            <GitHubIcon className="w-6 h-6 text-white" />
           </div>
           <div className="min-w-0 flex-1">
             <a
@@ -301,9 +303,10 @@ function RepoPageContent() {
             </div>
             <Link
               href="/login"
-              className="text-sm underline hover:no-underline"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
             >
-              ログインして制限を解除
+              <GitHubIcon className="w-3.5 h-3.5" />
+              GitHubでログイン
             </Link>
           </div>
         </div>
@@ -312,17 +315,21 @@ function RepoPageContent() {
       {/* 未認証バナー（未認証の場合のみ） */}
       {!isAuthenticated && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-          <div className="flex items-start gap-3">
-            <Lightbulb className="w-6 h-6 text-blue-500 shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-blue-900 dark:text-blue-100">
-                ログインするとさらに便利に
-              </h3>
-              <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                ログインすると、期間の変更、詳細なランキング表示、プライベートリポジトリへのアクセス、
-                APIレート制限の大幅な緩和（60回/時間 → 5,000回/時間）が利用できます。
-              </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <Lightbulb className="w-5 h-5 text-blue-500 shrink-0 mt-0.5 sm:mt-0" />
+              <div className="text-sm">
+                <span className="font-medium text-blue-900 dark:text-blue-100">ログインで機能アップ：</span>
+                <span className="text-blue-700 dark:text-blue-300">プライベートリポジトリ・期間変更・API 5,000回/時間</span>
+              </div>
             </div>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center gap-1.5 text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors shadow-sm shrink-0"
+            >
+              <GitHubIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">GitHubで</span>ログイン
+            </Link>
           </div>
         </div>
       )}
