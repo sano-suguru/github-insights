@@ -9,6 +9,7 @@ import {
   Legend,
 } from "recharts";
 import type { EventsChartProps } from "@/types/chart";
+import { CHART_TOOLTIP_STYLES } from "@/lib/colors";
 import { useMemo } from "react";
 
 // イベントタイプのラベルと色
@@ -82,18 +83,7 @@ export default function ContributionTypePie({ events }: EventsChartProps) {
           </Pie>
           <Tooltip
             formatter={(value) => [`${value ?? 0}`, "Activities"]}
-            contentStyle={{
-              backgroundColor: "rgba(0, 0, 0, 0.8)",
-              border: "none",
-              borderRadius: "8px",
-            }}
-            itemStyle={{
-              color: "#fff",
-            }}
-            labelStyle={{
-              color: "#fff",
-              fontWeight: "bold",
-            }}
+            {...CHART_TOOLTIP_STYLES}
           />
           <Legend
             content={() => (

@@ -9,7 +9,7 @@ import {
   Legend,
 } from "recharts";
 import type { LanguageStat } from "@/lib/github/types";
-import { getChartColor } from "@/lib/colors";
+import { getChartColor, CHART_TOOLTIP_STYLES } from "@/lib/colors";
 
 interface LanguagesPieChartProps {
   data: LanguageStat[];
@@ -53,18 +53,7 @@ export default function LanguagesPieChart({ data }: LanguagesPieChartProps) {
           </Pie>
           <Tooltip
             formatter={(value) => [`${value ?? 0}%`, "割合"]}
-            contentStyle={{
-              backgroundColor: "rgba(0, 0, 0, 0.8)",
-              border: "none",
-              borderRadius: "8px",
-            }}
-            itemStyle={{
-              color: "#fff",
-            }}
-            labelStyle={{
-              color: "#fff",
-              fontWeight: "bold",
-            }}
+            {...CHART_TOOLTIP_STYLES}
           />
           <Legend
             content={() => (
