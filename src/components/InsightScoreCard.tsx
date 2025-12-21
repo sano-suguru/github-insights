@@ -177,5 +177,3 @@ function BreakdownItem({ icon: Icon, label, value, score, color, suffix = "" }: 
     </div>
   );
 }
-
-export default InsightScoreCard;
