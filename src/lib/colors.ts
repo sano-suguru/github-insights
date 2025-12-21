@@ -47,3 +47,25 @@ export function getHeatmapColorClass(value: number, maxValue: number): string {
   if (intensity < 0.75) return "bg-purple-500 dark:bg-purple-600";
   return "bg-purple-600 dark:bg-purple-500";
 }
+
+/**
+ * コントリビューターチャート用のカラーパレット
+ * ContributorsChart（棒グラフ）と ContributorPieChart（円グラフ）で共通使用
+ */
+export const CONTRIBUTOR_CHART_COLORS = [
+  "#8b5cf6", // purple-500
+  "#ec4899", // pink-500
+  "#3b82f6", // blue-500
+  "#10b981", // emerald-500
+  "#f59e0b", // amber-500
+  "#ef4444", // red-500
+  "#06b6d4", // cyan-500
+  "#84cc16", // lime-500
+] as const;
+
+/**
+ * コントリビューターチャート用の色を取得
+ */
+export function getContributorColor(index: number): string {
+  return CONTRIBUTOR_CHART_COLORS[index % CONTRIBUTOR_CHART_COLORS.length];
+}
