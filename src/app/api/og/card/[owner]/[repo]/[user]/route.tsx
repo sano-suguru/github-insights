@@ -1,6 +1,7 @@
 import { ImageResponse } from "@vercel/og";
 import { NextRequest } from "next/server";
 import { createOgBadgeColorGetter } from "@/lib/badges";
+import { logger } from "@/lib/logger";
 import {
   sequentialFetchEdge,
   GITHUB_HEADERS,
@@ -131,7 +132,7 @@ async function getContributorStats(
       ownerAvatarUrl: repoData?.owner?.avatar_url ?? "",
     };
   } catch (error) {
-    console.error("Error fetching contributor stats:", error);
+    logger.error("Error fetching contributor stats:", error);
     return null;
   }
 }

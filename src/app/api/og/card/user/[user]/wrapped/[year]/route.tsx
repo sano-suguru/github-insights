@@ -1,5 +1,6 @@
 import { ImageResponse } from "@vercel/og";
 import { NextRequest } from "next/server";
+import { logger } from "@/lib/logger";
 import {
   calculateInsightScore,
   getRankColorsForOg,
@@ -121,7 +122,7 @@ async function getUserStats(user: string, year: number): Promise<UserStats | nul
       topLanguages,
     };
   } catch (error) {
-    console.error("Error fetching user stats:", error);
+    logger.error("Error fetching user stats:", error);
     return null;
   }
 }

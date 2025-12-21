@@ -418,13 +418,13 @@ function MyContributionSummary({
       {/* 統計グリッド - 横スクロール可能 */}
       <div className="flex sm:grid sm:grid-cols-5 gap-3 sm:gap-4 mb-6 overflow-x-auto pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
         {/* Rank */}
-        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-[100px] sm:w-auto">
+        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-25 sm:w-auto">
           <p className="text-2xl sm:text-3xl font-bold">#{myStats.rank}</p>
           <p className="text-xs sm:text-sm text-white/80">of {contributors.length}</p>
         </div>
 
         {/* Commits */}
-        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-[100px] sm:w-auto">
+        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-25 sm:w-auto">
           <div className="flex items-center justify-center gap-1 mb-1">
             <GitCommit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
@@ -433,7 +433,7 @@ function MyContributionSummary({
         </div>
 
         {/* Additions */}
-        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-[100px] sm:w-auto">
+        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-25 sm:w-auto">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
@@ -442,7 +442,7 @@ function MyContributionSummary({
         </div>
 
         {/* Deletions */}
-        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-[100px] sm:w-auto">
+        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-25 sm:w-auto">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
@@ -451,7 +451,7 @@ function MyContributionSummary({
         </div>
 
         {/* Score */}
-        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-[100px] sm:w-auto">
+        <div className="bg-white/10 rounded-lg p-2.5 sm:p-3 text-center shrink-0 w-25 sm:w-auto">
           <p className="text-xl sm:text-2xl font-bold">{myStats.score.toLocaleString()}</p>
           <p className="text-xs sm:text-sm text-white/80">Score</p>
         </div>
