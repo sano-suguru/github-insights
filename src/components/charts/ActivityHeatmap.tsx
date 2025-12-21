@@ -48,7 +48,7 @@ export default function ActivityHeatmap({ data }: ActivityHeatmapProps) {
 
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[600px]">
+      <div className="min-w-150">
         {/* 時間ラベル */}
         <div className="flex mb-1">
           <div className="w-8"></div>
