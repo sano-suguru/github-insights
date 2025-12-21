@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ContributorDetailStat } from "@/lib/github/types";
 import { calculateBadges, sortBadgesByImportance, Badge } from "@/lib/badges";
+import { formatNumber } from "@/lib/utils";
 import { 
   TrendingUp, GitCommit, Plus, Minus, GitPullRequest, 
   Crown, Medal, ImageIcon, X 
@@ -363,15 +364,4 @@ function BadgeChip({ badge }: { badge: Badge }) {
       <span className="hidden lg:inline">{badge.name}</span>
     </span>
   );
-}
-
-// 数値フォーマット（1k, 10k など）
-function formatNumber(num: number): string {
-  if (num >= 10000) {
-    return `${Math.round(num / 1000)}k`;
-  }
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}k`;
-  }
-  return num.toString();
 }
