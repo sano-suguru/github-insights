@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 import { auth } from "@/lib/auth";
 import { getContributorStats, getContributorDetails } from "@/lib/github/stats";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching contributors:", error);
+    logger.error("Error fetching contributors:", error);
 
     if (error instanceof GitHubRateLimitError) {
       return createApiErrorResponse(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
+import { logger } from "@/lib/logger";
 import { auth } from "@/lib/auth";
 import { createApiErrorResponse, sequentialFetch } from "@/lib/api-server-utils";
 import { SERVER_CACHE } from "@/lib/cache-config";
@@ -99,7 +100,7 @@ export async function GET(request: NextRequest, { params }: UserRouteParams) {
 
     return response;
   } catch (error) {
-    console.error("Error fetching user data:", error);
+    logger.error("Error fetching user data:", error);
 
     if (error instanceof GitHubRateLimitError) {
       return createApiErrorResponse(
