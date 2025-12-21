@@ -159,7 +159,7 @@ function DashboardContent() {
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* リポジトリ選択エリア */}
-        <div className="relative z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 mb-8">
+        <div className="relative z-content bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 mb-8">
           <RepoSearchCombobox
             repositories={repositories}
             selectedRepo={activeRepo}

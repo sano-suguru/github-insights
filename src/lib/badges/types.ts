@@ -65,10 +65,12 @@ export interface WrappedBadge {
   color: string; // Tailwind色クラス
 }
 
-/** 希少度に応じたTailwind色クラス */
+/** 希少度に応じたTailwind色クラス
+ * Note: Wrappedカードは常にダーク背景のため、明るい色（300系）を固定で使用
+ */
 export const WRAPPED_BADGE_COLORS: Record<WrappedBadgeRarity, string> = {
-  legendary: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 backdrop-blur-sm",
-  epic: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 backdrop-blur-sm",
-  rare: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 backdrop-blur-sm",
-  common: "bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30 backdrop-blur-sm",
+  legendary: "bg-amber-500/20 text-amber-300 border border-amber-500/40 backdrop-blur-sm",
+  epic: "bg-purple-500/20 text-purple-300 border border-purple-500/40 backdrop-blur-sm",
+  rare: "bg-blue-500/20 text-blue-300 border border-blue-500/40 backdrop-blur-sm",
+  common: "bg-slate-500/20 text-slate-300 border border-slate-500/40 backdrop-blur-sm",
 };

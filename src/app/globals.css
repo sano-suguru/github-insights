@@ -12,6 +12,16 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans), var(--font-noto-sans-jp), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* 
+   * z-index階層管理
+   * 用途に応じた意味のある名前で定義し、数値の直接指定を避ける
+   */
+  --z-content: 10;       /* 通常コンテンツ（カード、セクション） */
+  --z-header: 40;        /* sticky ヘッダー */
+  --z-modal: 50;         /* モーダル、ポップオーバー */
+  --z-overlay: 60;       /* 全画面オーバーレイ */
+  --z-dropdown: 100;     /* ドロップダウン（ヘッダーより上） */
 }
 
 @media (prefers-color-scheme: dark) {

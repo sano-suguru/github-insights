@@ -274,7 +274,7 @@ export default function RepoSearchCombobox({
 
       {/* ドロップダウン */}
       {isOpen && (
-        <div className="absolute z-100 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-80 overflow-y-auto">
+        <div className="absolute z-dropdown w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-80 overflow-y-auto">
           {/* 外部リポジトリ分析オプション */}
           {isExternalRepoInput && (
             <div className="p-2 border-b border-gray-100 dark:border-gray-700">
