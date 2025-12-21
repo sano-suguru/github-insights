@@ -42,6 +42,18 @@ export const CLIENT_CACHE = {
   COMMITS_STALE_TIME: SERVER_CACHE.COMMITS_REVALIDATE * 1000,
   CONTRIBUTORS_STALE_TIME: SERVER_CACHE.CONTRIBUTORS_REVALIDATE * 1000,
   
+  // コミット履歴（10分）- 長めにキャッシュ
+  COMMIT_HISTORY_STALE_TIME: 10 * 60 * 1000,
+  
+  // リポジトリ一覧（5分）- ダッシュボード用
+  REPOSITORIES_STALE_TIME: 5 * 60 * 1000,
+  
+  // 検索関連（5分）- APIレート制限対策
+  SEARCH_STALE_TIME: 5 * 60 * 1000,
+  
+  // 静的データ（1時間）- 人気リポジトリ等の変更頻度が低いデータ
+  STATIC_DATA_STALE_TIME: 60 * 60 * 1000,
+  
   // gcTime: 最長のstaleTime（10分）の3倍を基準に30分に統一
   // 異なるstaleTimeごとにgcTimeを分けると複雑になるため、
   // 最長に合わせることで全データを安全にキャッシュ保持
