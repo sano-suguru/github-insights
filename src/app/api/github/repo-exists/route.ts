@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 import { auth } from "@/lib/auth";
 import { getRepository } from "@/lib/github/repository";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.error("Error validating repository:", error);
+    logger.error("Error validating repository:", error);
     return createApiErrorResponse(500, "INTERNAL", "Failed to validate repository");
   }
 }

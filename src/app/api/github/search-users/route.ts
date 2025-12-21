@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
+import { logger } from "@/lib/logger";
 import { auth } from "@/lib/auth";
 import { searchUsers } from "@/lib/github/user";
 import { GitHubRateLimitError } from "@/lib/github/errors";
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error("Search Users API error:", error);
+    logger.error("Search Users API error:", error);
 
     if (error instanceof GitHubRateLimitError) {
       return createApiErrorResponse(

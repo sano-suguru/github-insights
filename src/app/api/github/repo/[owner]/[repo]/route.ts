@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 import { auth } from "@/lib/auth";
 import type {
   Repository,
@@ -116,7 +117,7 @@ export async function GET(request: NextRequest, { params }: RepoRouteParams) {
       },
     });
   } catch (error) {
-    console.error("Error fetching repo data:", error);
+    logger.error("Error fetching repo data:", error);
 
     if (error instanceof GitHubRateLimitError) {
       return createApiErrorResponse(

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 import { auth } from "@/lib/auth";
 import { getCommitHistory } from "@/lib/github/commits";
 import { SERVER_CACHE, SWR_CACHE } from "@/lib/cache-config";
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching commits:", error);
+    logger.error("Error fetching commits:", error);
 
     if (error instanceof GitHubRateLimitError) {
       return createApiErrorResponse(

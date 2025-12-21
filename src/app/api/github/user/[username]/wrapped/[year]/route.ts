@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
+import { logger } from "@/lib/logger";
 import { auth } from "@/lib/auth";
 import {
   getUserProfile,
@@ -198,7 +199,7 @@ export async function GET(request: NextRequest, { params }: UserYearRouteParams)
 
     return response;
   } catch (error) {
-    console.error("Error fetching wrapped data:", error);
+    logger.error("Error fetching wrapped data:", error);
 
     if (error instanceof GitHubRateLimitError) {
       return createApiErrorResponse(
