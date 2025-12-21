@@ -12,12 +12,12 @@ import {
 import type { CommitInfo } from "@/lib/github/types";
 import { useMemo } from "react";
 
-interface Props {
+interface CommitsLineChartProps {
   data: CommitInfo[];
   days?: number | null; // null = 全期間
 }
 
-export default function CommitsLineChart({ data, days = 30 }: Props) {
+export default function CommitsLineChart({ data, days = 30 }: CommitsLineChartProps) {
   // 日付ごとにコミット数を集計
   const chartData = useMemo(() => {
     // データが空の場合は空配列を返す

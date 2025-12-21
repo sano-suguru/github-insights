@@ -4,7 +4,7 @@ import type { CommitInfo } from "@/lib/github/types";
 import { getHeatmapColorClass } from "@/lib/colors";
 import { useMemo } from "react";
 
-interface Props {
+interface ActivityHeatmapProps {
   data: CommitInfo[];
 }
 
@@ -13,7 +13,7 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_LABELS = HOURS.filter((h) => h % 3 === 0); // 3時間ごとのラベル (0, 3, 6, ..., 21)
 const HOUR_LABEL_MIN_WIDTH = `${100 / HOUR_LABELS.length}%`; // 各ラベルの最小幅
 
-export default function ActivityHeatmap({ data }: Props) {
+export default function ActivityHeatmap({ data }: ActivityHeatmapProps) {
   // 曜日×時間帯のマトリックスを作成
   const heatmapData = useMemo(() => {
     const matrix: number[][] = Array.from({ length: 7 }, () =>
@@ -48,7 +48,7 @@ export default function ActivityHeatmap({ data }: Props) {
 
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[600px]">
+      <div className="min-w-150">
         {/* 時間ラベル */}
         <div className="flex mb-1">
           <div className="w-8"></div>

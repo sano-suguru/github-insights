@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import type { ContributorStat } from "@/lib/github/types";
 
-interface Props {
+interface ContributorsChartProps {
   data: ContributorStat[];
 }
 
@@ -29,7 +29,7 @@ const COLORS = [
 
 // Note: このコンポーネントは dynamic import (ssr: false) で使用されるため、
 // クライアントサイドでのみレンダリングされる
-export default function ContributorsChart({ data }: Props) {
+export default function ContributorsChart({ data }: ContributorsChartProps) {
   if (data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">

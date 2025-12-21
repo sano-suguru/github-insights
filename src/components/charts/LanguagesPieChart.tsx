@@ -11,11 +11,11 @@ import {
 import type { LanguageStat } from "@/lib/github/types";
 import { getChartColor } from "@/lib/colors";
 
-interface Props {
+interface LanguagesPieChartProps {
   data: LanguageStat[];
 }
 
-export default function LanguagesPieChart({ data }: Props) {
+export default function LanguagesPieChart({ data }: LanguagesPieChartProps) {
   if (data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">

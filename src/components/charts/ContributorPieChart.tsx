@@ -26,7 +26,7 @@ const OTHERS_LOGIN = "__others__";
 
 export type MetricType = "commits" | "additions" | "deletions";
 
-interface Props {
+interface ContributorPieChartProps {
   data: ContributorDetailStat[];
   metric: MetricType;
 }
@@ -48,7 +48,7 @@ function formatNumber(num: number): string {
   return num.toLocaleString();
 }
 
-export default function ContributorPieChart({ data, metric }: Props) {
+export default function ContributorPieChart({ data, metric }: ContributorPieChartProps) {
   if (data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
