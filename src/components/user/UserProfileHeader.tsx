@@ -61,7 +61,10 @@ export function UserProfileHeader({
   }, [showBadgePopover, userBadges.length]);
 
   return (
-    <div className="relative z-content bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 md:p-8 mb-6">
+    <section 
+      aria-label="ユーザープロフィール" 
+      className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 md:p-8 mb-6"
+    >
       <div className="flex flex-col md:flex-row gap-6">
         {/* アバター */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -285,6 +288,6 @@ export function UserProfileHeader({
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

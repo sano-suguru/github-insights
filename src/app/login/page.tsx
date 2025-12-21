@@ -28,7 +28,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="max-w-md w-full mx-4">
+      <main className="max-w-md w-full mx-4">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
           {/* ロゴ・タイトル */}
           <div className="text-center mb-8">
@@ -129,7 +129,7 @@ export default function LoginPage() {
             </Link>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

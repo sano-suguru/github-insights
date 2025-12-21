@@ -120,13 +120,19 @@ interface SectionCardProps {
 }
 
 export function SectionCard({ title, children, className = "" }: SectionCardProps) {
+  // タイトルからIDを生成（スペースをハイフンに変換）
+  const titleId = `section-${title.toLowerCase().replace(/\s+/g, "-")}`;
+  
   return (
-    <div className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300 ${className}`}>
-      <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
-        <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
+    <section 
+      aria-labelledby={titleId}
+      className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300 ${className}`}
+    >
+      <h2 id={titleId} className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
+        <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full" aria-hidden="true"></span>
         {title}
       </h2>
       {children}
-    </div>
+    </section>
   );
 }

@@ -197,13 +197,13 @@ export default function UserProfilePage() {
         {/* Top Repositories */}
         {stats.topRepositories.length > 0 && (
           <SectionCard title="Top Repositories">
-            <div className="space-y-2 sm:space-y-3">
+            <ul className="space-y-2 sm:space-y-3">
               {stats.topRepositories.slice(0, 3).map((repo) => (
-                <Link
-                  key={repo.nameWithOwner}
-                  href={`/repo/${repo.nameWithOwner}`}
-                  className="block p-2 sm:p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
-                >
+                <li key={repo.nameWithOwner}>
+                  <Link
+                    href={`/repo/${repo.nameWithOwner}`}
+                    className="block p-2 sm:p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
+                  >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm sm:text-base text-gray-900 dark:text-white truncate">
@@ -234,8 +234,9 @@ export default function UserProfilePage() {
                     </div>
                   </div>
                 </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           </SectionCard>
         )}
 

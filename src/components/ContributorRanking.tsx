@@ -44,7 +44,7 @@ export default function ContributorRanking({
   return (
     <div className="space-y-4">
       {/* ランキングリスト */}
-      <div className="space-y-2">
+      <ol className="space-y-2" aria-label="コントリビューターランキング">
         {top10.map((contributor) => (
           <ContributorRow
             key={contributor.login}
@@ -55,7 +55,7 @@ export default function ContributorRanking({
             showCardButton={!!owner && !!repo}
           />
         ))}
-      </div>
+      </ol>
 
       {/* 自分がTop10外の場合は別表示 */}
       {currentUser && !isCurrentUserInTop10 && (
@@ -154,7 +154,7 @@ function ContributorRow({
   }, [showBadgePopover, badges.length]);
 
   return (
-    <div
+    <li
       className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-colors ${
         isCurrentUser
           ? "bg-purple-50 dark:bg-purple-900/30 ring-2 ring-purple-500"
@@ -347,7 +347,7 @@ function ContributorRow({
           <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       )}
-    </div>
+    </li>
   );
 }
 
