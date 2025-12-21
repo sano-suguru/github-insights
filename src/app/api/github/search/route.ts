@@ -5,14 +5,15 @@ import { auth } from "@/lib/auth";
 import { searchRepositories } from "@/lib/github/repository";
 import { GitHubRateLimitError } from "@/lib/github/errors";
 import { createApiErrorResponse } from "@/lib/api-server-utils";
+import { SERVER_CACHE } from "@/lib/cache-config";
 
-// 検索結果をキャッシュ（60秒）
+// 検索結果をキャッシュ
 const createCachedSearch = (accessToken: string | null, query: string) => {
   const isAuthenticated = !!accessToken;
   return unstable_cache(
     async () => searchRepositories(accessToken, query, 10),
     [`search:${query}:${isAuthenticated ? "auth" : "public"}`],
-    { revalidate: 60, tags: ["search"] }
+    { revalidate: SERVER_CACHE.USER_SEARCH_REVALIDATE, tags: ["search"] }
   );
 };
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
       { repositories, rateLimit },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+          "Cache-Control": `public, s-maxage=${SERVER_CACHE.USER_SEARCH_REVALIDATE}, stale-while-revalidate=${SERVER_CACHE.USER_SEARCH_REVALIDATE * 2}`,
         },
       }
     );

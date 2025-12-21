@@ -8,12 +8,12 @@ import ContributorPieChart, { MetricType } from "./ContributorPieChart";
 
 type ChartType = "bar" | "pie";
 
-interface Props {
+interface ContributorChartWithToggleProps {
   contributors: ContributorStat[];
   contributorDetails: ContributorDetailStat[];
 }
 
-export default function ContributorChartWithToggle({ contributors, contributorDetails }: Props) {
+export default function ContributorChartWithToggle({ contributors, contributorDetails }: ContributorChartWithToggleProps) {
   const [chartType, setChartType] = useState<ChartType>("bar");
   const [metric, setMetric] = useState<MetricType>("commits");
 
