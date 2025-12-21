@@ -92,7 +92,7 @@ export function useCommitHistory({
     queryFn: ({ signal }) => fetchCommitsFromAPI(owner, repo, baseDays, signal),
     enabled: enabled && !!owner && !!repo,
     // クライアント側もキャッシュ（サーバーキャッシュと二重化）
-    staleTime: 10 * 60 * 1000,
+    staleTime: CLIENT_CACHE.COMMIT_HISTORY_STALE_TIME,
     gcTime: CLIENT_CACHE.GC_TIME,
   });
 
@@ -129,7 +129,7 @@ export function usePrefetchCommitHistory() {
       queryClient.prefetchQuery({
         queryKey: ["commitHistory", owner, repo, baseDays],
         queryFn: ({ signal }) => fetchCommitsFromAPI(owner, repo, baseDays, signal),
-        staleTime: 10 * 60 * 1000,
+        staleTime: CLIENT_CACHE.COMMIT_HISTORY_STALE_TIME,
       });
     },
     [queryClient]

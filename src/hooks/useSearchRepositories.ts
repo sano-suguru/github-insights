@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "./useDebounce";
 import type { SearchRepositoryResult, SearchUserResult, Repository } from "@/lib/github/types";
+import { CLIENT_CACHE } from "@/lib/cache-config";
 
 // 検索最小文字数の定数
 export const MIN_USER_SEARCH_QUERY_LENGTH = 1;
@@ -129,7 +130,7 @@ export function useSearchRepositories(
   const { data: featuredRepos = [] } = useQuery({
     queryKey: ["featuredRepos"],
     queryFn: getFeaturedRepos,
-    staleTime: 1000 * 60 * 60, // 1時間
+    staleTime: CLIENT_CACHE.STATIC_DATA_STALE_TIME,
     enabled: enabled && !isUserSearch,
   });
 
@@ -141,7 +142,7 @@ export function useSearchRepositories(
   } = useQuery({
     queryKey: ["userSearch", debouncedUserQuery],
     queryFn: () => searchRemoteUsers(debouncedUserQuery),
-    staleTime: 1000 * 60 * 5, // 5分
+    staleTime: CLIENT_CACHE.SEARCH_STALE_TIME,
     enabled: enabled && isUserSearch && debouncedUserQuery.length >= MIN_USER_SEARCH_QUERY_LENGTH,
     retry: false,
   });
@@ -150,7 +151,7 @@ export function useSearchRepositories(
   const { data: localResults = [] } = useQuery({
     queryKey: ["localSearch", query],
     queryFn: () => searchLocalRepos(query),
-    staleTime: 1000 * 60 * 5, // 5分
+    staleTime: CLIENT_CACHE.SEARCH_STALE_TIME,
     enabled: enabled && !isUserSearch && query.length >= MIN_USER_SEARCH_QUERY_LENGTH,
   });
 
@@ -162,7 +163,7 @@ export function useSearchRepositories(
   } = useQuery({
     queryKey: ["remoteSearch", debouncedQuery],
     queryFn: () => searchRemoteRepos(debouncedQuery),
-    staleTime: 1000 * 60 * 5, // 5分
+    staleTime: CLIENT_CACHE.SEARCH_STALE_TIME,
     enabled: enabled && !isUserSearch && debouncedQuery.length >= MIN_REPO_SEARCH_QUERY_LENGTH,
     retry: false,
   });
