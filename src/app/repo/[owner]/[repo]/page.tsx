@@ -9,7 +9,7 @@ import { AlertTriangle, AlertCircle, Lightbulb, GitCommit, GitPullRequest, Circl
 import { getPublicRateLimitInfo } from "@/lib/github/client";
 import { useRepoAllData } from "@/hooks/useRepoData";
 import { useCommitHistory, usePrefetchCommitHistory } from "@/hooks/useCommitHistory";
-import DashboardLayout from "@/components/DashboardLayout";
+import DashboardLayout, { SectionCard } from "@/components/DashboardLayout";
 import { PeriodSelector } from "@/components/PeriodSelector";
 import ContributorRanking from "@/components/ContributorRanking";
 import { ChartErrorWrapper } from "@/components/ErrorDisplay";
@@ -351,11 +351,7 @@ function RepoPageContent() {
       {/* グラフエリア */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Languages */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
-            <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
-            Languages
-          </h2>
+        <SectionCard title="Languages">
           <ChartSkeletonWrapper isLoading={allDataLoading} skeleton={<PieChartSkeleton />}>
             <ChartErrorWrapper
               isError={allDataError && languages.length === 0}
@@ -365,13 +361,13 @@ function RepoPageContent() {
               <LanguagesPieChart data={languages} />
             </ChartErrorWrapper>
           </ChartSkeletonWrapper>
-        </div>
+        </SectionCard>
 
         {/* Commits */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6">
+        <section aria-labelledby="commits-section" className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 sm:mb-4">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
+            <h2 id="commits-section" className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full" aria-hidden="true"></span>
               Commits
             </h2>
             {/* 認証済みの場合のみ期間選択を表示 */}
@@ -394,14 +390,14 @@ function RepoPageContent() {
               <CommitsLineChart data={commits} days={isAuthenticated ? selectedDays : 30} />
             </ChartErrorWrapper>
           </ChartSkeletonWrapper>
-        </div>
+        </section>
 
         {/* Contributors */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6">
+        <section aria-labelledby="contributors-section" className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6">
           {/* 認証済みの場合はトグル付きチャート内でタイトル表示、未認証は外側で表示 */}
           {!isAuthenticated && (
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
-              <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
+            <h2 id="contributors-section" className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full" aria-hidden="true"></span>
               Contributors
             </h2>
           )}
@@ -425,14 +421,10 @@ function RepoPageContent() {
               )}
             </ChartErrorWrapper>
           </ChartSkeletonWrapper>
-        </div>
+        </section>
 
         {/* Activity */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
-            <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
-            Activity
-          </h2>
+        <SectionCard title="Activity">
           <ChartSkeletonWrapper isLoading={commitsLoading} skeleton={<HeatmapSkeleton />}>
             <ChartErrorWrapper
               isError={commitsError}
@@ -442,7 +434,7 @@ function RepoPageContent() {
               <ActivityHeatmap data={commits} />
             </ChartErrorWrapper>
           </ChartSkeletonWrapper>
-        </div>
+        </SectionCard>
       </div>
 
       {/* Your Contribution（認証済みの場合のみ） */}
@@ -463,26 +455,22 @@ function RepoPageContent() {
 
       {/* Ranking */}
       {allDataLoading ? (
-        <div className="mt-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-            <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
-            Ranking
-          </h2>
-          <RankingSkeleton />
+        <div className="mt-8">
+          <SectionCard title="Ranking">
+            <RankingSkeleton />
+          </SectionCard>
         </div>
       ) : (
         contributorDetails.length > 0 && (
-          <div className="mt-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <span className="w-1 h-5 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></span>
-              Ranking
-            </h2>
-            <ContributorRanking
-              contributors={contributorDetails}
-              currentUserLogin={isAuthenticated ? session?.login : undefined}
-              owner={owner}
-              repo={repo}
-            />
+          <div className="mt-8">
+            <SectionCard title="Ranking">
+              <ContributorRanking
+                contributors={contributorDetails}
+                currentUserLogin={isAuthenticated ? session?.login : undefined}
+                owner={owner}
+                repo={repo}
+              />
+            </SectionCard>
           </div>
         )
       )}
