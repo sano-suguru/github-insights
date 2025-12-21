@@ -16,6 +16,25 @@
 
 2. **現在のブランチ・変更状態** - 必要に応じて `git status` で確認
 
+## Git ワークフロー
+
+### ブランチ運用
+
+- **main ブランチは保護されている** - 直接プッシュ不可。必ず機能ブランチを作成して PR 経由でマージする
+- ブランチ命名例: `feature/xxx`, `fix/xxx`, `refactor/xxx`, `papercut/xxx`
+
+### コミットメッセージ
+
+- **日本語で記述** - チームの共通言語に合わせる
+- プレフィックス推奨: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
+
+```bash
+# 例
+git commit -m "feat: ユーザープロフィールページを追加"
+git commit -m "fix: レート制限エラー時のフォールバック処理を修正"
+git commit -m "refactor: formatNumber関数を共通化"
+```
+
 ## プロジェクト概要
 
 GitHub リポジトリ/ユーザーの貢献度・統計を可視化する日本語向け Web サービス。**認証/未認証の両モード**に対応し、GitHub GraphQL API からデータ取得・可視化を行う。
