@@ -123,6 +123,9 @@ function ContributorRow({
   }, [showBadgePopover]);
 
   // ポップオーバーの表示位置を計算（上 or 下）
+  // ビューポート内の空きスペースに応じて動的に位置を決定。
+  // この setState はポップオーバーが開いたときのみ実行され、
+  // 表示位置の計算はレンダリングに直結するため useEffect 内での実行が適切。
   useEffect(() => {
     if (!showBadgePopover || !buttonRef.current) return;
 
@@ -135,8 +138,12 @@ function ContributorRow({
     const estimatedPopoverHeight = Math.min(badges.length * 60 + 60, 400);
 
     // 下のスペースが足りない場合は上に表示
-    // 位置計算のためのsetStateはパフォーマンス問題なし
-    /* eslint-disable react-hooks/set-state-in-effect */
+    /* eslint-disable react-hooks/set-state-in-effect -- 
+       ポップオーバー位置計算に必要。この setState は:
+       - ポップオーバーが開いたときのみ実行される
+       - DOM 測定後の位置決定のため useEffect 内が適切
+       - 無限ループは発生しない（依存配列で制御）
+    */
     if (spaceBelow < estimatedPopoverHeight && spaceAbove > spaceBelow) {
       setPopoverPosition("top");
     } else {

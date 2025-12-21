@@ -17,9 +17,12 @@ export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
 
-  // next-themes recommended pattern for SSR/hydration handling
+  // next-themes 推奨パターン: SSR/ハイドレーション対策
+  // サーバーとクライアントでテーマが異なる場合のミスマッチを防ぐため、
+  // マウント後にのみテーマを表示。この setState は初回マウント時のみ実行される。
+  // See: https://github.com/pacocoursey/next-themes#avoid-hydration-mismatch
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- ハイドレーション対策のため必要
     setMounted(true);
   }, []);
 
