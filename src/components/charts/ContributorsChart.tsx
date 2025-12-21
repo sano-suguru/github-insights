@@ -11,21 +11,11 @@ import {
   CartesianGrid,
 } from "recharts";
 import type { ContributorStat } from "@/lib/github/types";
+import { getContributorColor } from "@/lib/colors";
 
 interface ContributorsChartProps {
   data: ContributorStat[];
 }
-
-const COLORS = [
-  "#8b5cf6",
-  "#ec4899",
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#06b6d4",
-  "#84cc16",
-];
 
 // Note: このコンポーネントは dynamic import (ssr: false) で使用されるため、
 // クライアントサイドでのみレンダリングされる
@@ -41,7 +31,7 @@ export default function ContributorsChart({ data }: ContributorsChartProps) {
   const chartData = data.slice(0, 8).map((contributor, index) => ({
     name: contributor.name || contributor.login,
     commits: contributor.commits,
-    color: COLORS[index % COLORS.length],
+    color: getContributorColor(index),
   }));
 
   return (

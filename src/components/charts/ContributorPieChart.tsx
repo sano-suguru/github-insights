@@ -10,17 +10,7 @@ import {
 } from "recharts";
 import type { ContributorDetailStat } from "@/lib/github/types";
 import { formatNumber } from "@/lib/utils";
-
-const COLORS = [
-  "#8b5cf6", // purple
-  "#ec4899", // pink
-  "#3b82f6", // blue
-  "#10b981", // green
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#06b6d4", // cyan
-  "#84cc16", // lime
-];
+import { getContributorColor } from "@/lib/colors";
 
 // 「その他」カテゴリ用の識別子
 const OTHERS_LOGIN = "__others__";
@@ -91,7 +81,7 @@ export default function ContributorPieChart({ data, metric }: ContributorPieChar
     .sort((a, b) => b.percentage - a.percentage)
     .map((item, index) => ({
       ...item,
-      color: item.login === OTHERS_LOGIN ? "#6b7280" : COLORS[index % COLORS.length],
+      color: item.login === OTHERS_LOGIN ? "#6b7280" : getContributorColor(index),
     }));
 
   return (
