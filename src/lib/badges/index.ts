@@ -5,6 +5,8 @@
  */
 
 // 型定義
+// Note: BadgeCategory, WrappedBadgeRarity, WrappedBadge は外部で未使用だが、
+//       ライブラリの拡張性のためエクスポートを維持
 export type {
   OgBadgeColorScheme,
   BadgeCategory,
@@ -13,17 +15,14 @@ export type {
   WrappedBadge,
 } from "./types";
 
-export {
-  OG_BADGE_DEFAULT_COLORS,
-  createOgBadgeColorGetter,
-  WRAPPED_BADGE_COLORS,
-} from "./types";
+// OGカード用バッジ色ファクトリ
+export { createOgBadgeColorGetter } from "./types";
 
 // バッジ定義
 export { BADGES, BADGE_PRIORITY, WRAPPED_BADGES } from "./definitions";
 
 // ユーティリティ
-export { getBadgesByCategory, sortBadgesByImportance } from "./utils";
+export { sortBadgesByImportance } from "./utils";
 
 // コントリビューター用
 export { calculateBadges } from "./contributor";

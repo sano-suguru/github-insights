@@ -71,5 +71,3 @@ export function PeriodSelector({
     </div>
   );
 }
-
-export { PERIOD_OPTIONS };

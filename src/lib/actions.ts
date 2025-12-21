@@ -1,6 +1,6 @@
 "use server";
 
-import { signIn, signOut } from "@/lib/auth";
+import { signIn } from "@/lib/auth";
 
 /**
  * GitHubでサインイン
@@ -8,11 +8,4 @@ import { signIn, signOut } from "@/lib/auth";
  */
 export async function signInWithGitHub() {
   await signIn("github", { redirectTo: "/dashboard" });
-}
-
-/**
- * サインアウト
- */
-export async function handleSignOut() {
-  await signOut({ redirectTo: "/" });
 }
