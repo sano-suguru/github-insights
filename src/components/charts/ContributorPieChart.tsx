@@ -9,6 +9,7 @@ import {
   Legend,
 } from "recharts";
 import type { ContributorDetailStat } from "@/lib/github/types";
+import { formatNumber } from "@/lib/utils";
 
 const COLORS = [
   "#8b5cf6", // purple
@@ -36,17 +37,6 @@ const metricLabels: Record<MetricType, string> = {
   additions: "Additions",
   deletions: "Deletions",
 };
-
-// 大きな数値のフォーマット
-function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return `${(num / 1000000).toFixed(1)}M`;
-  }
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}k`;
-  }
-  return num.toLocaleString();
-}
 
 export default function ContributorPieChart({ data, metric }: ContributorPieChartProps) {
   if (data.length === 0) {
