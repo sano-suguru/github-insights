@@ -133,7 +133,7 @@ export default function ContributionCardModal({
   const hasRepoContext = owner && repo;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
       {/* オーバーレイ */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -222,7 +222,7 @@ export default function ContributionCardModal({
         {/* 全画面プレビュー（モバイル用・90度回転で大きく表示） */}
         {isFullscreen && (
           <div
-            className="fixed inset-0 z-60 bg-black flex items-center justify-center"
+            className="fixed inset-0 z-overlay bg-black flex items-center justify-center"
             onClick={() => setIsFullscreen(false)}
           >
             <button

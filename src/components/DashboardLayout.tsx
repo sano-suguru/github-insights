@@ -46,7 +46,7 @@ export default function DashboardLayout({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 検索バー（カード型） */}
         {!hideSearchBar && (
-          <div className="relative z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 mb-8">
+          <div className="relative z-content bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 mb-8">
             <RepoSearchCombobox
               onSelectRepo={handleSelectRepo}
               placeholder="リポジトリ or @ユーザー を検索..."

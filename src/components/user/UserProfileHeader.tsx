@@ -61,7 +61,7 @@ export function UserProfileHeader({
   }, [showBadgePopover, userBadges.length]);
 
   return (
-    <div className="relative z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 md:p-8 mb-6">
+    <div className="relative z-content bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 md:p-8 mb-6">
       <div className="flex flex-col md:flex-row gap-6">
         {/* アバター */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -160,12 +160,12 @@ export function UserProfileHeader({
               {showBadgePopover && (
                 <>
                   {/* モバイル: 固定位置モーダル */}
-                  <div className="sm:hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+                  <div className="sm:hidden fixed inset-0 z-modal flex items-center justify-center p-4">
                     <div
                       className="fixed inset-0 bg-black/50"
                       onClick={() => setShowBadgePopover(false)}
                     />
-                    <div className="relative z-50 w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="relative z-modal w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4 animate-in fade-in zoom-in-95 duration-200">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-base font-medium text-gray-900 dark:text-white">
                           Badges
@@ -203,7 +203,7 @@ export function UserProfileHeader({
 
                   {/* デスクトップ: 相対位置ポップオーバー */}
                   <div
-                    className={`hidden sm:block absolute right-0 z-50 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200 max-h-96 overflow-y-auto ${
+                    className={`hidden sm:block absolute right-0 z-modal w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 animate-in fade-in zoom-in-95 duration-200 max-h-96 overflow-y-auto ${
                       popoverPosition === "bottom"
                         ? "top-full mt-2"
                         : "bottom-full mb-2"
