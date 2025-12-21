@@ -18,15 +18,17 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900 to-gray-900">
-      {/* ヒーローセクション */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+      {/* メインコンテンツ */}
+      <main>
+        {/* ヒーローセクション */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16" aria-labelledby="hero-heading">
         <div className="text-center">
           {/* ロゴ */}
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-linear-to-r from-purple-500 to-pink-500 mb-8">
             <GitHubIcon className="w-10 h-10 text-white" />
           </div>
 
-          <h1 className="text-5xl sm:text-6xl font-bold text-white mb-6">
+          <h1 id="hero-heading" className="text-5xl sm:text-6xl font-bold text-white mb-6">
             GitHub{" "}
             <span className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               Insights
@@ -70,10 +72,10 @@ export default function Home() {
             </form>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* 機能紹介 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" aria-label="機能紹介">
         <div className="grid md:grid-cols-3 gap-8">
           <FeatureCard
             icon={<BarChart3 className="w-8 h-8" />}
@@ -106,7 +108,8 @@ export default function Home() {
             description="プライベートリポジトリを含むすべてのリポジトリを分析可能。安全に利用できます。"
           />
         </div>
-      </div>
+      </section>
+      </main>
 
       {/* フッター */}
       <footer className="border-t border-gray-800 py-8">
@@ -128,10 +131,10 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="bg-gray-800/50 backdrop-blur rounded-2xl p-6 border border-gray-700/50">
-      <div className="text-purple-400 mb-4">{icon}</div>
+    <article className="bg-gray-800/50 backdrop-blur rounded-2xl p-6 border border-gray-700/50">
+      <div className="text-purple-400 mb-4" aria-hidden="true">{icon}</div>
       <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
       <p className="text-gray-400">{description}</p>
-    </div>
+    </article>
   );
 }

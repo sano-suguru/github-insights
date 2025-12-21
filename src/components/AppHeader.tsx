@@ -32,7 +32,7 @@ export default function AppHeader() {
           </Link>
 
           {/* 右側: テーマトグル + ユーザー情報またはログインリンク */}
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <nav className="flex items-center gap-2 sm:gap-4 shrink-0" aria-label="ユーザーメニュー">
             {/* テーマトグル */}
             <ThemeToggle />
 
@@ -74,7 +74,7 @@ export default function AppHeader() {
                 ログイン
               </Link>
             )}
-          </div>
+          </nav>
         </div>
       </div>
     </header>
