@@ -2,12 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getRepositories } from "@/lib/github/repository";
+import { CLIENT_CACHE } from "@/lib/cache-config";
 
 export function useRepositories(accessToken: string | null) {
   return useQuery({
     queryKey: ["repositories"],
     queryFn: () => getRepositories(accessToken!),
     enabled: !!accessToken,
-    staleTime: 5 * 60 * 1000,
+    staleTime: CLIENT_CACHE.REPOSITORIES_STALE_TIME,
   });
 }
