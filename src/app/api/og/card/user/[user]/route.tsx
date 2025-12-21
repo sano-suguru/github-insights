@@ -1,6 +1,7 @@
 import { ImageResponse } from "@vercel/og";
 import { NextRequest } from "next/server";
 import { createOgBadgeColorGetter } from "@/lib/badges";
+import { logger } from "@/lib/logger";
 import {
   calculateInsightScore,
   getRankColorsForOg,
@@ -75,7 +76,7 @@ async function getUserStats(user: string): Promise<UserStats | null> {
     ]);
 
     if (!userRes.ok) {
-      console.error("Failed to fetch user:", userRes.status);
+      logger.error("Failed to fetch user:", userRes.status);
       return null;
     }
 
@@ -128,7 +129,7 @@ async function getUserStats(user: string): Promise<UserStats | null> {
       topRepos,
     };
   } catch (error) {
-    console.error("Error fetching user stats:", error);
+    logger.error("Error fetching user stats:", error);
     return null;
   }
 }
