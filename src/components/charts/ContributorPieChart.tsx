@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import type { ContributorDetailStat } from "@/lib/github/types";
 import { formatNumber } from "@/lib/utils";
-import { getContributorColor } from "@/lib/colors";
+import { getContributorColor, CHART_TOOLTIP_STYLES } from "@/lib/colors";
 
 // 「その他」カテゴリ用の識別子
 const OTHERS_LOGIN = "__others__";
@@ -107,17 +107,7 @@ export default function ContributorPieChart({ data, metric }: ContributorPieChar
               `${(value ?? 0).toLocaleString()} (${chartData.find(d => d.name === name)?.percentage ?? 0}%)`,
               metricLabels[metric],
             ]}
-            contentStyle={{
-              backgroundColor: "rgba(0, 0, 0, 0.8)",
-              border: "none",
-              borderRadius: "8px",
-            }}
-            itemStyle={{
-              color: "#fff",
-            }}
-            labelStyle={{
-              color: "#fff",
-            }}
+            {...CHART_TOOLTIP_STYLES}
           />
           <Legend
             content={() => (

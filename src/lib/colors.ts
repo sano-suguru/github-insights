@@ -69,3 +69,22 @@ export const CONTRIBUTOR_CHART_COLORS = [
 export function getContributorColor(index: number): string {
   return CONTRIBUTOR_CHART_COLORS[index % CONTRIBUTOR_CHART_COLORS.length];
 }
+
+/**
+ * Recharts Tooltip の共通スタイル
+ * 円グラフ・棒グラフ等で統一されたダークテーマTooltip
+ */
+export const CHART_TOOLTIP_STYLES = {
+  contentStyle: {
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    border: "none",
+    borderRadius: "8px",
+  },
+  itemStyle: {
+    color: "#fff",
+  },
+  labelStyle: {
+    color: "#fff",
+    fontWeight: "bold" as const,
+  },
+} as const;
