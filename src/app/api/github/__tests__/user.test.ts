@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
+import type { Session } from "next-auth";
 import type { UserProfile, UserRepository, UserStats } from "@/lib/github/types";
 
 // 動的インポートを使用（[username] フォルダ名の問題を回避）
@@ -12,12 +13,14 @@ const mockGetUserProfile = vi.fn<() => Promise<UserProfile | null>>();
 const mockGetUserRepositories = vi.fn<() => Promise<UserRepository[]>>();
 const mockGetUserEvents = vi.fn<() => Promise<unknown[]>>();
 const mockGetUserContributionStats = vi.fn<() => Promise<{ totalPRs: number; totalIssues: number }>>();
+const mockGetContributionCalendar = vi.fn<() => Promise<{ totalContributions: number; longestStreak: number; currentStreak: number }>>();
 const mockCalculateUserStats = vi.fn<() => UserStats>();
 vi.mock("@/lib/github/user", () => ({
   getUserProfile: () => mockGetUserProfile(),
   getUserRepositories: () => mockGetUserRepositories(),
   getUserEvents: () => mockGetUserEvents(),
   getUserContributionStats: () => mockGetUserContributionStats(),
+  getContributionCalendar: () => mockGetContributionCalendar(),
   calculateUserStats: () => mockCalculateUserStats(),
 }));
 vi.mock("@/lib/github/errors", () => ({
@@ -35,8 +38,9 @@ vi.mock("next/cache", () => ({
 }));
 
 // auth モック - セッションからアクセストークンを取得するため
+const mockAuth = vi.fn<() => Promise<Session | null>>();
 vi.mock("@/lib/auth", () => ({
-  auth: vi.fn(() => Promise.resolve({ accessToken: "test-token" })),
+  auth: () => mockAuth(),
 }));
 
 // テスト用のリクエスト生成ヘルパー
@@ -90,6 +94,10 @@ describe("GET /api/github/user/[username]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => {});
+    // デフォルトで認証済み状態を設定
+    mockAuth.mockResolvedValue({ accessToken: "test-token" } as Session);
+    // デフォルトでストリークのモックを設定
+    mockGetContributionCalendar.mockResolvedValue({ totalContributions: 0, longestStreak: 0, currentStreak: 0 });
   });
 
   afterEach(() => {
@@ -102,6 +110,7 @@ describe("GET /api/github/user/[username]", () => {
     mockGetUserRepositories.mockResolvedValue(mockRepositories);
     mockGetUserEvents.mockResolvedValue([]);
     mockGetUserContributionStats.mockResolvedValue({ totalPRs: 10, totalIssues: 5 });
+    mockGetContributionCalendar.mockResolvedValue({ totalContributions: 500, longestStreak: 30, currentStreak: 7 });
     mockCalculateUserStats.mockReturnValue(mockStats);
 
     const request = createRequest();
@@ -113,7 +122,12 @@ describe("GET /api/github/user/[username]", () => {
     const data = await response.json();
     expect(data.profile).toEqual(mockProfile);
     expect(data.stats).toEqual(mockStats);
-    expect(data.contributionStats).toEqual({ totalPRs: 10, totalIssues: 5 });
+    expect(data.contributionStats).toEqual({
+      totalPRs: 10,
+      totalIssues: 5,
+      currentStreak: 7,
+      longestStreak: 30,
+    });
   });
 
   it("ユーザーが見つからない場合は 404 を返す", async () => {
@@ -164,5 +178,55 @@ describe("GET /api/github/user/[username]", () => {
       code: "INTERNAL",
       message: "Failed to fetch user data",
     });
+  });
+
+  it("未認証時はストリークを取得しない", async () => {
+    // auth モックを未認証状態に変更
+    mockAuth.mockResolvedValue(null);
+
+    const { GET } = await importRoute();
+    mockGetUserProfile.mockResolvedValue(mockProfile);
+    mockGetUserRepositories.mockResolvedValue(mockRepositories);
+    mockGetUserEvents.mockResolvedValue([]);
+    mockGetUserContributionStats.mockResolvedValue({ totalPRs: 10, totalIssues: 5 });
+    mockCalculateUserStats.mockReturnValue(mockStats);
+
+    const request = createRequest();
+    const response = await GET(request, {
+      params: Promise.resolve({ username: "testuser" }),
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    
+    // 未認証時はストリークが undefined（JSON では省略される）
+    expect(data.contributionStats.currentStreak).toBeUndefined();
+    expect(data.contributionStats.longestStreak).toBeUndefined();
+    // getContributionCalendar が呼ばれていないことを確認
+    expect(mockGetContributionCalendar).not.toHaveBeenCalled();
+  });
+
+  it("認証済み時はストリークを取得する", async () => {
+    const { GET } = await importRoute();
+    mockGetUserProfile.mockResolvedValue(mockProfile);
+    mockGetUserRepositories.mockResolvedValue(mockRepositories);
+    mockGetUserEvents.mockResolvedValue([]);
+    mockGetUserContributionStats.mockResolvedValue({ totalPRs: 10, totalIssues: 5 });
+    mockGetContributionCalendar.mockResolvedValue({ totalContributions: 500, longestStreak: 30, currentStreak: 7 });
+    mockCalculateUserStats.mockReturnValue(mockStats);
+
+    const request = createRequest();
+    const response = await GET(request, {
+      params: Promise.resolve({ username: "testuser" }),
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    
+    // 認証済み時はストリークが取得される
+    expect(data.contributionStats.currentStreak).toBe(7);
+    expect(data.contributionStats.longestStreak).toBe(30);
+    // getContributionCalendar が呼ばれていることを確認
+    expect(mockGetContributionCalendar).toHaveBeenCalled();
   });
 });

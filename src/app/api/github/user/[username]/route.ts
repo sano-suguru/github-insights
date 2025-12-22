@@ -15,6 +15,7 @@ import {
   getUserRepositories,
   getUserEvents,
   getUserContributionStats,
+  getContributionCalendar,
   calculateUserStats,
 } from "@/lib/github/user";
 import { GitHubRateLimitError } from "@/lib/github/errors";
@@ -49,7 +50,26 @@ async function fetchUserData(
   
   const stats = calculateUserStats(repositories);
 
-  return { profile, stats, events, contributionStats };
+  // 認証済みの場合のみストリークを取得（GraphQL APIは未認証では制限が厳しい）
+  let streakInfo: { currentStreak?: number; longestStreak?: number } = {};
+  if (accessToken) {
+    const currentYear = new Date().getFullYear();
+    const calendar = await getContributionCalendar(username, currentYear, accessToken);
+    streakInfo = {
+      currentStreak: calendar.currentStreak,
+      longestStreak: calendar.longestStreak,
+    };
+  }
+
+  return {
+    profile,
+    stats,
+    events,
+    contributionStats: {
+      ...contributionStats,
+      ...streakInfo,
+    },
+  };
 }
 
 export async function GET(request: NextRequest, { params }: UserRouteParams) {

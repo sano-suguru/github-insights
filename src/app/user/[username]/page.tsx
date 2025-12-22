@@ -18,6 +18,7 @@ import { fetchApi } from "@/lib/api-utils";
 import { safeDecodePathSegment } from "@/lib/path-utils";
 import DashboardLayout, { SectionCard } from "@/components/DashboardLayout";
 import { InsightScoreCard } from "@/components/InsightScoreCard";
+import { StreakCard } from "@/components/StreakCard";
 import { UserProfileHeader } from "@/components/user/UserProfileHeader";
 import { UserCardModal } from "@/components/UserCardModal";
 
@@ -169,6 +170,17 @@ export default function UserProfilePage() {
       <div className="mb-6">
         <InsightScoreCard input={insightScoreInput} />
       </div>
+
+      {/* Streak - 認証済みのみ表示 */}
+      {contributionStats.currentStreak !== undefined &&
+        contributionStats.longestStreak !== undefined && (
+          <div className="mb-6">
+            <StreakCard
+              currentStreak={contributionStats.currentStreak}
+              longestStreak={contributionStats.longestStreak}
+            />
+          </div>
+        )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Languages */}

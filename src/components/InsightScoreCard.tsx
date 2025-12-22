@@ -45,7 +45,7 @@ export function InsightScoreCard({ input, compact = false }: InsightScoreCardPro
               Insight Score
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              GitHub活動の総合指標
+              Overall GitHub activity score
             </p>
           </div>
         </div>
@@ -56,7 +56,7 @@ export function InsightScoreCard({ input, compact = false }: InsightScoreCardPro
       <div className="space-y-3">
         <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
           <TrendingUp className="w-4 h-4" />
-          スコア内訳
+          Score Breakdown
         </h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <BreakdownItem
@@ -107,7 +107,7 @@ export function InsightScoreCard({ input, compact = false }: InsightScoreCardPro
             value={input.accountYears}
             score={result.breakdown.seniority}
             color="text-cyan-500"
-            suffix="年"
+            suffix="yrs"
           />
         </div>
       </div>
