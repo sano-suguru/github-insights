@@ -123,6 +123,8 @@ export interface UserEvent {
 export interface UserContributionStats {
   totalPRs: number;
   totalIssues: number;
+  currentStreak?: number;
+  longestStreak?: number;
 }
 
 export interface YearlyStats {
