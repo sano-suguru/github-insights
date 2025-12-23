@@ -11,6 +11,7 @@ import type {
   UserStats,
   UserEvent,
   UserContributionStats,
+  ActivityTimeAnalysis,
 } from "@/lib/github/types";
 import { calculateUserBadges } from "@/lib/badges";
 import { calculateAccountYears } from "@/lib/insight-score";
@@ -19,6 +20,7 @@ import { safeDecodePathSegment } from "@/lib/path-utils";
 import DashboardLayout, { SectionCard } from "@/components/DashboardLayout";
 import { InsightScoreCard } from "@/components/InsightScoreCard";
 import { StreakCard } from "@/components/StreakCard";
+import { ActivityTimeCard } from "@/components/ActivityTimeCard";
 import { UserProfileHeader } from "@/components/user/UserProfileHeader";
 import { UserCardModal } from "@/components/UserCardModal";
 
@@ -44,6 +46,7 @@ async function fetchUserData(username: string): Promise<{
   stats: UserStats;
   events: UserEvent[];
   contributionStats: UserContributionStats;
+  activityTime: ActivityTimeAnalysis | null;
 }> {
   return fetchApi(`/api/github/user/${encodeURIComponent(username)}`, {
     notFoundError: "USER_NOT_FOUND",
@@ -139,7 +142,7 @@ export default function UserProfilePage() {
     return <DashboardLayout isLoading />;
   }
 
-  const { profile, stats, events, contributionStats } = data;
+  const { profile, stats, events, contributionStats, activityTime } = data;
   const joinedDate = new Date(profile.createdAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -181,6 +184,13 @@ export default function UserProfilePage() {
             />
           </div>
         )}
+
+      {/* Activity Time - イベントがある場合のみ表示 */}
+      {activityTime && (
+        <div className="mb-6">
+          <ActivityTimeCard activityTime={activityTime} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Languages */}
