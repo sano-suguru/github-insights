@@ -4,6 +4,11 @@
 
 ## 2025-12-23
 
+- feat: ユーザープロフィールページにActivity Time表示を追加（#45）
+  - ActivityTimeCardコンポーネント（5タイプ別アイコン・グラデーション）
+  - User APIにactivityTimeフィールドを追加
+  - HOURS_IN_DAY定数をtypes.tsに定義
+
 - feat: ユーザープロフィールページにストリーク表示を追加（#43）
   - StreakCardコンポーネント（グラデーション色、Personal Bestバッジ）
   - User APIにストリーク取得（認証済みのみ）
