@@ -9,6 +9,7 @@ import type {
   UserStats,
   UserEvent,
   UserContributionStats,
+  ActivityTimeAnalysis,
 } from "@/lib/github/types";
 import {
   getUserProfile,
@@ -18,6 +19,7 @@ import {
   getContributionCalendar,
   calculateUserStats,
 } from "@/lib/github/user";
+import { analyzeActivityTime } from "@/lib/github/transforms";
 import { GitHubRateLimitError } from "@/lib/github/errors";
 import { safeDecodePathSegment } from "@/lib/path-utils";
 import { buildPublicCacheControl } from "@/lib/cache-utils";
@@ -34,11 +36,12 @@ async function fetchUserData(
   stats: UserStats | null;
   events: UserEvent[];
   contributionStats: UserContributionStats;
+  activityTime: ActivityTimeAnalysis | null;
 }> {
   const profile = await getUserProfile(username, accessToken);
 
   if (!profile) {
-    return { profile: null, stats: null, events: [], contributionStats: { totalPRs: 0, totalIssues: 0 } };
+    return { profile: null, stats: null, events: [], contributionStats: { totalPRs: 0, totalIssues: 0 }, activityTime: null };
   }
 
   // セカンダリレート制限対策: 順次実行（各リクエスト間に100msの遅延）
@@ -61,6 +64,9 @@ async function fetchUserData(
     };
   }
 
+  // アクティビティ時間分析（直近イベントから）
+  const activityTime = events.length > 0 ? analyzeActivityTime(events) : null;
+
   return {
     profile,
     stats,
@@ -69,6 +75,7 @@ async function fetchUserData(
       ...contributionStats,
       ...streakInfo,
     },
+    activityTime,
   };
 }
 
@@ -90,7 +97,7 @@ export async function GET(request: NextRequest, { params }: UserRouteParams) {
 
     const fetcher = () => fetchUserData(username, accessToken);
 
-    const { profile, stats, events, contributionStats } = isAuthenticated
+    const { profile, stats, events, contributionStats, activityTime } = isAuthenticated
       ? await fetcher()
       : await unstable_cache(fetcher, [cacheKey], {
           revalidate: SERVER_CACHE.USER_PROFILE_REVALIDATE,
@@ -106,6 +113,7 @@ export async function GET(request: NextRequest, { params }: UserRouteParams) {
       stats,
       events,
       contributionStats,
+      activityTime,
     });
 
     if (!isAuthenticated) {

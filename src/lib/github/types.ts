@@ -180,6 +180,9 @@ export interface CommitHistoryOptions {
 
 // ========== 活動時間分析 ==========
 
+/** 1日の時間数（distribution 配列の長さ） */
+export const HOURS_IN_DAY = 24;
+
 export type ActivityTimeType =
   | "night-owl"
   | "early-bird"
